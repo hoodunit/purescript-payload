@@ -16,6 +16,8 @@ import Effect.Ref as Ref
 import Node.Encoding (Encoding(..))
 import Node.HTTP as HTTP
 import Node.Stream (onDataString, onEnd, onError)
+import Payload.Data (class FromData)
+import Payload.Data as Data
 import Payload.Response (class IsRespondable, internalError, sendError, sendInternalError, sendResponse)
 import Payload.Trie (Trie)
 import Payload.Trie as Trie
@@ -24,7 +26,6 @@ import Payload.UrlParsing (class ParseUrl, class ToSegments, Segment(..))
 import Payload.UrlParsing as UrlParsing
 import Prim.Row as Row
 import Record (get)
-import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals, from)
 import Type.Proxy (Proxy(..))
 import Type.Row (class RowToList, Cons, Nil, RLProxy(..), kind RowList)
@@ -103,7 +104,7 @@ instance handleablePostRoute ::
        , TypeEquals handlerReq { params :: Record params, body :: body }
        , IsRespondable res
        , PayloadUrl.DecodeUrl path params
-       , SimpleJson.ReadForeign body
+       , FromData body
        , ParseUrl path urlParts
        , ToSegments urlParts
        )
@@ -119,7 +120,7 @@ instance handleablePostRoute ::
       handleRequest params = Aff.launchAff_ $ Aff.catchError (runRequest params) (sendInternalError res)
       runRequest :: Record params -> Aff Unit
       runRequest params = do
-        bodyResult <- map SimpleJson.readJSON (readBody req)
+        bodyResult <- map Data.fromData (readBody req)
         case bodyResult of
           Right body -> do
             let handlerReq = { params, body }
@@ -132,13 +133,11 @@ instance handleableGetRoute ::
        ( TypeEquals (Record route)
            { response :: res
            , params :: Record params
-           , body :: body
            | r }
        , IsSymbol path
-       , TypeEquals handlerReq { params :: Record params, body :: body }
+       , TypeEquals handlerReq { params :: Record params }
        , IsRespondable res
        , PayloadUrl.DecodeUrl path params
-       , SimpleJson.ReadForeign body
        , ParseUrl path urlParts
        , ToSegments urlParts
        )
@@ -155,7 +154,7 @@ instance handleableGetRoute ::
 
       runRequest :: Record params -> Aff Unit
       runRequest params = do
-        let handlerReq = { params, body: unsafeCoerce {} }
+        let handlerReq = { params }
         handlerResp <- handler (from handlerReq)
         liftEffect $ sendResponse res handlerResp
 
