@@ -26,6 +26,7 @@ import Payload.UrlParsing (class ParseUrl, class ToSegments, Segment(..))
 import Payload.UrlParsing as UrlParsing
 import Prim.Row as Row
 import Record (get)
+import Record as Record
 import Type.Equality (class TypeEquals, from)
 import Type.Proxy (Proxy(..))
 import Type.Row (class RowToList, Cons, Nil, RLProxy(..), kind RowList)
@@ -101,14 +102,14 @@ instance handleablePostRoute ::
            , body :: body
            | r }
        , IsSymbol path
-       , TypeEquals handlerReq { params :: Record params, body :: body }
+       , Row.Union params ( body :: body ) payload
        , IsRespondable res
        , PayloadUrl.DecodeUrl path params
        , FromData body
        , ParseUrl path urlParts
        , ToSegments urlParts
        )
-    => Handleable (Route "POST" path (Record route)) (handlerReq -> Aff res) where
+    => Handleable (Route "POST" path (Record route)) (Record payload -> Aff res) where
   handle route handler Nil req res =
     Just (sendError res (internalError "No path segments passed to handler"))
   handle route handler (method : pathSegments) req res =
@@ -120,11 +121,11 @@ instance handleablePostRoute ::
       handleRequest params = Aff.launchAff_ $ Aff.catchError (runRequest params) (sendInternalError res)
       runRequest :: Record params -> Aff Unit
       runRequest params = do
-        bodyResult <- map Data.fromData (readBody req)
-        case bodyResult of
+        bodyStr <- readBody req
+        case (Data.fromData bodyStr :: Either String body) of
           Right body -> do
-            let handlerReq = { params, body }
-            handlerResp <- handler (from handlerReq)
+            let (payload :: Record payload) = Record.union params { body }
+            handlerResp <- handler payload
             liftEffect $ sendResponse res handlerResp
           Left errors -> do
             sendInternalError res $ error $ "Error decoding body: " <> show errors
@@ -135,13 +136,13 @@ instance handleableGetRoute ::
            , params :: Record params
            | r }
        , IsSymbol path
-       , TypeEquals handlerReq { params :: Record params }
+       , TypeEquals (Record payload) (Record params)
        , IsRespondable res
        , PayloadUrl.DecodeUrl path params
        , ParseUrl path urlParts
        , ToSegments urlParts
        )
-    => Handleable (Route "GET" path (Record route)) (handlerReq -> Aff res) where
+    => Handleable (Route "GET" path (Record route)) (Record payload -> Aff res) where
   handle route handler Nil req res =
     Just (sendError res (internalError "No path segments passed to handler"))
   handle route handler (method : pathSegments) req res =
@@ -154,8 +155,8 @@ instance handleableGetRoute ::
 
       runRequest :: Record params -> Aff Unit
       runRequest params = do
-        let handlerReq = { params }
-        handlerResp <- handler (from handlerReq)
+        let payload = from params
+        handlerResp <- handler payload
         liftEffect $ sendResponse res handlerResp
 
 readBody :: HTTP.Request -> Aff String

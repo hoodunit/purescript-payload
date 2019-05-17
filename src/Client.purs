@@ -15,48 +15,55 @@ import Payload.Url as PayloadUrl
 import Prim.Row as Row
 import Record as Record
 import Simple.JSON as SimpleJson
-import Type.Equality (class TypeEquals, from)
+import Type.Equality (class TypeEquals, to)
 
-type DefaultReqParams = ( params :: {}, body :: {} )
-defaultReqParams :: Record DefaultReqParams
-defaultReqParams =
-  { params: {}
-  , body: {}
-  }
+class ClientQueryable route payload res | route -> payload, route -> res where
+  request :: route -> payload -> Aff (Either String res)
 
-class ClientQueryable route reqParams res | route -> reqParams, route -> res where
-  request :: route -> Record reqParams -> Aff (Either String res)
-
-instance clientQueryableRoute ::
+instance clientQueryableGetRoute ::
        ( Row.Union route DefaultRequest mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
-       , Row.Union reqParams DefaultReqParams mergedReqParams
-       , Row.Nub mergedReqParams reqParamsWithDefaults
+       , TypeEquals (Record routeWithDefaults)
+           { response :: res
+           , params :: Record params
+           | r }
+       , IsSymbol path
+       , IsRespondable res
+       , PayloadUrl.EncodeUrl path params
+       , SimpleJson.ReadForeign res
+       )
+    => ClientQueryable (Route "GET" path (Record route)) (Record params) res where
+  request _ payload = do
+    let params = payload
+    let path = PayloadUrl.encodeUrl (SProxy :: SProxy path) params
+    let url = "http://localhost:3000" <> path
+    doGet url
+else instance clientQueryablePostRoute ::
+       ( Row.Union route DefaultRequest mergedRoute
+       , Row.Nub mergedRoute routeWithDefaults
        , TypeEquals (Record routeWithDefaults)
            { response :: res
            , params :: Record params
            , body :: body
            | r }
+       , TypeEquals (Record payload)
+           { body :: body
+           | params }
        , IsSymbol path
-       , IsSymbol method
-       , TypeEquals { params :: Record params, body :: body } (Record reqParamsWithDefaults)
+       , Row.Lacks "body" params
        , IsRespondable res
        , PayloadUrl.EncodeUrl path params
        , SimpleJson.WriteForeign body
        , SimpleJson.ReadForeign res
        )
-    => ClientQueryable (Route method path (Record route)) reqParams res where
-  request route reqParams = do
-    let method = reflectSymbol (SProxy :: SProxy method)
-    let fullReqParams = Record.merge reqParams defaultReqParams
-    let params = (from fullReqParams).params
+    => ClientQueryable (Route "POST" path (Record route)) (Record payload) res where
+  request _ payload = do
+    let p = to payload
+    let (params :: Record params) = Record.delete (SProxy :: SProxy "body") p
     let path = PayloadUrl.encodeUrl (SProxy :: SProxy path) params
     let url = "http://localhost:3000" <> path
-    if method == "GET"
-      then doGet url
-      else do
-        let body = (from fullReqParams).body
-        doPost url body
+    let (body :: body) = Record.get (SProxy :: SProxy "body") p
+    doPost url body
 
 doGet :: forall res. IsRespondable res => String -> Aff (Either String res)
 doGet url = do
