@@ -130,7 +130,7 @@ serverTests = do
 
 startTestServer :: Aff Unit
 startTestServer = do
-  let opts = { hostname: "localhost", port: 3000, backlog: Nothing }
+  let opts = Payload.defaultOpts { logLevel = Payload.LogDebug }
   startResult <- Payload.start opts api handlers
   case startResult of
     Right _ -> pure unit

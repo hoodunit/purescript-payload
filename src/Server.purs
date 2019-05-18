@@ -10,6 +10,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (wrap)
 import Data.Nullable (toMaybe)
 import Data.String as String
+import Data.Symbol (SProxy(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -22,16 +23,34 @@ import Payload.Response (sendError)
 import Payload.Routing (class Routable, HandlerEntry, mkRouter)
 import Payload.Trie (Trie)
 import Payload.Trie as Trie
+import Record as Record
 
 type Options =
-  { hostname :: String
+  { backlog :: Maybe Int
+  , hostname :: String
   , port :: Int
-  , backlog :: Maybe Int
-  }
+  , logLevel :: LogLevel }
+
+data LogLevel = LogNormal | LogDebug
+
+defaultOpts :: Options
+defaultOpts =
+  { backlog: Nothing
+  , hostname: "localhost"
+  , port: 3000
+  , logLevel: LogNormal }
 
 type PayloadServer = HTTP.Server
 
 foreign import unsafeDecodeURIComponent :: String -> String
+
+start_
+  :: forall apiSpec handlers
+   . Routable apiSpec handlers
+  => apiSpec
+  -> handlers
+  -> Aff (Either String PayloadServer)
+start_ = start defaultOpts
 
 start
   :: forall apiSpec handlers
@@ -43,15 +62,18 @@ start
 start opts apiSpec handlers = do
   case mkRouter apiSpec handlers of
     Right routerTrie -> do
-      server <- liftEffect $ HTTP.createServer (handleRequest routerTrie)
-      listen server opts
+      server <- liftEffect $ HTTP.createServer (handleRequest opts routerTrie)
+      let httpOpts = Record.delete (SProxy :: SProxy "logLevel") opts
+      listen server httpOpts
       pure (Right server)
     Left err -> pure (Left err)
 
-handleRequest :: Trie HandlerEntry -> HTTP.Request -> HTTP.Response -> Effect Unit
-handleRequest routerTrie req res = do
+handleRequest :: Options -> Trie HandlerEntry -> HTTP.Request -> HTTP.Response -> Effect Unit
+handleRequest { logLevel } routerTrie req res = do
   let url = Url.parse (HTTP.requestURL req)
-  -- log (HTTP.requestMethod req <> " " <> show (url.path))
+  case logLevel of
+    LogDebug -> log (HTTP.requestMethod req <> " " <> show (url.path))
+    _ -> pure unit
   case requestSegments req of
     Right reqSegments -> runHandlers routerTrie reqSegments req res
     Left err -> sendError res { status: 500,
