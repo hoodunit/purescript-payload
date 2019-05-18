@@ -31,7 +31,23 @@ type Options =
   , port :: Int
   , logLevel :: LogLevel }
 
-data LogLevel = LogNormal | LogDebug
+data LogLevel = LogSilent | LogError | LogNormal | LogDebug
+
+instance eqLogLevel :: Eq LogLevel where
+  eq LogSilent LogSilent = true
+  eq LogError LogError = true
+  eq LogNormal LogNormal = true
+  eq LogDebug LogDebug = true
+  eq _ _ = false
+
+instance ordLogLevel :: Ord LogLevel where
+  compare l1 l2 = rank l1 `compare` rank l2
+    where
+      rank :: LogLevel -> Int
+      rank LogSilent = 0
+      rank LogError = 1
+      rank LogNormal = 2
+      rank LogDebug = 3
 
 defaultOpts :: Options
 defaultOpts =
@@ -41,6 +57,15 @@ defaultOpts =
   , logLevel: LogNormal }
 
 type PayloadServer = HTTP.Server
+
+type Config =
+  { logger :: Logger }
+
+type Logger =
+  { log :: String -> Effect Unit
+  , logDebug :: String -> Effect Unit
+  , logError :: String -> Effect Unit
+  }
 
 foreign import unsafeDecodeURIComponent :: String -> String
 
@@ -60,20 +85,37 @@ start
   -> handlers
   -> Aff (Either String PayloadServer)
 start opts apiSpec handlers = do
+  let cfg = mkConfig opts
   case mkRouter apiSpec handlers of
     Right routerTrie -> do
-      server <- liftEffect $ HTTP.createServer (handleRequest opts routerTrie)
+      server <- liftEffect $ HTTP.createServer (handleRequest cfg routerTrie)
       let httpOpts = Record.delete (SProxy :: SProxy "logLevel") opts
-      listen server httpOpts
+      listen cfg server httpOpts
       pure (Right server)
     Left err -> pure (Left err)
 
-handleRequest :: Options -> Trie HandlerEntry -> HTTP.Request -> HTTP.Response -> Effect Unit
-handleRequest { logLevel } routerTrie req res = do
+mkConfig :: Options -> Config
+mkConfig { logLevel } = { logger: mkLogger logLevel }
+
+mkLogger :: LogLevel -> Logger
+mkLogger logLevel = { log: log_, logDebug, logError }
+  where
+    log_ :: String -> Effect Unit
+    log_ | logLevel >= LogNormal = log
+    log_ = const $ pure unit
+
+    logDebug :: String -> Effect Unit
+    logDebug | logLevel >= LogDebug = log
+    logDebug = const $ pure unit
+
+    logError :: String -> Effect Unit
+    logError | logLevel >= LogError = log
+    logError = const $ pure unit
+
+handleRequest :: Config -> Trie HandlerEntry -> HTTP.Request -> HTTP.Response -> Effect Unit
+handleRequest { logger } routerTrie req res = do
   let url = Url.parse (HTTP.requestURL req)
-  case logLevel of
-    LogDebug -> log (HTTP.requestMethod req <> " " <> show (url.path))
-    _ -> pure unit
+  logger.logDebug (HTTP.requestMethod req <> " " <> show (url.path))
   case requestSegments req of
     Right reqSegments -> runHandlers routerTrie reqSegments req res
     Left err -> sendError res { status: 500,
@@ -114,13 +156,13 @@ pathToSegments = dropEmpty <<< List.fromFoldable <<< String.split (wrap "/")
     dropEmpty ("" : xs) = dropEmpty xs
     dropEmpty xs = xs
 
-listen :: HTTP.Server -> HTTP.ListenOptions -> Aff Unit
-listen server opts = Aff.makeAff $ \cb -> do
-  HTTP.listen server opts (logStarted *> cb (Right unit))
-  pure $ Aff.Canceler (\error -> liftEffect (logError error) *> close server)
+listen :: Config -> HTTP.Server -> HTTP.ListenOptions -> Aff Unit
+listen { logger } server opts = Aff.makeAff $ \cb -> do
+  HTTP.listen server opts (logger.log startedMsg *> cb (Right unit))
+  pure $ Aff.Canceler (\error -> liftEffect (logger.logError (errorMsg error)) *> close server)
   where
-    logStarted = log $ "Listening on port " <> show opts.port
-    logError e = log $ "Closing server due to error: " <> show e
+    startedMsg = "Listening on port " <> show opts.port
+    errorMsg e = "Closing server due to error: " <> show e
 
 close :: HTTP.Server -> Aff Unit
 close server = Aff.makeAff $ \cb -> do

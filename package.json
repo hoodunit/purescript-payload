@@ -4,7 +4,7 @@
     "clean": "rimraf output && rimraf .pulp-cache",
     "build": "pulp build -- --censor-lib --strict",
     "build:watch": "pulp --watch build -- --censor-lib --strict",
-    "test": "pulp --watch test --main Payload.Test.Main -- --censor-lib --strict"
+    "test": "pulp --watch test --include examples --main Payload.Test.Main -- --censor-lib --strict"
   },
   "devDependencies": {
     "bower": "1.8.8",
