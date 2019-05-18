@@ -57,9 +57,11 @@ api =
   , getPageMetadata: Route :: GET "/pages/<id>/metadata"
       { params :: { id :: String }
       , response :: String }
+  , getHello: Route :: GET "/hello there"
+      { response :: String }
   }
 
-handlers = { getUsers, getUser, getUsersProfiles, createUser, getUserPost, indexPage, files, getPage, getPageMetadata }
+handlers = { getUsers, getUser, getUsersProfiles, createUser, getUserPost, indexPage, files, getPage, getPageMetadata, getHello }
 
 getUsers :: forall r. { | r } -> Aff (Array User)
 getUsers _ = pure [{ id: 1, name: "John Doe" }]
@@ -88,6 +90,8 @@ getPage { id } = pure $ "Page " <> id
 
 getPageMetadata :: forall r. { id :: String | r} -> Aff String
 getPageMetadata { id } = pure $ "Page metadata " <> id
+
+getHello _ = pure "Hello!"
 
 assertResp :: forall a err. Show err => Eq a => Show a => Aff (Either err a) -> a -> Test
 assertResp req expected = do
@@ -120,6 +124,9 @@ serverTests = do
     test "GET /pages/<id>/metadata" $ assertResp
       (Client.request api.getPageMetadata { id: "1"})
       "Page metadata 1"
+    test "GET /hello%20there" $ assertResp
+      (Client.request api.getHello {})
+      "Hello!"
 
 startTestServer :: Aff Unit
 startTestServer = do

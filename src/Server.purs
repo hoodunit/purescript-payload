@@ -31,6 +31,8 @@ type Options =
 
 type PayloadServer = HTTP.Server
 
+foreign import unsafeDecodeURIComponent :: String -> String
+
 start
   :: forall apiSpec handlers
    . Routable apiSpec handlers
@@ -71,7 +73,8 @@ requestSegments :: HTTP.Request -> Either String (List String)
 requestSegments req = do
   path <- requestPath req
   let segments = pathToSegments path
-  pure (method : segments)
+  let decodedSegments = unsafeDecodeURIComponent <$> segments
+  pure (method : decodedSegments)
   where
     method = HTTP.requestMethod req
   
@@ -79,7 +82,7 @@ requestPath :: HTTP.Request -> Either String String
 requestPath = HTTP.requestURL >>> Url.parse >>> urlPath
 
 urlPath :: URL -> Either String String
-urlPath url = url.path
+urlPath url = url.pathname
   # toMaybe
   # maybe (Left "No path") Right
 

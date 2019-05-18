@@ -76,5 +76,6 @@ tests = do
     match (SProxy :: SProxy "/users/<id>/<..rest>") "/users/asdf/a" 
     noMatch (SProxy :: SProxy "/users/<id>/<..rest>") "/users/asdf" 
 
+    -- URLs should be URL-decoded before reaching the matcher
     match (SProxy :: SProxy "/hello there") "/hello there" 
     noMatch (SProxy :: SProxy "/hello there") "/hello%20there" 
