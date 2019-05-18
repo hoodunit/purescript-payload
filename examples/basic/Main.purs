@@ -15,7 +15,8 @@ import Payload.Routing (GET, Route(..), POST)
 import Payload.Server as Payload
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
-import Test.Unit.Main (runTest)
+import Test.Unit.Main (runTest, runTestWith)
+import Test.Unit.Output.Fancy as Fancy
 
 type User =
   { id :: Int
@@ -132,4 +133,4 @@ startTestServer = do
 runTests :: Aff Unit
 runTests = do
   startTestServer
-  liftEffect $ runTest tests
+  runTestWith (Fancy.runTest) tests
