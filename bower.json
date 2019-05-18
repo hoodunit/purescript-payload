@@ -7,18 +7,20 @@
     "output"
   ],
   "dependencies": {
-    "purescript-aff": "^5.0.0",
-    "purescript-console": "^4.1.0",
-    "purescript-node-http": "^5.0.0",
-    "purescript-foreign-generic": "^7.0.0",
-    "purescript-typelevel-prelude": "^3.0.0",
-    "purescript-record": "^1.0.0",
-    "purescript-debug": "^4.0.0",
-    "purescript-node-fs": "^5.0.0",
-    "purescript-node-fs-aff": "^6.0.0",
-    "purescript-affjax": "^9.0.0"
+    "purescript-aff": "5.1.1",
+    "purescript-console": "4.2.0",
+    "purescript-node-http": "5.0.0",
+    "purescript-foreign-generic": "9.0.0",
+    "purescript-typelevel-prelude": "4.0.0",
+    "purescript-record": "2.0.0",
+    "purescript-debug": "4.0.0",
+    "purescript-node-fs": "5.0.0",
+    "purescript-node-fs-aff": "6.0.0",
+    "purescript-affjax": "9.0.0",
+    "purescript-prelude": "4.1.1",
+    "purescript-simple-json": "5.1.0"
   },
   "devDependencies": {
-    "purescript-test-unit": "^15.0.0"
+    "purescript-test-unit": "15.0.0"
   }
 }
