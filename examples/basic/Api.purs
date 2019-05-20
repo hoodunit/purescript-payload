@@ -1,8 +1,9 @@
 module Payload.Examples.Basic.Api where
 
 import Data.List (List)
+import Payload.Guards (Guard(..))
 import Payload.Handlers (File(..))
-import Payload.Routing (GET, Route(..), POST)
+import Payload.Route (GET, POST, Route(..))
 
 type User =
   { id :: Int
@@ -12,8 +13,15 @@ type Post =
   { id :: String
   , text :: String }
 
+newtype AdminUser = AdminUser
+  { id :: Int
+  , name :: String }
+
 api =
   { getUsers: Route :: GET "/users"
+      { guards :: { adminUser :: AdminUser }
+      , response :: Array User }
+  , getUsersNonAdmin: Route :: GET "/users"
       { response :: Array User }
   , getUser: Route :: GET "/users/<id>"
       { params :: { id :: Int }
@@ -22,6 +30,7 @@ api =
       { response :: Array String }
   , createUser: Route :: POST "/users/new"
       { body :: User
+      , guards :: { adminUser :: AdminUser }
       , response :: User }
   , getUserPost: Route :: GET "/users/<id>/posts/<postId>"
       { params :: { id :: Int, postId :: String }

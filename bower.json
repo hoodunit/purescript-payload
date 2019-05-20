@@ -18,7 +18,8 @@
     "purescript-node-fs-aff": "6.0.0",
     "purescript-affjax": "9.0.0",
     "purescript-prelude": "4.1.1",
-    "purescript-simple-json": "5.1.0"
+    "purescript-simple-json": "5.1.0",
+    "purescript-stringutils": "0.0.8"
   },
   "devDependencies": {
     "purescript-test-unit": "15.0.0"

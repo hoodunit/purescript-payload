@@ -4,13 +4,14 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
-import Data.List (List, (:))
+import Data.List (List(..), (:))
 import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (wrap)
 import Data.Nullable (toMaybe)
 import Data.String as String
 import Data.Symbol (SProxy(..))
+import Data.Traversable (sequence, traverse)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -20,7 +21,7 @@ import Node.HTTP as HTTP
 import Node.URL (URL)
 import Node.URL as Url
 import Payload.Response (sendError)
-import Payload.Routing (class Routable, HandlerEntry, mkRouter)
+import Payload.Routing (class Routable, HandlerEntry, Outcome(..), mkRouter)
 import Payload.Trie (Trie)
 import Payload.Trie as Trie
 import Record as Record
@@ -70,23 +71,23 @@ type Logger =
 foreign import unsafeDecodeURIComponent :: String -> String
 
 start_
-  :: forall apiSpec handlers
-   . Routable apiSpec handlers
+  :: forall apiSpec handlers guards
+   . Routable apiSpec handlers guards
   => apiSpec
-  -> handlers
+  -> { handlers :: handlers, guards :: guards }
   -> Aff (Either String PayloadServer)
 start_ = start defaultOpts
 
 start
-  :: forall apiSpec handlers
-   . Routable apiSpec handlers
+  :: forall apiSpec handlers guards
+   . Routable apiSpec handlers guards
   => Options
   -> apiSpec
-  -> handlers
+  -> { handlers :: handlers, guards :: guards }
   -> Aff (Either String PayloadServer)
-start opts apiSpec handlers = do
+start opts apiSpec api = do
   let cfg = mkConfig opts
-  case mkRouter apiSpec handlers of
+  case mkRouter apiSpec api of
     Right routerTrie -> do
       server <- liftEffect $ HTTP.createServer (handleRequest cfg routerTrie)
       let httpOpts = Record.delete (SProxy :: SProxy "logLevel") opts
@@ -125,13 +126,13 @@ handleRequest { logger } routerTrie req res = do
 runHandlers :: Trie HandlerEntry -> List String -> HTTP.Request -> HTTP.Response -> Effect Unit
 runHandlers routerTrie pathSegments req res = do
   let matches = Trie.lookup pathSegments routerTrie
-  case foldl handleNext Nothing matches of
-    Just handleIt -> handleIt
-    Nothing -> sendError res { status: 404, statusMsg: "Not Found", body: "" }
+  Aff.launchAff_ $ handleNext Forward matches
   where
-    handleNext :: Maybe (Effect Unit) -> HandlerEntry -> Maybe (Effect Unit)
-    handleNext (Just e) _ = Just e
-    handleNext Nothing { handler } = handler pathSegments req res
+    handleNext :: Outcome -> List HandlerEntry -> Aff Outcome
+    handleNext _ Nil = pure Failure
+    handleNext Success (entry : rest) = pure Success
+    handleNext Failure (entry : rest) = pure Failure
+    handleNext Forward ({ handler } : rest) = handler pathSegments req res >>= \o -> handleNext o rest
   
 requestSegments :: HTTP.Request -> Either String (List String)
 requestSegments req = do

@@ -10,7 +10,7 @@ import Data.Either (Either)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Effect.Aff (Aff)
 import Payload.Response (class IsRespondable, ResponseBody(..), readResponse)
-import Payload.Routing (DefaultRequest, Route(..))
+import Payload.Route (DefaultRequest, Route(..))
 import Payload.Url as PayloadUrl
 import Prim.Row as Row
 import Record as Record

@@ -17,7 +17,7 @@ import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Payload.Client as Client
 import Payload.Handlers (File(..))
-import Payload.Routing (GET, Route(..), POST)
+import Payload.Route (GET, Route(..), POST)
 import Payload.Server as Payload
 import Payload.Test.Params as ParamsTest
 import Payload.Test.Routing as RoutingTest
@@ -71,7 +71,7 @@ tests = do
 startTestServer :: Aff Unit
 startTestServer = do
   let opts = Payload.defaultOpts { logLevel = Payload.LogError, port = 3001 }
-  startResult <- Payload.start opts api handlers
+  startResult <- Payload.start opts api { handlers, guards: {} }
   case startResult of
     Right _ -> pure unit
     Left err -> liftEffect (log err)

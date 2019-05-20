@@ -5,24 +5,26 @@ import Prelude
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List)
+import Data.String.Utils as StringUtils
 import Data.String as String
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
+import Node.HTTP as HTTP
 import Payload.Client as Client
-import Payload.Examples.Basic.Api (Post, User, api)
+import Payload.Examples.Basic.Api (AdminUser(..), Post, User, api)
 import Payload.Handlers (File(..))
-import Payload.Routing (GET, Route(..), POST)
+import Payload.Route (GET, Route(..), POST)
 import Payload.Server as Payload
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
 import Test.Unit.Main (runTest, runTestWith)
 import Test.Unit.Output.Fancy as Fancy
 
-handlers = { getUsers, getUser, getUsersProfiles, createUser, getUserPost, indexPage, files, getPage, getPageMetadata, getHello }
+-- getUsers :: forall r. { adminUser :: AdminUser | r } -> Aff (Array User)
+getUsers { adminUser: AdminUser adminUser } = pure [adminUser, { id: 1, name: "John Doe" }]
 
-getUsers :: forall r. { | r } -> Aff (Array User)
-getUsers _ = pure [{ id: 1, name: "John Doe" }]
+getUsersNonAdmin _ = pure [{ id: 1, name: "John Doe" }]
 
 getUser :: forall r. { id :: Int | r } -> Aff User
 getUser {id} = pure { id, name: "John Doe" }
@@ -63,6 +65,9 @@ tests = do
   suite "Example: basic" do
     test "GET /users" $ assertResp
       (Client.request api.getUsers {})
+      [{ id: 1, name: "John Admin" }, { id: 1, name: "John Doe" }]
+    test "GET /users" $ assertResp
+      (Client.request api.getUsersNonAdmin {})
       [{ id: 1, name: "John Doe" }]
     test "GET /users/<id>" $ assertResp
       (Client.request api.getUser { id: 1 })
@@ -70,9 +75,9 @@ tests = do
     test "GET /users/profile" $ assertResp
       (Client.request api.getUsersProfiles {})
       ["Profile1", "Profile2"]
-    test "POST /users/new" $ assertResp
-      (Client.request api.createUser { body: { id: 5, name: "New user!" }})
-      { id: 5, name: "New user!" }
+    -- test "POST /users/new" $ assertResp
+    --   (Client.request api.createUser { body: { id: 5, name: "New user!" }})
+    --   { id: 5, name: "New user!" }
     test "GET /users/<id>/posts/<postId>" $ assertResp
       (Client.request api.getUserPost { id: 1, postId: "1" })
       { id: "1", text: "Some post" }
@@ -86,10 +91,28 @@ tests = do
       (Client.request api.getHello {})
       "Hello!"
 
+getAdminUser :: HTTP.Request -> Aff (Either String AdminUser)
+getAdminUser req = do
+  if StringUtils.endsWith "secret" (HTTP.requestURL req)
+     then pure (Left "Fail not an admin")
+     else pure (Right (AdminUser { id: 1, name: "John Admin" }))
+
 startTestServer :: Aff Unit
 startTestServer = do
   let opts = Payload.defaultOpts { logLevel = Payload.LogError }
-  startResult <- Payload.start opts api handlers
+  let handlers = { getUsers
+                 , getUsersNonAdmin
+                 , getUser
+                 , getUsersProfiles
+                 , createUser
+                 , getUserPost
+                 , indexPage
+                 , files
+                 , getPage
+                 , getPageMetadata
+                 , getHello }
+  let guards = { adminUser: getAdminUser }
+  startResult <- Payload.start opts api { handlers, guards }
   case startResult of
     Right _ -> pure unit
     Left err -> liftEffect (log err)

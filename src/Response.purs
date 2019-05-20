@@ -31,6 +31,7 @@ type Response r =
 
 data ResponseBody r = StringBody String | StreamBody (Stream.Readable r) | EmptyBody
 
+
 class IsRespondable r where
   mkResponse :: forall s. r -> Aff (Either ServerError (Response s))
   readResponse :: forall s. ResponseBody s -> Either String r
