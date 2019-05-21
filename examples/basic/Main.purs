@@ -15,6 +15,7 @@ import Node.HTTP as HTTP
 import Payload.Client as Client
 import Payload.Examples.Basic.Api (AdminUser(..), Post, User, api)
 import Payload.Handlers (File(..))
+import Payload.Guards as Guards
 import Payload.Route (GET, Route(..), POST)
 import Payload.Server as Payload
 import Test.Unit (TestSuite, Test, failure, suite, test)
@@ -119,7 +120,7 @@ startTestServer = do
                  , getPage
                  , getPageMetadata
                  , getHello }
-  let guards = { adminUser: getAdminUser }
+  let guards = { adminUser: getAdminUser, request: Guards.request }
   startResult <- Payload.start opts api { handlers, guards }
   case startResult of
     Right _ -> pure unit

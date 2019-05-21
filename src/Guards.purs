@@ -14,6 +14,8 @@ import Type.Row (RLProxy(..))
 
 data Guard (name :: Symbol) a = Guard
 
+type GuardFn a = HTTP.Request -> Aff (Either String a)
+
 class RunGuards
   (routeGuards :: RowList)
   (allGuards :: # Type)
@@ -39,3 +41,6 @@ instance runGuardsCons ::
         let newResults = Record.insert (SProxy :: SProxy name) val results
         runGuards (RLProxy :: RLProxy rest) allGuards newResults req
       Left err -> pure (Left err)
+
+request :: GuardFn HTTP.Request
+request req = pure (Right req)

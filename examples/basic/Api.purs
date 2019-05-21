@@ -1,8 +1,8 @@
 module Payload.Examples.Basic.Api where
 
 import Data.List (List)
-import Payload.Guards (Guard(..))
-import Payload.Handlers (File(..))
+import Node.HTTP as HTTP
+import Payload.Handlers (File)
 import Payload.Route (GET, POST, Route(..))
 
 type User =
@@ -19,7 +19,7 @@ newtype AdminUser = AdminUser
 
 api =
   { getUsers: Route :: GET "/users"
-      { guards :: { adminUser :: AdminUser }
+      { guards :: { adminUser :: AdminUser, request :: HTTP.Request }
       , response :: Array User }
   , getUsersNonAdmin: Route :: GET "/<name>"
       { params :: { name :: String }
