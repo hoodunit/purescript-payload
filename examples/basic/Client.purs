@@ -11,5 +11,5 @@ import Payload.Examples.Basic.Api (api)
 
 main :: Effect Unit
 main = launchAff_ do
-  users <- Client.request_ api.getUsers {}
+  users <- Client.request_ api.routes.getUsers {}
   liftEffect $ log (show users)

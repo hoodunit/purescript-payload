@@ -14,8 +14,9 @@ import Effect.Console (log)
 import Node.HTTP as HTTP
 import Payload.Client as Client
 import Payload.Examples.Basic.Api (AdminUser(..), Post, User, api)
-import Payload.Handlers (File(..))
+import Payload.Guards (GuardFn)
 import Payload.Guards as Guards
+import Payload.Handlers (File(..))
 import Payload.Route (GET, Route(..), POST)
 import Payload.Server as Payload
 import Test.Unit (TestSuite, Test, failure, suite, test)
@@ -23,9 +24,10 @@ import Test.Unit.Assert as Assert
 import Test.Unit.Main (runTest, runTestWith)
 import Test.Unit.Output.Fancy as Fancy
 
--- getUsers :: forall r. { adminUser :: AdminUser | r } -> Aff (Array User)
+getUsers :: forall r. { adminUser :: AdminUser | r } -> Aff (Array User)
 getUsers { adminUser: AdminUser adminUser } = pure [adminUser, { id: 1, name: "John Doe" }]
 
+getUsersNonAdmin :: forall r. { | r } -> Aff (Array User)
 getUsersNonAdmin _ = pure [{ id: 1, name: "John Doe" }]
 
 getUser :: forall r. { id :: Int | r } -> Aff User
@@ -53,6 +55,7 @@ getPage { id } = pure $ "Page " <> id
 getPageMetadata :: forall r. { id :: String | r} -> Aff String
 getPageMetadata { id } = pure $ "Page metadata " <> id
 
+getHello :: forall r. { | r} -> Aff String
 getHello _ = pure "Hello!"
 
 assertResp :: forall a err. Show err => Eq a => Show a => Aff (Either err a) -> a -> Test
@@ -66,21 +69,21 @@ tests :: TestSuite
 tests = do
   suite "Example: basic" do
     test "GET /users (with secret)" $ assertResp
-      (Client.request (Client.defaultOpts { query = Just "secret" }) api.getUsers {})
+      (Client.request (Client.defaultOpts { query = Just "secret" }) api.routes.getUsers {})
       [{ id: 1, name: "John Admin" }, { id: 1, name: "John Doe" }]
     test "GET /users without secret should fall through to non-admin route" $ assertResp
-      (Client.request_ api.getUsersNonAdmin { name: "users" })
+      (Client.request_ api.routes.getUsersNonAdmin { name: "users" })
       [{ id: 1, name: "John Doe" }]
     test "GET /users/<id>" $ assertResp
-      (Client.request_ api.getUser { id: 1 })
+      (Client.request_ api.routes.getUser { id: 1 })
       { id: 1, name: "John Doe" }
     test "GET /users/profile" $ assertResp
-      (Client.request_ api.getUsersProfiles {})
+      (Client.request_ api.routes.getUsersProfiles {})
       ["Profile1", "Profile2"]
     test "POST /users/new" $ do
       let opts = Client.defaultOpts { query = Just "secret" }
       assertResp
-        (Client.request opts api.createUser { body: { id: 5, name: "New user!" }})
+        (Client.request opts api.routes.createUser { body: { id: 5, name: "New user!" }})
         { id: 5, name: "New user!" }
     -- test "POST /users/new fails without the secret" $ do
     --   let opts = Client.defaultOpts
@@ -88,19 +91,19 @@ tests = do
     --     (Client.request opts api.createUser { body: { id: 5, name: "New user!" }})
     --     { id: 5, name: "New user!" }
     test "GET /users/<id>/posts/<postId>" $ assertResp
-      (Client.request_ api.getUserPost { id: 1, postId: "1" })
+      (Client.request_ api.routes.getUserPost { id: 1, postId: "1" })
       { id: "1", text: "Some post" }
     test "GET /pages/<id>" $ assertResp
-      (Client.request_ api.getPage { id: "1" })
+      (Client.request_ api.routes.getPage { id: "1" })
       "Page 1"
     test "GET /pages/<id>/metadata" $ assertResp
-      (Client.request_ api.getPageMetadata { id: "1"})
+      (Client.request_ api.routes.getPageMetadata { id: "1"})
       "Page metadata 1"
     test "GET /hello%20there" $ assertResp
-      (Client.request_ api.getHello {})
+      (Client.request_ api.routes.getHello {})
       "Hello!"
 
-getAdminUser :: HTTP.Request -> Aff (Either String AdminUser)
+getAdminUser :: GuardFn AdminUser
 getAdminUser req = do
   if StringUtils.endsWith "secret" (HTTP.requestURL req)
      then pure (Right (AdminUser { id: 1, name: "John Admin" }))

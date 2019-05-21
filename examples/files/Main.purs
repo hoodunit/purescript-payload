@@ -16,6 +16,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Payload.Client as Client
+import Payload.GuardParsing (GNil, GuardTypes(..), Guards(..))
 import Payload.Handlers (File(..))
 import Payload.Route (GET, Route(..), POST)
 import Payload.Server as Payload
@@ -29,11 +30,14 @@ import Test.Unit.Main (runTest, runTestWith)
 import Test.Unit.Output.Fancy as Fancy
 
 api =
-  { indexPage: Route :: GET "/"
-      { response :: File }
-  , getAll: Route :: GET "/<..path>"
-      { params :: { path :: List String }
-      , response :: File }
+  { guards: GuardTypes :: _ {}
+  , routes:
+    { indexPage: Route :: GET "/"
+        { response :: File }
+    , getAll: Route :: GET "/<..path>"
+        { params :: { path :: List String }
+        , response :: File }
+    }
   }
 
 handlers = { indexPage, getAll }

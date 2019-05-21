@@ -71,18 +71,18 @@ type Logger =
 foreign import unsafeDecodeURIComponent :: String -> String
 
 start_
-  :: forall apiSpec handlers guards
-   . Routable apiSpec handlers guards
-  => apiSpec
+  :: forall routesSpec guardsSpec handlers guards
+   . Routable routesSpec guardsSpec handlers guards
+  => { routes :: routesSpec, guards :: guardsSpec }
   -> { handlers :: handlers, guards :: guards }
   -> Aff (Either String PayloadServer)
 start_ = start defaultOpts
 
 start
-  :: forall apiSpec handlers guards
-   . Routable apiSpec handlers guards
+  :: forall routesSpec guardsSpec handlers guards
+   . Routable routesSpec guardsSpec handlers guards
   => Options
-  -> apiSpec
+  -> { routes :: routesSpec, guards :: guardsSpec }
   -> { handlers :: handlers, guards :: guards }
   -> Aff (Either String PayloadServer)
 start opts apiSpec api = do

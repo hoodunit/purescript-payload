@@ -5,7 +5,7 @@
     "build": "pulp build -- --censor-lib --strict",
     "build:watch": "pulp --watch build -- --censor-lib --strict",
     "build:client:basic": "pulp --watch browserify --main Payload.Examples.Basic.Client --to output/examples/basicClient.js -- --censor-lib --strict",
-    "test": "pulp --watch test --include examples --main Payload.Test.Main -- --censor-lib --strict"
+    "test": "pulp --watch test --include examples --main Payload.Test.Main -- --censor-lib --strict --verbose-errors"
   },
   "devDependencies": {
     "bower": "1.8.8",
