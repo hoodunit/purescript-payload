@@ -21,8 +21,9 @@ api =
   { getUsers: Route :: GET "/users"
       { guards :: { adminUser :: AdminUser }
       , response :: Array User }
-  , getUsersNonAdmin: Route :: GET "/users"
-      { response :: Array User }
+  , getUsersNonAdmin: Route :: GET "/<name>"
+      { params :: { name :: String }
+      , response :: Array User }
   , getUser: Route :: GET "/users/<id>"
       { params :: { id :: Int }
       , response :: User }

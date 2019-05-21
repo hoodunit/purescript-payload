@@ -7,18 +7,29 @@ import Affjax.RequestBody as RequestBody
 import Affjax.ResponseFormat as ResponseFormat
 import Data.Bifunctor (lmap)
 import Data.Either (Either)
-import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
+import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
 import Payload.Response (class IsRespondable, ResponseBody(..), readResponse)
-import Payload.Route (DefaultRequest, Route(..))
+import Payload.Route (DefaultRequest, Route)
+import Payload.Url (class EncodeUrl)
 import Payload.Url as PayloadUrl
 import Prim.Row as Row
 import Record as Record
 import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals, to)
 
+type Options =
+  { hostname :: String
+  , port :: Int }
+
+defaultOpts :: Options
+defaultOpts =
+  { hostname: "localhost"
+  , port: 3000 }
+
 class ClientQueryable route payload res | route -> payload, route -> res where
-  request :: route -> payload -> Aff (Either String res)
+  request :: route -> payload -> Options -> Aff (Either String res)
+  request_ :: route -> payload -> Aff (Either String res)
 
 instance clientQueryableGetRoute ::
        ( Row.Union route DefaultRequest mergedRoute
@@ -33,11 +44,12 @@ instance clientQueryableGetRoute ::
        , SimpleJson.ReadForeign res
        )
     => ClientQueryable (Route "GET" path (Record route)) (Record params) res where
-  request _ payload = do
+  request_ route payload = request route payload defaultOpts
+  request _ payload opts = do
     let params = payload
-    let path = PayloadUrl.encodeUrl (SProxy :: SProxy path) params
-    let url = "http://localhost:3000" <> path
-    doGet url
+    let url = encodeUrl opts (SProxy :: SProxy path) params
+    res <- AX.get ResponseFormat.string url
+    pure (decodeResponse res)
 else instance clientQueryablePostRoute ::
        ( Row.Union route DefaultRequest mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
@@ -57,27 +69,26 @@ else instance clientQueryablePostRoute ::
        , SimpleJson.ReadForeign res
        )
     => ClientQueryable (Route "POST" path (Record route)) (Record payload) res where
-  request _ payload = do
+  request_ route payload = request route payload defaultOpts
+  request _ payload opts = do
     let p = to payload
     let (params :: Record params) = Record.delete (SProxy :: SProxy "body") p
-    let path = PayloadUrl.encodeUrl (SProxy :: SProxy path) params
-    let url = "http://localhost:3000" <> path
+    let url = encodeUrl opts (SProxy :: SProxy path) params
     let (body :: body) = Record.get (SProxy :: SProxy "body") p
-    doPost url body
+    let encodedBody = RequestBody.String (SimpleJson.writeJSON body)
+    res <- AX.post ResponseFormat.string url encodedBody
+    pure (decodeResponse res)
 
-doGet :: forall res. IsRespondable res => String -> Aff (Either String res)
-doGet url = do
-  res <- AX.get ResponseFormat.string url
-  let showingError = lmap ResponseFormat.printResponseFormatError
-  pure $ showingError res.body >>= (StringBody >>> readResponse
-)
+encodeUrl :: forall path params
+  . EncodeUrl path params
+  => Options -> SProxy path -> Record params -> String
+encodeUrl opts pathProxy params = "http://" <> opts.hostname <> ":" <> show opts.port <> path
+  where
+    path = PayloadUrl.encodeUrl pathProxy params
 
-doPost :: forall res body
-          . SimpleJson.WriteForeign body
-          => IsRespondable res
-          => String -> body -> Aff (Either String res)
-doPost url body = do
-  let encodedBody = RequestBody.String (SimpleJson.writeJSON body)
-  res <- AX.post ResponseFormat.string url encodedBody
-  let showingError = lmap ResponseFormat.printResponseFormatError
-  pure $ showingError res.body >>= (StringBody >>> readResponse)
+decodeResponse :: forall res. IsRespondable res =>
+                 (AX.Response (Either AX.ResponseFormatError String)) -> Either String res
+decodeResponse res = do
+  showingError res.body >>= (StringBody >>> readResponse)
+  where
+    showingError = lmap ResponseFormat.printResponseFormatError

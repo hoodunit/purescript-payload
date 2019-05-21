@@ -64,31 +64,32 @@ tests :: TestSuite
 tests = do
   suite "Example: basic" do
     test "GET /users" $ assertResp
-      (Client.request api.getUsers {})
+      (Client.request_ api.getUsers {})
       [{ id: 1, name: "John Admin" }, { id: 1, name: "John Doe" }]
-    test "GET /users" $ assertResp
-      (Client.request api.getUsersNonAdmin {})
+    test "GET /users as non-admin should fall-through to non-admin route" $ assertResp
+      -- TODO: Need to add in the secret
+      (Client.request_ api.getUsersNonAdmin { name: "users" })
       [{ id: 1, name: "John Doe" }]
     test "GET /users/<id>" $ assertResp
-      (Client.request api.getUser { id: 1 })
+      (Client.request_ api.getUser { id: 1 })
       { id: 1, name: "John Doe" }
     test "GET /users/profile" $ assertResp
-      (Client.request api.getUsersProfiles {})
+      (Client.request_ api.getUsersProfiles {})
       ["Profile1", "Profile2"]
     -- test "POST /users/new" $ assertResp
     --   (Client.request api.createUser { body: { id: 5, name: "New user!" }})
     --   { id: 5, name: "New user!" }
     test "GET /users/<id>/posts/<postId>" $ assertResp
-      (Client.request api.getUserPost { id: 1, postId: "1" })
+      (Client.request_ api.getUserPost { id: 1, postId: "1" })
       { id: "1", text: "Some post" }
     test "GET /pages/<id>" $ assertResp
-      (Client.request api.getPage { id: "1" })
+      (Client.request_ api.getPage { id: "1" })
       "Page 1"
     test "GET /pages/<id>/metadata" $ assertResp
-      (Client.request api.getPageMetadata { id: "1"})
+      (Client.request_ api.getPageMetadata { id: "1"})
       "Page metadata 1"
     test "GET /hello%20there" $ assertResp
-      (Client.request api.getHello {})
+      (Client.request_ api.getHello {})
       "Hello!"
 
 getAdminUser :: HTTP.Request -> Aff (Either String AdminUser)
