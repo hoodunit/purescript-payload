@@ -176,22 +176,6 @@ instance handleableGetRoute ::
       decodePath :: List String -> Either String (Record params)
       decodePath = PayloadUrl.decodeUrl (SProxy :: SProxy path) (Proxy :: Proxy (Record params))
 
-    -- either (const Nothing) (Just <<< handleRequest) $ do
-    --   params <- decodePath pathSegments
-    --   pure params
-    -- where
-    --   handleRequest params = Aff.launchAff_ $ Aff.catchError (runRequest params) (sendInternalError res)
-
-    --   runRequest :: Record params -> Aff Unit
-    --   runRequest params = do
-    --     guardResults <- runGuards (RLProxy :: _ routeGuardList) allGuards {} req
-    --     case guardResults of
-    --       Right guards -> do
-    --         let (payload :: Record payload) = from (Record.union params guards)
-    --         handlerResp <- handler payload
-    --         liftEffect $ sendResponse res handlerResp
-    --       Left err -> sendInternalError res $ error $ "Guard failed" <> show err
-
 readBody :: HTTP.Request -> Aff String
 readBody req = Aff.makeAff (readBody_ req)
 
