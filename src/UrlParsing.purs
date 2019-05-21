@@ -2,20 +2,11 @@ module Payload.UrlParsing where
 
 import Prelude
 
-import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.List as List
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.String (Pattern(..))
-import Data.String as String
-import Payload.Params (class FromParam, class ToParam, fromParam, toParam)
-import Prim.Row as Row
 import Prim.Symbol as Symbol
 import Prim.TypeError (class Fail, Above, Beside, Text, kind Doc)
-import Record as Record
-import Type.Equality (class TypeEquals, to)
 import Type.Prelude (class IsSymbol, SProxy(..), reflectSymbol)
-import Type.Proxy (Proxy(..))
 
 infixr 2 type Beside as <>
 infixr 1 type Above as |>
