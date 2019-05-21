@@ -7,6 +7,7 @@ import Affjax.RequestBody as RequestBody
 import Affjax.ResponseFormat as ResponseFormat
 import Data.Bifunctor (lmap)
 import Data.Either (Either)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
 import Payload.Response (class IsRespondable, ResponseBody(..), readResponse)
@@ -20,15 +21,19 @@ import Type.Equality (class TypeEquals, to)
 
 type Options =
   { hostname :: String
-  , port :: Int }
+  , port :: Int
+  , query :: Maybe String
+  }
 
 defaultOpts :: Options
 defaultOpts =
   { hostname: "localhost"
-  , port: 3000 }
+  , port: 3000
+  , query: Nothing
+  }
 
 class ClientQueryable route payload res | route -> payload, route -> res where
-  request :: route -> payload -> Options -> Aff (Either String res)
+  request :: Options -> route -> payload -> Aff (Either String res)
   request_ :: route -> payload -> Aff (Either String res)
 
 instance clientQueryableGetRoute ::
@@ -44,8 +49,8 @@ instance clientQueryableGetRoute ::
        , SimpleJson.ReadForeign res
        )
     => ClientQueryable (Route "GET" path (Record route)) (Record params) res where
-  request_ route payload = request route payload defaultOpts
-  request _ payload opts = do
+  request_ route payload = request defaultOpts route payload
+  request opts _ payload = do
     let params = payload
     let url = encodeUrl opts (SProxy :: SProxy path) params
     res <- AX.get ResponseFormat.string url
@@ -69,8 +74,8 @@ else instance clientQueryablePostRoute ::
        , SimpleJson.ReadForeign res
        )
     => ClientQueryable (Route "POST" path (Record route)) (Record payload) res where
-  request_ route payload = request route payload defaultOpts
-  request _ payload opts = do
+  request_ route payload = request defaultOpts route payload
+  request opts _ payload = do
     let p = to payload
     let (params :: Record params) = Record.delete (SProxy :: SProxy "body") p
     let url = encodeUrl opts (SProxy :: SProxy path) params
@@ -82,9 +87,11 @@ else instance clientQueryablePostRoute ::
 encodeUrl :: forall path params
   . EncodeUrl path params
   => Options -> SProxy path -> Record params -> String
-encodeUrl opts pathProxy params = "http://" <> opts.hostname <> ":" <> show opts.port <> path
+encodeUrl opts pathProxy params =
+  "http://" <> opts.hostname <> ":" <> show opts.port <> path <> queryStr
   where
     path = PayloadUrl.encodeUrl pathProxy params
+    queryStr = maybe "" (\q -> "?" <> q) opts.query
 
 decodeResponse :: forall res. IsRespondable res =>
                  (AX.Response (Either AX.ResponseFormatError String)) -> Either String res

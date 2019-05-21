@@ -5,8 +5,9 @@ import Prelude
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List)
-import Data.String.Utils as StringUtils
+import Data.Maybe (Maybe(..))
 import Data.String as String
+import Data.String.Utils as StringUtils
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
@@ -63,11 +64,10 @@ assertResp req expected = do
 tests :: TestSuite
 tests = do
   suite "Example: basic" do
-    test "GET /users" $ assertResp
-      (Client.request_ api.getUsers {})
+    test "GET /users (with secret)" $ assertResp
+      (Client.request (Client.defaultOpts { query = Just "secret" }) api.getUsers {})
       [{ id: 1, name: "John Admin" }, { id: 1, name: "John Doe" }]
-    test "GET /users as non-admin should fall-through to non-admin route" $ assertResp
-      -- TODO: Need to add in the secret
+    test "GET /users without secret should fall through to non-admin route" $ assertResp
       (Client.request_ api.getUsersNonAdmin { name: "users" })
       [{ id: 1, name: "John Doe" }]
     test "GET /users/<id>" $ assertResp
@@ -76,9 +76,16 @@ tests = do
     test "GET /users/profile" $ assertResp
       (Client.request_ api.getUsersProfiles {})
       ["Profile1", "Profile2"]
-    -- test "POST /users/new" $ assertResp
-    --   (Client.request api.createUser { body: { id: 5, name: "New user!" }})
-    --   { id: 5, name: "New user!" }
+    test "POST /users/new" $ do
+      let opts = Client.defaultOpts { query = Just "secret" }
+      assertResp
+        (Client.request opts api.createUser { body: { id: 5, name: "New user!" }})
+        { id: 5, name: "New user!" }
+    -- test "POST /users/new fails without the secret" $ do
+    --   let opts = Client.defaultOpts
+    --   assertResp
+    --     (Client.request opts api.createUser { body: { id: 5, name: "New user!" }})
+    --     { id: 5, name: "New user!" }
     test "GET /users/<id>/posts/<postId>" $ assertResp
       (Client.request_ api.getUserPost { id: 1, postId: "1" })
       { id: "1", text: "Some post" }
@@ -95,8 +102,8 @@ tests = do
 getAdminUser :: HTTP.Request -> Aff (Either String AdminUser)
 getAdminUser req = do
   if StringUtils.endsWith "secret" (HTTP.requestURL req)
-     then pure (Left "Fail not an admin")
-     else pure (Right (AdminUser { id: 1, name: "John Admin" }))
+     then pure (Right (AdminUser { id: 1, name: "John Admin" }))
+     else pure (Left "Fail not an admin")
 
 startTestServer :: Aff Unit
 startTestServer = do
