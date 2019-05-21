@@ -42,6 +42,11 @@ type HandlerEntry =
 
 data Outcome = Success | Failure | Forward
 
+instance showOutcome :: Show Outcome where
+  show Success = "Success"
+  show Failure = "Failure"
+  show Forward = "Forward"
+
 class Routable apiSpec handlers guards | apiSpec -> handlers where
   mkRouter :: apiSpec -> { handlers :: handlers, guards :: guards } -> Either String (Trie HandlerEntry)
 

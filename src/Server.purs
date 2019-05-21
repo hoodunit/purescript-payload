@@ -126,13 +126,17 @@ handleRequest { logger } routerTrie req res = do
 runHandlers :: Trie HandlerEntry -> List String -> HTTP.Request -> HTTP.Response -> Effect Unit
 runHandlers routerTrie pathSegments req res = do
   let matches = Trie.lookup pathSegments routerTrie
-  Aff.launchAff_ $ handleNext Forward matches
+  Aff.launchAff_ $ do
+    outcome <- handleNext Forward matches
+    case outcome of
+      Forward -> liftEffect $ sendError res { status: 404, statusMsg: "Not Found", body: "" }
+      _ -> pure unit
   where
     handleNext :: Outcome -> List HandlerEntry -> Aff Outcome
-    handleNext _ Nil = pure Failure
-    handleNext Success (entry : rest) = pure Success
-    handleNext Failure (entry : rest) = pure Failure
+    handleNext Success _ = pure Success
+    handleNext Failure _ = pure Failure
     handleNext Forward ({ handler } : rest) = handler pathSegments req res >>= \o -> handleNext o rest
+    handleNext _ Nil = pure Forward
   
 requestSegments :: HTTP.Request -> Either String (List String)
 requestSegments req = do
