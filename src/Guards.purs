@@ -3,9 +3,11 @@ module Payload.Guards where
 import Prelude
 
 import Data.Either (Either(..))
+import Data.Map (Map)
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
 import Node.HTTP as HTTP
+import Payload.Cookies as Cookies
 import Payload.GuardParsing (GCons, GNil, GuardTypes(..), Guards(..), kind GuardList)
 import Prim.Row as Row
 import Prim.RowList (Cons, Nil, kind RowList)
@@ -52,3 +54,6 @@ instance runGuardsCons ::
 
 request :: GuardFn HTTP.Request
 request req = pure (Right req)
+
+cookies :: GuardFn (Map String String)
+cookies req = pure (Right $ Cookies.requestCookies req)
