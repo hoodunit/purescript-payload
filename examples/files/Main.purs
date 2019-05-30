@@ -7,26 +7,16 @@ import Affjax.ResponseFormat as ResponseFormat
 import Data.Array as Array
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
-import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..))
+import Data.List (List(..))
 import Data.String as String
-import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Aff as Aff
-import Effect.Class (liftEffect)
-import Effect.Console (log)
-import Payload.Client as Client
-import Payload.GuardParsing (GNil, GuardTypes(..), Guards(..))
+import Payload.GuardParsing (GuardTypes(..))
 import Payload.Handlers (File(..))
-import Payload.Route (GET, Route(..), POST)
-import Payload.Server as Payload
-import Payload.Test.Params as ParamsTest
-import Payload.Test.Routing as RoutingTest
-import Payload.Test.Trie as TrieTest
-import Payload.Test.UrlParsing as UrlParsingTest
+import Payload.Route (GET, Route(..))
+import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
-import Test.Unit.Main (runTest, runTestWith)
+import Test.Unit.Main (runTestWith)
 import Test.Unit.Output.Fancy as Fancy
 
 api =
@@ -49,9 +39,9 @@ indexPage _ = pure (File "examples/files/index.html")
 getAll :: forall r. { path :: List String | r} -> Aff File
 getAll { path } = pure (File $ "examples/files/public/" <> String.joinWith "/" (Array.fromFoldable path))
 
-request :: forall res. String -> Aff (Either String String)
+request :: String -> Aff (Either String String)
 request path = do
-  res <- AX.get ResponseFormat.string ("http://localhost:3001/" <> path)
+  res <- AX.get ResponseFormat.string ("http://localhost:3000/" <> path)
   let showingError = lmap ResponseFormat.printResponseFormatError
   pure $ showingError res.body
 
@@ -72,15 +62,5 @@ tests = do
       res <- request "/test.json"
       Assert.equal (Right "{ \"foo\": \"bar\" }\n") res
 
-startTestServer :: Aff Unit
-startTestServer = do
-  let opts = Payload.defaultOpts { logLevel = Payload.LogError, port = 3001 }
-  startResult <- Payload.start opts api { handlers, guards: {} }
-  case startResult of
-    Right _ -> pure unit
-    Left err -> liftEffect (log $ "Could not start test server: " <> err)
-
 runTests :: Aff Unit
-runTests = do
-  startTestServer
-  runTestWith (Fancy.runTest) tests
+runTests = withServer api { handlers, guards: {} } (runTestWith Fancy.runTest tests)

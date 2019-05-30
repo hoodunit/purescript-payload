@@ -173,7 +173,7 @@ listen { logger } server opts = Aff.makeAff $ \cb -> do
     startedMsg = "Listening on port " <> show opts.port
     errorMsg e = "Closing server due to error: " <> show e
 
-close :: HTTP.Server -> Aff Unit
+close :: PayloadServer -> Aff Unit
 close server = Aff.makeAff $ \cb -> do
   HTTP.close server (cb (Right unit))
   pure Aff.nonCanceler

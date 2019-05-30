@@ -9,6 +9,7 @@ import Payload.Examples.Basic.Main as BasicExample
 import Payload.Examples.Files.Main as FilesExample
 import Payload.Test.Cookies as CookiesTest
 import Payload.Test.GuardParsing as GuardParsingTest
+import Payload.Test.Guards as GuardsTest
 import Payload.Test.Params as ParamsTest
 import Payload.Test.Routing as RoutingTest
 import Payload.Test.Trie as TrieTest
@@ -28,5 +29,5 @@ tests = do
 main :: Effect Unit
 main = Aff.launchAff_ $ do
   liftEffect $ runTest tests
-  BasicExample.runTests
   FilesExample.runTests
+  BasicExample.runTests

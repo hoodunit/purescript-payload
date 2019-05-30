@@ -19,6 +19,7 @@ import Payload.Guards as Guards
 import Payload.Handlers (File(..))
 import Payload.Route (GET, Route(..), POST)
 import Payload.Server as Payload
+import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
 import Test.Unit.Main (runTest, runTestWith)
@@ -109,9 +110,8 @@ getAdminUser req = do
      then pure (Right (AdminUser { id: 1, name: "John Admin" }))
      else pure (Left "Fail not an admin")
 
-startTestServer :: Aff Unit
-startTestServer = do
-  let opts = Payload.defaultOpts { logLevel = Payload.LogError }
+runTests :: Aff Unit
+runTests = do
   let handlers = { getUsers
                  , getUsersNonAdmin
                  , getUser
@@ -124,12 +124,4 @@ startTestServer = do
                  , getPageMetadata
                  , getHello }
   let guards = { adminUser: getAdminUser, request: Guards.request }
-  startResult <- Payload.start opts api { handlers, guards }
-  case startResult of
-    Right _ -> pure unit
-    Left err -> liftEffect (log $ "Could not start test server: " <> err)
-
-runTests :: Aff Unit
-runTests = do
-  startTestServer
-  runTestWith Fancy.runTest tests
+  withServer api { handlers, guards } (runTestWith Fancy.runTest tests)
