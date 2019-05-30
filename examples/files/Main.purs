@@ -78,7 +78,7 @@ startTestServer = do
   startResult <- Payload.start opts api { handlers, guards: {} }
   case startResult of
     Right _ -> pure unit
-    Left err -> liftEffect (log err)
+    Left err -> liftEffect (log $ "Could not start test server: " <> err)
 
 runTests :: Aff Unit
 runTests = do

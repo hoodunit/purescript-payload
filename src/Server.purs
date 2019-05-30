@@ -17,6 +17,7 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Console (log)
+import Effect.Exception (Error)
 import Node.HTTP as HTTP
 import Node.URL (URL)
 import Node.URL as Url
@@ -91,8 +92,8 @@ start opts apiSpec api = do
     Right routerTrie -> do
       server <- liftEffect $ HTTP.createServer (handleRequest cfg routerTrie)
       let httpOpts = Record.delete (SProxy :: SProxy "logLevel") opts
-      listen cfg server httpOpts
-      pure (Right server)
+      listenResult <- listen cfg server httpOpts
+      pure (const server <$> listenResult)
     Left err -> pure (Left err)
 
 mkConfig :: Options -> Config
@@ -161,9 +162,12 @@ pathToSegments = dropEmpty <<< List.fromFoldable <<< String.split (wrap "/")
     dropEmpty ("" : xs) = dropEmpty xs
     dropEmpty xs = xs
 
-listen :: Config -> HTTP.Server -> HTTP.ListenOptions -> Aff Unit
+foreign import onError :: HTTP.Server -> (Error -> Effect Unit) -> Effect Unit
+
+listen :: Config -> HTTP.Server -> HTTP.ListenOptions -> Aff (Either String Unit)
 listen { logger } server opts = Aff.makeAff $ \cb -> do
-  HTTP.listen server opts (logger.log startedMsg *> cb (Right unit))
+  onError server \error -> cb (Right (Left (show error)))
+  HTTP.listen server opts (logger.log startedMsg *> cb (Right (Right unit)))
   pure $ Aff.Canceler (\error -> liftEffect (logger.logError (errorMsg error)) *> close server)
   where
     startedMsg = "Listening on port " <> show opts.port
