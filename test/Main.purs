@@ -31,3 +31,4 @@ main = Aff.launchAff_ $ do
   liftEffect $ runTest tests
   FilesExample.runTests
   BasicExample.runTests
+  GuardsTest.runTests
