@@ -7,13 +7,13 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Payload.Routing (class Routable)
+import Payload.Routing (class Routable, API(..))
 import Payload.Server as Payload
 
 withServer
   :: forall routesSpec guardsSpec handlers guards
    . Routable routesSpec guardsSpec handlers guards
-  => { routes :: routesSpec, guards :: guardsSpec }
+  => API { routes :: routesSpec, guards :: guardsSpec }
   -> { handlers :: handlers, guards :: guards }
   -> Aff Unit
   -> Aff Unit

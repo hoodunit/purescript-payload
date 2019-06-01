@@ -2,8 +2,10 @@ module Payload.Url where
 
 import Prelude
 
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
+import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String as String
 import Payload.Params (class FromParam, class FromSegments, class ToParam, fromParam, fromSegments, toParam)
@@ -48,6 +50,14 @@ instance writeUrlConsLit ::
     where
       litStr = reflectSymbol (SProxy :: SProxy lit)
       restOfUrl = writeUrl (FProxy :: FProxy rest) params
+
+instance writeUrlConsMulti ::
+  ( IsSymbol multiKey
+  , Row.Cons multiKey (List String) from params
+  ) => WriteUrl (UrlCons (Multi multiKey) UrlNil) params where
+  writeUrl _ params = "/" <> multiStr
+    where
+      multiStr = String.joinWith "/" (Array.fromFoldable $ Record.get (SProxy :: _ multiKey) params)
 
 class DecodeUrl (urlStr :: Symbol) params | urlStr -> params where
   decodeUrl :: SProxy urlStr -> Proxy (Record params) -> List String -> Either String (Record params)

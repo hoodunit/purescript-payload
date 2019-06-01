@@ -2,14 +2,17 @@ module Payload.Trie where
 
 import Prelude
 
+import Data.Array as Array
+import Data.Either (Either(..), either, note)
 import Data.Foldable (class Foldable, foldM, foldr)
 import Data.List (List(..), (:))
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.String as String
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
-import Payload.UrlParsing (Segment(Lit, Key, Multi))
+import Payload.UrlParsing (Segment(Lit, Key, Multi), showUrl)
 
 data Trie a = Trie
   { value :: Maybe a
@@ -21,20 +24,28 @@ instance showTrie :: Show a => Show (Trie a) where
 instance eqTrie :: Eq a => Eq (Trie a) where
   eq (Trie { value: v1, children: c1 }) (Trie { value: v2, children: c2 }) = v1 == v2 && c1 == c2
 
-insert :: forall a. a -> List Segment -> Trie a -> Maybe (Trie a)
-insert newVal Nil (Trie { value: Nothing, children }) = Just (Trie { value: Just newVal, children })
-insert newVal Nil (Trie { value: Just _ }) = Nothing
+instance functorTrie :: Functor Trie where
+  map f (Trie { value, children }) = Trie { value: f <$> value, children: mapChild <$> children }
+    where
+      -- mapChild :: forall a. Tuple Segment (Trie a) -> Tuple Segment (Trie a)
+      mapChild (Tuple s trie) = Tuple s (f <$> trie)
+
+insert :: forall a. a -> List Segment -> Trie a -> Either String (Trie a)
+insert newVal Nil (Trie { value: Nothing, children }) = Right (Trie { value: Just newVal, children })
+insert newVal Nil (Trie { value: Just _ }) = Left $ "Failed to insert: duplicate key"
 insert newVal (seg : rest) trie@(Trie { value, children }) =
   case List.findIndex (segmentMatches seg) children of
-    Just matchIndex -> case List.index children matchIndex >>= updateChild >>= (\c -> List.updateAt matchIndex c children) of
-      Just updatedChildren -> Just (Trie { value, children: updatedChildren })
-      Nothing -> Nothing
+    Just matchIndex -> do
+      matchingChild <- note "No index of match index??" $ List.index children matchIndex
+      updatedChild <- updateChild matchingChild
+      updatedChildren <- note "Could not update child??" $ List.updateAt matchIndex updatedChild children
+      Right (Trie { value, children: updatedChildren })
     -- No matching segment found -> check for collisions, then add to list if no collisions
     Nothing -> if existsSegmentCollision seg children
-                  then Nothing
+                  then Left "Collision while recursing down trie"
                   else (\newChild -> Trie { value, children: (Tuple seg newChild) : children }) <$> insert newVal rest empty
   where
-    updateChild :: Tuple Segment (Trie a) -> Maybe (Tuple Segment (Trie a))
+    updateChild :: Tuple Segment (Trie a) -> Either String (Tuple Segment (Trie a))
     updateChild (Tuple s child) = Tuple s <$> insert newVal rest child
 
     existsSegmentCollision :: Segment -> List (Tuple Segment (Trie a)) -> Boolean
@@ -79,11 +90,22 @@ lookup_ f trie = lookup (List.fromFoldable f) trie
 fromFoldable :: forall f a l
   . Foldable f
   => Foldable l
-  => f (Tuple (l Segment) a) -> Maybe (Trie a)
+  => f (Tuple (l Segment) a) -> Either String (Trie a)
 fromFoldable f = foldM (\trie (Tuple list val) -> insert val (List.fromFoldable list) trie) empty f
 
 fromFoldable_ :: forall f a l
   . Foldable f
   => Foldable l
   => f (Tuple (l Segment) a) -> Trie a
-fromFoldable_ = fromFoldable >>> fromMaybe empty
+fromFoldable_ = fromFoldable >>> either (const empty) identity
+
+toList :: forall a. Trie a -> List a
+toList (Trie { value, children }) =
+  (maybe Nil pure value) <> List.concatMap toList (Tuple.snd <$> children)
+
+dumpEntries :: forall a. Show a => Trie a -> String
+dumpEntries =
+  toList
+  >>> map show
+  >>> Array.fromFoldable
+  >>> String.joinWith "\n"

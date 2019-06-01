@@ -2,8 +2,9 @@ module Payload.Test.Trie where
 
 import Prelude
 
+import Data.Either (isLeft, isRight)
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Payload.Trie (Trie(..))
 import Payload.Trie as Trie
@@ -49,27 +50,27 @@ tests = do
         let trie = Trie.fromFoldable_ $
           [ Tuple (Lit "GET" : Lit "products" : Lit "1" : Nil) "getProductById" ]
         Assert.assert "Expected insert to succeed"
-          (isJust $ Trie.insert "getProductById2" (Lit "GET" : Lit "products" : Lit "2" : Nil) trie)
+          (isRight $ Trie.insert "getProductById2" (Lit "GET" : Lit "products" : Lit "2" : Nil) trie)
       test "inserting duplicate literals fails" do
         let trie = Trie.fromFoldable_ $
           [ Tuple (Lit "GET" : Lit "products" : Lit "id" : Nil) "getProductById" ]
-        Assert.equal Nothing
+        Assert.assert "Expected insert to fail" $ isLeft
           (Trie.insert "getProductById2" (Lit "GET" : Lit "products" : Lit "id" : Nil) trie)
       test "inserting colliding keys fails" do
         let trie = Trie.fromFoldable_ $
           [ Tuple (Lit "GET" : Lit "products" : Key "id" : Nil) "getProductById" ]
-        Assert.equal Nothing (Trie.insert "getProductById2"
-                               (Lit "GET" : Lit "products" : Key "productId" : Nil) trie)
+        Assert.assert "Expected insert to fail" $ isLeft $
+          (Trie.insert "getProductById2" (Lit "GET" : Lit "products" : Key "productId" : Nil) trie)
       test "inserting colliding middle keys fails" do
         let trie = Trie.fromFoldable_ $
           [ Tuple (Lit "GET" : Lit "products" : Key "id" : Lit "info" : Nil) "getProductById" ]
-        Assert.equal Nothing (Trie.insert "getProductById2"
-                               (Lit "GET" : Lit "products" : Key "productId" : Lit "info" : Nil) trie)
+        Assert.assert "Expected insert to fail" $ isLeft $
+          (Trie.insert "getProductById2" (Lit "GET" : Lit "products" : Key "productId" : Lit "info" : Nil) trie)
       test "inserting colliding multi matches fails" do
         let trie = Trie.fromFoldable_ $
           [ Tuple (Lit "GET" : Lit "products" : Multi "any1" : Nil) "getProductById" ]
-        Assert.equal Nothing (Trie.insert "getProductById2"
-                               (Lit "GET" : Lit "products" : Multi "any2" : Nil) trie)
+        Assert.assert "Expected insert to fail" $ isLeft $
+          (Trie.insert "getProductById2" (Lit "GET" : Lit "products" : Multi "any2" : Nil) trie)
     suite "lookup" do
       test "nested" do
         let trie = Trie.fromFoldable_ $

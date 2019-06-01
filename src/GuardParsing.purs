@@ -23,6 +23,13 @@ type Nil = GNil
 
 data GuardTypes types = GuardTypes
 
+class Append (left :: GuardList) (right :: GuardList) (both :: GuardList) | left right -> both
+
+instance appendGuardLeftNil :: Append GNil right right
+instance appendGuards ::
+  ( Append rest (GCons s right) both
+  ) => Append (GCons s rest) right both
+
 class ParseGuardList (string :: Symbol) (parts :: GuardList) | string -> parts
 instance aNilParse :: ParseGuardList "" GNil
 else instance bConsParse ::

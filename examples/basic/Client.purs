@@ -6,10 +6,12 @@ import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
+import Payload.Client (mkClient)
 import Payload.Client as Client
-import Payload.Examples.Basic.Api (api)
+import Payload.Examples.Basic.Api (apiStructured)
 
 main :: Effect Unit
 main = launchAff_ do
-  users <- Client.request_ api.routes.getUsers {}
+  let client = mkClient apiStructured
+  users <- client.adminUsers.getUsers (Client.defaultOpts) {}
   liftEffect $ log (show users)

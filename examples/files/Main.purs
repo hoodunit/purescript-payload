@@ -13,22 +13,24 @@ import Effect.Aff (Aff)
 import Payload.GuardParsing (GuardTypes(..))
 import Payload.Handlers (File(..))
 import Payload.Route (GET, Route(..))
+import Payload.Routing (API(..))
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
 import Test.Unit.Main (runTestWith)
 import Test.Unit.Output.Fancy as Fancy
 
-api =
-  { guards: GuardTypes :: _ {}
-  , routes:
-    { indexPage: Route :: GET "/"
+api :: API
+  { guards :: {}
+  , routes ::
+    { indexPage :: GET "/"
         { response :: File }
-    , getAll: Route :: GET "/<..path>"
+    , getAll :: GET "/<..path>"
         { params :: { path :: List String }
         , response :: File }
     }
   }
+api = API
 
 handlers = { indexPage, getAll }
 

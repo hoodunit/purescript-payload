@@ -17,6 +17,7 @@ import Payload.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
 import Payload.Guards (GuardFn)
 import Payload.Handlers (File(..))
 import Payload.Route (GET, Route(..))
+import Payload.Routing (API(..))
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
@@ -31,17 +32,18 @@ newtype AdminUser = AdminUser
   { id :: Int
   , name :: String }
 
-api =
-  { guards: GuardTypes :: _ { user :: User, adminUser :: AdminUser }
-  , routes:
-    { adminIndex: Route :: GET "/admin"
+api :: API
+  { guards :: { user :: User, adminUser :: AdminUser }
+  , routes ::
+    { adminIndex :: GET "/admin"
         { guards :: Guards ("adminUser" : Nil)
         , response :: String }
-    , userIndex: Route :: GET "/user"
+    , userIndex :: GET "/user"
         { guards :: Guards ("user" : Nil)
         , response :: String }
-    , unauthenticatedIndex: Route :: GET "/"
+    , unauthenticatedIndex :: GET "/"
         { response :: String }}}
+api = API
 
 adminIndex :: forall r. { | r} -> Aff String
 adminIndex _ = pure "Admin page"

@@ -61,6 +61,9 @@ instance showSegment :: Show Segment where
   show (Lit a) = "(Lit '" <> a <> "')"
   show (Key a) = "(Key '" <> a <> "')"
   show (Multi a) = "(Multi '" <> a <> "')"
+  -- show (Lit a) = "/" <> a
+  -- show (Key a) = "/<" <> a <> ">"
+  -- show (Multi a) = "/<" <> a <> "..>"
 
 instance ordSegment :: Ord Segment where
   compare (Lit a) (Lit b) = a `compare` b

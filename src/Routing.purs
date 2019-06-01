@@ -20,16 +20,18 @@ import Node.HTTP as HTTP
 import Node.Stream (onDataString, onEnd, onError)
 import Payload.Data (class FromData)
 import Payload.Data as Data
-import Payload.GuardParsing (GuardTypes(..), Guards(..))
+import Payload.GuardParsing (GNil, GuardTypes(..), Guards(..), kind GuardList)
+import Payload.GuardParsing as GuardParsing
 import Payload.Guards (class RunGuards, runGuards)
 import Payload.Response (class IsRespondable, internalError, sendError, sendInternalError, sendResponse)
 import Payload.Route (DefaultRequest, Route(..))
 import Payload.Trie (Trie)
 import Payload.Trie as Trie
 import Payload.Url as PayloadUrl
-import Payload.UrlParsing (class ParseUrl, class ToSegments, Segment(..))
+import Payload.UrlParsing (class ParseUrl, class ToSegments, Segment(..), UrlNil)
 import Payload.UrlParsing as UrlParsing
 import Prim.Row as Row
+import Prim.Symbol as Symbol
 import Record (get)
 import Record as Record
 import Type.Equality (class TypeEquals, from)
@@ -41,45 +43,59 @@ type HandlerEntry =
   { handler :: List String -> HTTP.Request -> HTTP.Response -> Aff Outcome
   , route :: List Segment }
 
-data Outcome = Success | Failure | Forward
+data Outcome = Success | Failure | Forward String
 
-instance showOutcome :: Show Outcome where
-  show Success = "Success"
-  show Failure = "Failure"
-  show Forward = "Forward"
+data API apiSpec = API
+data Routes (path :: Symbol) routesSpec = Routes
+
+type DefaultParentRoute = ( params :: {}, guards :: Guards GNil )
+defaultParent :: Record DefaultParentRoute
+defaultParent =
+  { params: {}, guards: Guards :: _ GNil }
 
 class Routable routesSpec guardsSpec handlers guards | routesSpec guardsSpec -> handlers, guardsSpec -> guards where
-  mkRouter :: { routes :: routesSpec, guards :: guardsSpec }
+  mkRouter :: API { routes :: routesSpec, guards :: guardsSpec }
               -> { handlers :: handlers, guards :: guards }
               -> Either String (Trie HandlerEntry)
 
 instance routableRecord ::
   ( RowToList routesSpec routesSpecList
-  , RoutableList routesSpecList routesSpec guardsSpec (Record handlers) (Record guards)
-  ) => Routable (Record routesSpec) (GuardTypes (Record guardsSpec)) (Record handlers) (Record guards) where
-  mkRouter { routes: routesSpec, guards: guardsSpec } { handlers, guards } =
-    mkRouterList (RLProxy :: RLProxy routesSpecList) routesSpec guardsSpec handlers guards Trie.empty
+  , RoutableList routesSpecList "" () GNil guardsSpec (Record handlers) (Record guards)
+  ) => Routable (Record routesSpec) (Record guardsSpec) (Record handlers) (Record guards) where
+  mkRouter _ { handlers, guards } =
+    mkRouterList
+      (RLProxy :: RLProxy routesSpecList)
+      (SProxy :: _ "")
+      (Proxy :: _ {})
+      (Guards :: _ GNil)
+      (Proxy :: _ (Record guardsSpec))
+      handlers
+      guards
+      Trie.empty
 
 class RoutableList
       (routesSpecList :: RowList)
-      (routesSpec :: # Type)
+      (basePath :: Symbol)
+      (baseParams :: # Type)
+      (baseGuards :: GuardList)
       (guardsSpec :: # Type)
       handlers
       guards
-      | routesSpecList -> routesSpec
-      , routesSpecList guardsSpec -> handlers
+      | routesSpecList guardsSpec -> handlers
       , guardsSpec -> guards where
   mkRouterList ::
     RLProxy routesSpecList
-    -> Record routesSpec
-    -> GuardTypes (Record guardsSpec)
+    -> SProxy basePath
+    -> Proxy (Record baseParams)
+    -> Guards baseGuards
+    -> Proxy (Record guardsSpec)
     -> handlers
     -> guards
     -> Trie HandlerEntry
     -> Either String (Trie HandlerEntry)
 
-instance routableListNil :: RoutableList Nil () guardsSpec handlers guards where
-  mkRouterList _ _ _ _ _ trie = Right trie
+instance routableListNil :: RoutableList Nil basePath baseParams baseGuards guardsSpec handlers guards where
+  mkRouterList _ _ _ _ _ _ _ trie = Right trie
 
 instance routableListCons ::
   ( IsSymbol routeName
@@ -87,36 +103,115 @@ instance routableListCons ::
   , IsSymbol method
   , Row.Union spec DefaultRequest mergedSpec
   , Row.Nub mergedSpec specWithDefaults
-  , Handleable (Route method path (Record specWithDefaults)) handler guardsSpec (Record guards)
-  , RoutableList remRoutes remRoutesSpec guardsSpec (Record handlers) (Record guards)
-  , Row.Cons routeName (Route method path (Record spec)) remRoutesSpec routesSpec
+  , Handleable (Route method path (Record specWithDefaults)) handler basePath baseParams baseGuards guardsSpec (Record guards)
+  , RoutableList remRoutes basePath baseParams baseGuards guardsSpec (Record handlers) (Record guards)
   , Row.Cons routeName handler h' handlers
-  , ParseUrl path urlParts
+
+  , Symbol.Append basePath path fullPath
+  , ParseUrl fullPath urlParts
   , ToSegments urlParts
   ) => RoutableList (Cons routeName (Route method path (Record spec)) remRoutes)
-                    routesSpec
+                    basePath
+                    baseParams
+                    baseGuards
+                    guardsSpec
+                    (Record handlers)
+                    (Record guards)
+                    where
+  mkRouterList _ basePath baseParams baseGuards guardsSpec handlers guards trie = do
+    newTrie <- lmap wrapError $ Trie.insert { route: routeSegments, handler } routeSegments trie
+    mkRouterList (RLProxy :: RLProxy remRoutes) basePath baseParams baseGuards guardsSpec handlers guards newTrie
+    where
+      method = reflectSymbol (SProxy :: SProxy method)
+      routeSegments = (Lit method : Nil) <> UrlParsing.asSegments (SProxy :: SProxy fullPath)
+      payloadHandler = (get (SProxy :: SProxy routeName) handlers)
+      route = Route :: Route method path (Record specWithDefaults)
+      guardTypes = (GuardTypes :: GuardTypes (Record guardsSpec))
+      handler = handle (SProxy :: _ basePath) baseParams baseGuards guardTypes route payloadHandler guards
+
+      wrapError :: String -> String
+      wrapError e = "Could not insert route for path '" <>
+                    reflectSymbol (SProxy :: SProxy path) <>
+                    "' into routing trie:\n" <>
+                    "  Full path: " <> show routeSegments <> "\n" <> e
+
+instance routableListConsRoutes ::
+  ( IsSymbol parentName
+  , IsSymbol basePath
+  , IsSymbol path
+
+  -- Parse out child routes from parent params
+  , Row.Union parentSpec DefaultParentRoute mergedSpec
+  , Row.Nub mergedSpec parentSpecWithDefaults
+  , TypeEquals
+      (Record parentSpecWithDefaults)
+      {params :: Record parentParams, guards :: Guards parentGuards | childRoutes}
+  , Row.Union baseParams parentParams childParams
+  , GuardParsing.Append baseGuards parentGuards childGuards
+  
+  -- Extra check: fail here already if they don't match
+  , PayloadUrl.DecodeUrl path parentParams
+
+  , Row.Cons parentName (Record childHandlers) handlers' handlers 
+
+  -- Recurse through child routes
+  , RowToList childRoutes childRoutesList
+  , Symbol.Append basePath path childBasePath
+  , RoutableList childRoutesList childBasePath childParams childGuards guardsSpec (Record childHandlers) (Record guards)
+
+  -- Iterate through rest of list routes
+  , RoutableList remRoutes basePath baseParams baseGuards guardsSpec (Record handlers) (Record guards)
+  ) => RoutableList (Cons parentName (Routes path (Record parentSpec)) remRoutes)
+                    basePath
+                    baseParams
+                    baseGuards
                     guardsSpec
                     (Record handlers)
                     (Record guards) where
-  mkRouterList _ routesSpec guardsSpec handlers guards trie =
-    case Trie.insert { route: routeSegments, handler } routeSegments trie of
-      Just newTrie -> mkRouterList (RLProxy :: RLProxy remRoutes)
-                      (unsafeCoerce routesSpec)
+  mkRouterList _ basePath baseParams baseGuards guardsSpec handlers guards trie =
+    case trieWithChildRoutes of
+      Right newTrie -> mkRouterList (RLProxy :: RLProxy remRoutes)
+                      basePath
+                      baseParams
+                      baseGuards
                       guardsSpec
                       handlers
                       guards
                       newTrie
-      Nothing -> Left $ "Could not insert route for path '" <> reflectSymbol (SProxy :: SProxy path) <> "' into routing trie"
+      Left e -> Left $ "Could not insert child routes for path '"
+                 <> reflectSymbol (SProxy :: SProxy path)
+                 <> "': " <> e
     where
-      method = reflectSymbol (SProxy :: SProxy method)
-      routeSegments = Lit method : UrlParsing.asSegments (SProxy :: SProxy path)
-      payloadHandler = (get (SProxy :: SProxy routeName) handlers)
-      route = Route :: Route method path (Record specWithDefaults)
-      guardTypes = (GuardTypes :: GuardTypes (Record guardsSpec))
-      handler = handle guardTypes route payloadHandler guards
+      childHandlers = Record.get (SProxy :: _ parentName) handlers
+      trieWithChildRoutes = mkRouterList
+                            (RLProxy :: _ childRoutesList)
+                            (SProxy :: _ childBasePath)
+                            (Proxy :: _ (Record childParams))
+                            (Guards :: _ childGuards)
+                            guardsSpec
+                            childHandlers
+                            guards
+                            trie
 
-class Handleable route handler (guardsSpec :: # Type) guards | route -> handler where
-  handle :: GuardTypes (Record guardsSpec) -> route -> handler -> guards -> List String -> HTTP.Request -> HTTP.Response -> Aff Outcome
+class Handleable
+  route
+  handler
+  (basePath :: Symbol)
+  (baseParams :: # Type)
+  (baseGuards :: GuardList)
+  (guardsSpec :: # Type)
+  guards | route -> handler where
+  handle :: SProxy basePath
+            -> Proxy (Record baseParams)
+            -> Guards baseGuards
+            -> GuardTypes (Record guardsSpec)
+            -> route
+            -> handler
+            -> guards
+            -> List String
+            -> HTTP.Request
+            -> HTTP.Response
+            -> Aff Outcome
 
 instance handleablePostRoute ::
        ( TypeEquals (Record route)
@@ -125,39 +220,46 @@ instance handleablePostRoute ::
            , body :: body
            , guards :: Guards guardNames
            | r }
-       , RunGuards guardNames guardsSpec allGuards () routeGuardSpec
        , IsSymbol path
-       , Row.Union params ( body :: body ) payload'
-       , Row.Union payload' routeGuardSpec payload
        , IsRespondable res
-       , PayloadUrl.DecodeUrl path params
+       , Symbol.Append basePath path fullPath
        , FromData body
-       , ParseUrl path urlParts
+
+       , Row.Union baseParams params fullParams
+       , PayloadUrl.DecodeUrl fullPath fullParams
+       , ParseUrl fullPath urlParts
        , ToSegments urlParts
+
+       , Row.Union fullParams ( body :: body ) payload'
+       , Row.Union payload' routeGuardSpec payload
+
+       , GuardParsing.Append baseGuards guardNames fullGuards
+       , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
        )
-    => Handleable (Route "POST" path (Record route)) (Record payload -> Aff res) guardsSpec (Record allGuards) where
-  handle _ route handler allGuards Nil req res = do
+    => Handleable (Route "POST" path (Record route)) (Record payload -> Aff res) basePath baseParams baseGuards guardsSpec (Record allGuards) where
+  handle _ _ _ _ route handler allGuards Nil req res = do
     liftEffect $ sendError res (internalError "No path segments passed to handler")
     pure Failure
-  handle _ route handler allGuards (method : pathSegments) req res =
+  handle _ _ _ _ route handler allGuards (method : pathSegments) req res =
     (either identity identity) <$> runExceptT (runHandler)
 
     where
       runHandler :: ExceptT Outcome Aff Outcome
       runHandler = do
-        params <- except $ lmap (const Forward) $ decodePath pathSegments
+        params <- except $ lmap Forward $ decodePath pathSegments
         bodyStr <- lift $ readBody req
-        body <- except $ lmap (const Forward) (Data.fromData bodyStr :: Either String body)
+        body <- except $ lmap Forward (Data.fromData bodyStr :: Either String body)
         let (payload' :: Record payload') = Record.union params { body }
-        guards <- withExceptT (const Forward) $ ExceptT $
-          runGuards (Guards :: _ guardNames) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
+        guards <- withExceptT Forward $ ExceptT $
+          runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
         let (payload :: Record payload) = Record.union payload' guards
         handlerResp <- lift $ handler payload
         liftEffect $ sendResponse res handlerResp
         pure Success
 
-      decodePath :: List String -> Either String (Record params)
-      decodePath = PayloadUrl.decodeUrl (SProxy :: SProxy path) (Proxy :: Proxy (Record params))
+      decodePath :: List String -> Either String (Record fullParams)
+      -- We need the base path here
+      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullParams))
 
 instance handleableGetRoute ::
        ( TypeEquals (Record route)
@@ -165,34 +267,40 @@ instance handleableGetRoute ::
            , params :: Record params
            , guards :: Guards guardNames
            | r }
-       , RunGuards guardNames guardsSpec allGuards () routeGuardSpec
        , IsSymbol path
-       , Row.Union params routeGuardSpec payload
        , IsRespondable res
-       , PayloadUrl.DecodeUrl path params
-       , ParseUrl path urlParts
+       , Symbol.Append basePath path fullPath
+
+       , Row.Union baseParams params fullParams
+       , PayloadUrl.DecodeUrl fullPath fullParams
+       , ParseUrl fullPath urlParts
        , ToSegments urlParts
+
+       , Row.Union fullParams routeGuardSpec payload
+
+       , GuardParsing.Append baseGuards guardNames fullGuards
+       , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
        )
-    => Handleable (Route "GET" path (Record route)) (Record payload -> Aff res) guardsSpec (Record allGuards) where
-  handle _ route handler allGuards Nil req res = do
+    => Handleable (Route "GET" path (Record route)) (Record payload -> Aff res) basePath baseParams baseGuards guardsSpec (Record allGuards) where
+  handle _ _ _ _ route handler allGuards Nil req res = do
     liftEffect $ sendError res (internalError "No path segments passed to handler")
     pure Failure
-  handle _ route handler allGuards (method : pathSegments) req res =
+  handle _ _ _ _ route handler allGuards (method : pathSegments) req res =
     (either identity identity) <$> runExceptT (runHandler)
 
     where
       runHandler :: ExceptT Outcome Aff Outcome
       runHandler = do
-        params <- except $ lmap (const Forward) $ decodePath pathSegments
-        guards <- withExceptT (const Forward) $ ExceptT $
-          runGuards (Guards :: _ guardNames) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
+        params <- except $ lmap Forward $ decodePath pathSegments
+        guards <- withExceptT Forward $ ExceptT $
+          runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
         let (payload :: Record payload) = from (Record.union params guards)
         handlerResp <- lift $ handler payload
         liftEffect $ sendResponse res handlerResp
         pure Success
 
-      decodePath :: List String -> Either String (Record params)
-      decodePath = PayloadUrl.decodeUrl (SProxy :: SProxy path) (Proxy :: Proxy (Record params))
+      decodePath :: List String -> Either String (Record fullParams)
+      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullParams))
 
 readBody :: HTTP.Request -> Aff String
 readBody req = Aff.makeAff (readBody_ req)

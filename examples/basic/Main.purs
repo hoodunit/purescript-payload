@@ -8,12 +8,14 @@ import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.String.Utils as StringUtils
+import Debug.Trace as Debug
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Node.HTTP as HTTP
+import Payload.Client (mkClient)
 import Payload.Client as Client
-import Payload.Examples.Basic.Api (AdminUser(..), Post, User, api)
+import Payload.Examples.Basic.Api (AdminUser(..), Post, User, apiStructured)
 import Payload.Guards (GuardFn)
 import Payload.Guards as Guards
 import Payload.Handlers (File(..))
@@ -69,22 +71,23 @@ assertResp req expected = do
 tests :: TestSuite
 tests = do
   suite "Example: basic" do
+    let client = mkClient apiStructured
     test "GET /users (with secret)" $ assertResp
-      (Client.request (Client.defaultOpts { query = Just "secret" }) api.routes.getUsers {})
+      (client.adminUsers.getUsers (Client.defaultOpts { query = Just "secret" }) {})
       [{ id: 1, name: "John Admin" }, { id: 1, name: "John Doe" }]
     test "GET /users without secret should fall through to non-admin route" $ assertResp
-      (Client.request_ api.routes.getUsersNonAdmin { name: "users" })
+      (client.getUsersNonAdmin Client.defaultOpts { name: "users" })
       [{ id: 1, name: "John Doe" }]
     test "GET /users/<id>" $ assertResp
-      (Client.request_ api.routes.getUser { id: 1 })
+      (client.users.userById.getUser Client.defaultOpts { id: 1 })
       { id: 1, name: "John Doe" }
     test "GET /users/profile" $ assertResp
-      (Client.request_ api.routes.getUsersProfiles {})
+      (client.users.getUsersProfiles Client.defaultOpts {})
       ["Profile1", "Profile2"]
     test "POST /users/new" $ do
       let opts = Client.defaultOpts { query = Just "secret" }
       assertResp
-        (Client.request opts api.routes.createUser { body: { id: 5, name: "New user!" }})
+        (client.adminUsers.createUser opts { body: { id: 5, name: "New user!" }})
         { id: 5, name: "New user!" }
     -- test "POST /users/new fails without the secret" $ do
     --   let opts = Client.defaultOpts
@@ -92,16 +95,16 @@ tests = do
     --     (Client.request opts api.createUser { body: { id: 5, name: "New user!" }})
     --     { id: 5, name: "New user!" }
     test "GET /users/<id>/posts/<postId>" $ assertResp
-      (Client.request_ api.routes.getUserPost { id: 1, postId: "1" })
+      (client.users.userById.getUserPost Client.defaultOpts { id: 1, postId: "1" })
       { id: "1", text: "Some post" }
     test "GET /pages/<id>" $ assertResp
-      (Client.request_ api.routes.getPage { id: "1" })
+      (client.getPage Client.defaultOpts { id: "1" })
       "Page 1"
     test "GET /pages/<id>/metadata" $ assertResp
-      (Client.request_ api.routes.getPageMetadata { id: "1"})
+      (client.getPageMetadata Client.defaultOpts { id: "1"})
       "Page metadata 1"
     test "GET /hello%20there" $ assertResp
-      (Client.request_ api.routes.getHello {})
+      (client.getHello Client.defaultOpts {})
       "Hello!"
 
 getAdminUser :: GuardFn AdminUser
@@ -112,16 +115,24 @@ getAdminUser req = do
 
 runTests :: Aff Unit
 runTests = do
-  let handlers = { getUsers
-                 , getUsersNonAdmin
-                 , getUser
-                 , getUsersProfiles
-                 , createUser
-                 , getUserPost
-                 , indexPage
-                 , files
-                 , getPage
-                 , getPageMetadata
-                 , getHello }
+  let handlers = {
+        users: {
+           getUsersProfiles,
+           userById: {
+             getUser,
+             getUserPost
+           }
+        },
+        adminUsers: {
+          getUsers,
+          createUser
+        },
+        getUsersNonAdmin,
+        indexPage,
+        files,
+        getPage,
+        getPageMetadata,
+        getHello
+  }
   let guards = { adminUser: getAdminUser, request: Guards.request }
-  withServer api { handlers, guards } (runTestWith Fancy.runTest tests)
+  withServer apiStructured { handlers, guards } (runTestWith Fancy.runTest tests)

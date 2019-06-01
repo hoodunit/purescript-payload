@@ -9,11 +9,13 @@ import Data.Maybe (fromMaybe)
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
+import Foreign (readString)
 import Node.FS.Aff as FsAff
 import Node.FS.Stats as Stats
 import Node.FS.Stream (createReadStream)
 import Payload.MimeTypes as MimeTypes
 import Payload.Response (class IsRespondable, ResponseBody(..))
+import Simple.JSON (class ReadForeign)
 import Unsafe.Coerce (unsafeCoerce)
 
 data File = File String
@@ -33,6 +35,10 @@ instance isRespondableFile :: IsRespondable File where
                  , body: StreamBody (unsafeCoerce fileStream) }
        else pure (Left "Could not read file")
   readResponse _ = Left "Unimplemented: cannot read files with client"
+
+instance readForeignFile :: ReadForeign File where
+  readImpl f = File <$> readString f
+  
 
 fileSize :: Stats.Stats -> Int
 fileSize (Stats.Stats statsObj) = Int.round statsObj.size

@@ -2,6 +2,7 @@ module Payload.Server where
 
 import Prelude
 
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.List (List(..), (:))
@@ -12,6 +13,8 @@ import Data.Nullable (toMaybe)
 import Data.String as String
 import Data.Symbol (SProxy(..))
 import Data.Traversable (sequence, traverse)
+import Data.Tuple as Tuple
+import Debug.Trace as Debug
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -22,7 +25,7 @@ import Node.HTTP as HTTP
 import Node.URL (URL)
 import Node.URL as Url
 import Payload.Response (sendError)
-import Payload.Routing (class Routable, HandlerEntry, Outcome(..), mkRouter)
+import Payload.Routing (class Routable, API(..), HandlerEntry, Outcome(..), mkRouter)
 import Payload.Trie (Trie)
 import Payload.Trie as Trie
 import Record as Record
@@ -74,7 +77,7 @@ foreign import unsafeDecodeURIComponent :: String -> String
 start_
   :: forall routesSpec guardsSpec handlers guards
    . Routable routesSpec guardsSpec handlers guards
-  => { routes :: routesSpec, guards :: guardsSpec }
+  => API { routes :: routesSpec, guards :: guardsSpec }
   -> { handlers :: handlers, guards :: guards }
   -> Aff (Either String PayloadServer)
 start_ = start defaultOpts
@@ -83,7 +86,7 @@ start
   :: forall routesSpec guardsSpec handlers guards
    . Routable routesSpec guardsSpec handlers guards
   => Options
-  -> { routes :: routesSpec, guards :: guardsSpec }
+  -> API { guards :: guardsSpec, routes :: routesSpec }
   -> { handlers :: handlers, guards :: guards }
   -> Aff (Either String PayloadServer)
 start opts apiSpec api = do
@@ -95,6 +98,9 @@ start opts apiSpec api = do
       listenResult <- listen cfg server httpOpts
       pure (const server <$> listenResult)
     Left err -> pure (Left err)
+
+dumpRoutes :: Trie HandlerEntry -> Effect Unit
+dumpRoutes routerTrie = log $ Trie.dumpEntries (_.route <$> routerTrie)
 
 mkConfig :: Options -> Config
 mkConfig { logLevel } = { logger: mkLogger logLevel }
@@ -126,18 +132,19 @@ handleRequest { logger } routerTrie req res = do
 
 runHandlers :: Trie HandlerEntry -> List String -> HTTP.Request -> HTTP.Response -> Effect Unit
 runHandlers routerTrie pathSegments req res = do
-  let matches = Trie.lookup pathSegments routerTrie
+  let (matches :: List HandlerEntry) = Trie.lookup pathSegments routerTrie
   Aff.launchAff_ $ do
-    outcome <- handleNext Forward matches
+    outcome <- handleNext (Forward "Dummy forward") matches
     case outcome of
-      Forward -> liftEffect $ sendError res { status: 404, statusMsg: "Not Found", body: "" }
+      (Forward _) -> liftEffect $ sendError res { status: 404, statusMsg: "Not Found", body: "" }
       _ -> pure unit
   where
     handleNext :: Outcome -> List HandlerEntry -> Aff Outcome
     handleNext Success _ = pure Success
     handleNext Failure _ = pure Failure
-    handleNext Forward ({ handler } : rest) = handler pathSegments req res >>= \o -> handleNext o rest
-    handleNext _ Nil = pure Forward
+    handleNext (Forward msg) ({ handler } : rest) =
+      handler pathSegments req res >>= \o -> handleNext o rest
+    handleNext _ Nil = pure (Forward "No match could handle")
   
 requestSegments :: HTTP.Request -> Either String (List String)
 requestSegments req = do

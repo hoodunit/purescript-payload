@@ -7,6 +7,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Payload.Examples.Basic.Main as BasicExample
 import Payload.Examples.Files.Main as FilesExample
+import Payload.Examples.Movies.Main as MoviesExample
 import Payload.Test.Cookies as CookiesTest
 import Payload.Test.GuardParsing as GuardParsingTest
 import Payload.Test.Guards as GuardsTest
@@ -32,3 +33,4 @@ main = Aff.launchAff_ $ do
   FilesExample.runTests
   BasicExample.runTests
   GuardsTest.runTests
+  MoviesExample.runTests
