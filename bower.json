@@ -9,16 +9,16 @@
   "dependencies": {
     "purescript-aff": "5.1.1",
     "purescript-console": "4.2.0",
-    "purescript-node-http": "5.0.0",
-    "purescript-foreign-generic": "9.0.0",
-    "purescript-typelevel-prelude": "4.0.0",
-    "purescript-record": "2.0.0",
+    "purescript-node-http": "5.0.1",
+    "purescript-foreign-generic": "10.0.0",
+    "purescript-typelevel-prelude": "5.0.0",
+    "purescript-record": "2.0.1",
     "purescript-debug": "4.0.0",
     "purescript-node-fs": "5.0.0",
     "purescript-node-fs-aff": "6.0.0",
     "purescript-affjax": "9.0.0",
     "purescript-prelude": "4.1.1",
-    "purescript-simple-json": "5.1.0",
+    "purescript-simple-json": "6.0.0",
     "purescript-stringutils": "0.0.8"
   },
   "devDependencies": {

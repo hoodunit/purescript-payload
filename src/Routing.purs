@@ -31,12 +31,14 @@ import Payload.Url as PayloadUrl
 import Payload.UrlParsing (class ParseUrl, class ToSegments, Segment(..), UrlNil)
 import Payload.UrlParsing as UrlParsing
 import Prim.Row as Row
+import Prim.RowList (class RowToList, kind RowList)
+import Prim.RowList as RowList
 import Prim.Symbol as Symbol
 import Record (get)
 import Record as Record
+import Type.Data.RowList (RLProxy(..))
 import Type.Equality (class TypeEquals, from)
 import Type.Proxy (Proxy(..))
-import Type.Row (class RowToList, Cons, Nil, RLProxy(..), kind RowList)
 import Unsafe.Coerce (unsafeCoerce)
 
 type HandlerEntry =
@@ -94,7 +96,7 @@ class RoutableList
     -> Trie HandlerEntry
     -> Either String (Trie HandlerEntry)
 
-instance routableListNil :: RoutableList Nil basePath baseParams baseGuards guardsSpec handlers guards where
+instance routableListNil :: RoutableList RowList.Nil basePath baseParams baseGuards guardsSpec handlers guards where
   mkRouterList _ _ _ _ _ _ _ trie = Right trie
 
 instance routableListCons ::
@@ -110,7 +112,7 @@ instance routableListCons ::
   , Symbol.Append basePath path fullPath
   , ParseUrl fullPath urlParts
   , ToSegments urlParts
-  ) => RoutableList (Cons routeName (Route method path (Record spec)) remRoutes)
+  ) => RoutableList (RowList.Cons routeName (Route method path (Record spec)) remRoutes)
                     basePath
                     baseParams
                     baseGuards
@@ -161,7 +163,7 @@ instance routableListConsRoutes ::
 
   -- Iterate through rest of list routes
   , RoutableList remRoutes basePath baseParams baseGuards guardsSpec (Record handlers) (Record guards)
-  ) => RoutableList (Cons parentName (Routes path (Record parentSpec)) remRoutes)
+  ) => RoutableList (RowList.Cons parentName (Routes path (Record parentSpec)) remRoutes)
                     basePath
                     baseParams
                     baseGuards

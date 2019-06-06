@@ -10,10 +10,8 @@ import Node.HTTP as HTTP
 import Payload.Cookies as Cookies
 import Payload.GuardParsing (GCons, GNil, GuardTypes(..), Guards(..), kind GuardList)
 import Prim.Row as Row
-import Prim.RowList (Cons, Nil, kind RowList)
 import Record as Record
 import Type.Equality (to)
-import Type.Row (RLProxy(..))
 
 data Guard (name :: Symbol) a = Guard
 

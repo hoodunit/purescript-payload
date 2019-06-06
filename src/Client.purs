@@ -18,14 +18,15 @@ import Payload.Url (class EncodeUrl)
 import Payload.Url as PayloadUrl
 import Prim.Row (class Cons)
 import Prim.Row as Row
-import Prim.RowList (class RowToList, Nil, kind RowList)
+import Prim.RowList (class RowToList, kind RowList)
+import Prim.RowList as RowList
 import Prim.Symbol as Symbol
 import Prim.TypeError (class Fail, Text)
 import Record as Record
 import Simple.JSON as SimpleJson
+import Type.Data.RowList (RLProxy(..))
 import Type.Equality (class TypeEquals, to)
 import Type.Proxy (Proxy(..))
-import Type.Row (Cons, RLProxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 type Options =
@@ -65,7 +66,7 @@ class ClientApiList
       -> Proxy (Record baseParams)
       -> client
 
-instance clientApiListNil :: ClientApiList Nil basePath baseParams (Record ()) where
+instance clientApiListNil :: ClientApiList RowList.Nil basePath baseParams (Record ()) where
   mkClientList _ _ _ = {}
 
 instance clientApiListCons ::
@@ -81,7 +82,7 @@ instance clientApiListCons ::
   , ClientQueryable (Route method path routeSpec) basePath baseParams payload res
   , ClientApiList remRoutes basePath baseParams (Record remClient)
   ) => ClientApiList
-         (Cons routeName (Route method path routeSpec) remRoutes)
+         (RowList.Cons routeName (Route method path routeSpec) remRoutes)
          basePath
          baseParams
          (Record client) where
@@ -125,7 +126,7 @@ instance clientApiListConsRoutes ::
   , Row.Cons parentName (Record childClient) remClient client 
   , ClientApiList remRoutes basePath baseParams (Record remClient)
   ) => ClientApiList
-         (Cons parentName (Routes path (Record parentSpec)) remRoutes)
+         (RowList.Cons parentName (Routes path (Record parentSpec)) remRoutes)
          basePath
          baseParams
          (Record client) where
