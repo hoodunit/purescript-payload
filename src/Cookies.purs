@@ -15,6 +15,7 @@ import Node.HTTP as HTTP
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import parseWrapper :: String -> Object String
+foreign import serializeImpl :: String -> String -> String
 
 requestCookies :: HTTP.Request -> Map String String
 requestCookies req = case requestCookieHeader req of
@@ -28,3 +29,14 @@ parseCookieHeader header = ((parseWrapper header
 
 requestCookieHeader :: HTTP.Request -> Maybe String
 requestCookieHeader = HTTP.requestHeaders >>> Object.lookup "cookie"
+
+setCookieHeader :: String -> String -> Tuple String String
+setCookieHeader name val = Tuple "Set-Cookie" (serializeImpl name val)
+
+cookieHeader :: Map String String -> Tuple String String
+cookieHeader cookies = Tuple "Cookie" cookiesStr
+  where
+    cookiesStr = String.joinWith "; " (serialize <$> cookiesArray)
+    serialize (Tuple key val) = serializeImpl key val
+    cookiesArray :: Array (Tuple String String)
+    cookiesArray = Map.toUnfoldable cookies

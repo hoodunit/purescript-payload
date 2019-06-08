@@ -12,6 +12,6 @@ import Payload.Examples.Basic.Api (apiStructured)
 
 main :: Effect Unit
 main = launchAff_ do
-  let client = mkClient apiStructured
-  users <- client.adminUsers.getUsers (Client.defaultOpts) {}
+  let client = mkClient Client.defaultOpts apiStructured
+  users <- client.adminUsers.getUsers identity {}
   liftEffect $ log (show users)

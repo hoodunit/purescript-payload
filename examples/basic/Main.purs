@@ -71,21 +71,21 @@ assertResp req expected = do
 tests :: TestSuite
 tests = do
   suite "Example: basic" do
-    let client = mkClient apiStructured
+    let client = mkClient Client.defaultOpts apiStructured
     test "GET /users (with secret)" $ assertResp
-      (client.adminUsers.getUsers (Client.defaultOpts { query = Just "secret" }) {})
+      (client.adminUsers.getUsers (\r -> r { url = r.url <> "?secret" }) {})
       [{ id: 1, name: "John Admin" }, { id: 1, name: "John Doe" }]
     test "GET /users without secret should fall through to non-admin route" $ assertResp
-      (client.getUsersNonAdmin Client.defaultOpts { name: "users" })
+      (client.getUsersNonAdmin identity { name: "users" })
       [{ id: 1, name: "John Doe" }]
     test "GET /users/<id>" $ assertResp
-      (client.users.userById.getUser Client.defaultOpts { id: 1 })
+      (client.users.userById.getUser identity { id: 1 })
       { id: 1, name: "John Doe" }
     test "GET /users/profile" $ assertResp
-      (client.users.getUsersProfiles Client.defaultOpts {})
+      (client.users.getUsersProfiles identity {})
       ["Profile1", "Profile2"]
     test "POST /users/new" $ do
-      let opts = Client.defaultOpts { query = Just "secret" }
+      let opts = \r -> r { url = r.url <> "?secret" }
       assertResp
         (client.adminUsers.createUser opts { body: { id: 5, name: "New user!" }})
         { id: 5, name: "New user!" }
@@ -95,16 +95,16 @@ tests = do
     --     (Client.request opts api.createUser { body: { id: 5, name: "New user!" }})
     --     { id: 5, name: "New user!" }
     test "GET /users/<id>/posts/<postId>" $ assertResp
-      (client.users.userById.getUserPost Client.defaultOpts { id: 1, postId: "1" })
+      (client.users.userById.getUserPost identity { id: 1, postId: "1" })
       { id: "1", text: "Some post" }
     test "GET /pages/<id>" $ assertResp
-      (client.getPage Client.defaultOpts { id: "1" })
+      (client.getPage identity { id: "1" })
       "Page 1"
     test "GET /pages/<id>/metadata" $ assertResp
-      (client.getPageMetadata Client.defaultOpts { id: "1"})
+      (client.getPageMetadata identity { id: "1"})
       "Page metadata 1"
     test "GET /hello%20there" $ assertResp
-      (client.getHello Client.defaultOpts {})
+      (client.getHello identity {})
       "Hello!"
 
 getAdminUser :: GuardFn AdminUser

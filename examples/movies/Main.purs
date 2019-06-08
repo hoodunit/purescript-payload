@@ -3,21 +3,30 @@ module Payload.Examples.Movies.Main where
 import Prelude
 
 import Affjax as AX
+import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
 import Data.Array as Array
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..))
+import Data.Either (Either(..), hush, note)
 import Data.List (List(..))
+import Data.Map (Map)
+import Data.Map as Map
+import Data.Maybe (Maybe(..), maybe)
 import Data.String as String
+import Data.Tuple (Tuple(..))
+import Debug.Trace as Debug
+import Effect (Effect)
 import Effect.Aff (Aff)
 import Payload.Client (class ClientApi, mkClient)
 import Payload.Client as Client
+import Payload.Cookies (requestCookies)
+import Payload.Cookies as Cookies
 import Payload.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
 import Payload.Guards (GuardFn)
 import Payload.Handlers (File(..))
 import Payload.Route (GET, POST, Route(..), DELETE)
 import Payload.Routing (API(..), Routes(..))
-import Payload.Test.Helpers (withServer)
+import Payload.Test.Helpers (assertFail, assertRes, withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
 import Test.Unit.Main (runTestWith)
@@ -50,6 +59,9 @@ type StatusResponse =
 type StatusCodeResponse =
   { statusCode :: Int
   , statusMessage :: String }
+
+type RatingValue =
+  { value :: Number }
 
 type ApiKey = String
 type SessionId = String
@@ -97,6 +109,7 @@ moviesApi :: API {
            rating :: Routes "/rating" {
              guards :: Guards ("sessionId" : Nil),
              create :: POST "/rating" {
+               body :: RatingValue,
                response :: StatusCodeResponse
              },
              -- DELETE not supported yet
@@ -112,25 +125,32 @@ moviesApi :: API {
 }
 moviesApi = API
 
-assertResp :: forall a err. Show err => Eq a => Show a => Aff (Either err a) -> a -> Test
-assertResp req expected = do
-  res <- req
-  case res of
-    Right val -> Assert.equal expected val
-    Left errors -> failure $ "Request failed: " <> show errors
+withCookies :: Map String String -> Client.ModifyRequest
+withCookies cookies req = req { withCredentials = true, headers = req.headers <> [ cookieHeader ] }
+  where
+    cookieHeader = case Cookies.cookieHeader cookies of
+                     Tuple field value -> RequestHeader field value
+
+foreign import setCookieHack :: String -> String -> Effect Unit
   
 -- tests :: forall routesSpec client r
 --          . ClientApi routesSpec client
---          => API { routes :: routesSpec | r } -> TestSuite
+--          => client -> TestSuite
 tests client = do
   suite "Example: movies API" do
-    test "Sub-route fails if parent route guard fails" $ do
-      res <- client.v1.movies.latest Client.defaultOpts {}
-      assertResp (client.v1.movies.latest Client.defaultOpts {})
-                 { id: 999, title: "The Godfather" }
-    test "Sub-route succeeds if parent route guard succeeds" $ do
-      assertResp (client.v1.movies.latest Client.defaultOpts {})
+    test "Sub-route fails if parent route guard fails (missing API key)" $ do
+      assertFail (client.v1.movies.latest identity {})
+    test "Sub-route succeeds if parent route guard succeeds (has API key)" $ do
+      assertRes (client.v1.movies.latest (withCookies (Map.singleton "apiKey" "key")) {})
                  { id: 723, title: "The Godfather" }
+    test "Sub-route fails if passes parent guard but not child guard (missing session key)" $ do
+      let payload = { movieId: 1, body: { value: 9.0 } }
+      let opts = withCookies $ Map.singleton "apiKey" "key"
+      assertFail $ client.v1.movies.byId.rating.create opts payload
+    test "Sub-route succeeds if passes parent and child guards (has API and session keys)" $ do
+      let opts = withCookies $ Map.fromFoldable [Tuple "apiKey" "key", Tuple "sessionId" "sessionId"]
+      assertRes (client.v1.movies.byId.rating.create opts { movieId: 1, body: { value: 9.0 } })
+                 { statusCode: 1, statusMessage: "Created" }
 
 newToken :: forall r. { | r} -> Aff RequestTokenResponse
 newToken _ = pure { success: true, expiresAt: "date", requestToken: "328dsdweoi" }
@@ -188,10 +208,14 @@ handlers = {
 }
 
 getApiKey :: GuardFn ApiKey
-getApiKey req = pure $ unsafeCoerce {}
+getApiKey req = do
+  let cookies = requestCookies req
+  pure $ note "No cookie" $ Map.lookup "apiKey" cookies
 
 getSessionId :: GuardFn SessionId
-getSessionId req = pure $ unsafeCoerce {}
+getSessionId req = do
+  let cookies = requestCookies req
+  pure $ note "No cookie" $ Map.lookup "sessionId" cookies
 
 guards = {
   apiKey: getApiKey,
@@ -200,5 +224,5 @@ guards = {
 
 runTests :: Aff Unit
 runTests = do
-  let runTest = runTestWith Fancy.runTest (tests $ mkClient moviesApi)
+  let runTest = runTestWith Fancy.runTest (tests $ mkClient Client.defaultOpts moviesApi)
   withServer moviesApi { handlers, guards } runTest

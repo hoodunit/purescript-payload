@@ -224,3 +224,9 @@ function tryDecode(str, decode) {
 exports.parseWrapper = function (str) {
   return parse(str)
 }
+
+exports.serializeImpl = function (name) {
+  return function(val) {
+    return serialize(name, val)
+  }
+}

@@ -4,10 +4,14 @@ import Prelude
 
 import Affjax as AX
 import Affjax.RequestBody as RequestBody
+import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
+import Data.HTTP.Method (Method(..))
+import Data.Map (Map)
+import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
@@ -31,25 +35,25 @@ import Unsafe.Coerce (unsafeCoerce)
 
 type Options =
   { hostname :: String
-  , port :: Int
-  , query :: Maybe String
-  }
+  , port :: Int }
+
+type ModifyRequest = AX.Request String -> AX.Request String
 
 defaultOpts :: Options
 defaultOpts =
   { hostname: "localhost"
   , port: 3000
-  , query: Nothing
   }
 
 class ClientApi routesSpec client | routesSpec -> client where
-  mkClient :: forall r. API { routes :: routesSpec | r } -> client
+  mkClient :: forall r. Options -> API { routes :: routesSpec | r } -> client
 
 instance clientApiRecord ::
   ( RowToList routesSpec routesSpecList
   , ClientApiList routesSpecList "" () (Record client)
   ) => ClientApi (Record routesSpec) (Record client) where
-  mkClient routesSpec = mkClientList
+  mkClient opts routesSpec = mkClientList
+                        opts
                         (RLProxy :: _ routesSpecList)
                         (SProxy :: _ "")
                         (Proxy :: _ (Record ()))
@@ -61,13 +65,14 @@ class ClientApiList
   client
   | routesSpecList -> client where
     mkClientList ::
-      RLProxy routesSpecList
+      Options
+      -> RLProxy routesSpecList
       -> SProxy basePath
       -> Proxy (Record baseParams)
       -> client
 
 instance clientApiListNil :: ClientApiList RowList.Nil basePath baseParams (Record ()) where
-  mkClientList _ _ _ = {}
+  mkClientList _ _ _ _ = {}
 
 instance clientApiListCons ::
   ( IsSymbol routeName
@@ -75,7 +80,7 @@ instance clientApiListCons ::
   , IsSymbol path
   , Row.Cons
      routeName
-     (Options -> payload -> Aff (Either String res))
+     (ModifyRequest -> payload -> Aff (Either String res))
      remClient
      client
   , Row.Lacks routeName remClient
@@ -86,18 +91,19 @@ instance clientApiListCons ::
          basePath
          baseParams
          (Record client) where
-  mkClientList _ _ _ =
+  mkClientList opts _ _ _ =
     Record.insert
       (SProxy :: _ routeName)
       doRequest
-      (mkClientList (RLProxy :: _ remRoutes) (SProxy :: _ basePath) (Proxy :: _ (Record baseParams)))
+      (mkClientList opts (RLProxy :: _ remRoutes) (SProxy :: _ basePath) (Proxy :: _ (Record baseParams)))
     where
-      doRequest :: Options -> payload -> Aff (Either String res)
-      doRequest opt payload =
+      doRequest :: ModifyRequest -> payload -> Aff (Either String res)
+      doRequest modifyReq payload =
         request (Route :: Route method path routeSpec)
                 (SProxy :: _ basePath)
                 (Proxy :: _ (Record baseParams))
-                opt
+                opts
+                modifyReq
                 payload
 
 instance clientApiListConsRoutes ::
@@ -130,13 +136,14 @@ instance clientApiListConsRoutes ::
          basePath
          baseParams
          (Record client) where
-  mkClientList _ basePath baseParams =
+  mkClientList opts _ basePath baseParams =
     Record.insert
       (SProxy :: _ parentName)
       childRoutes
-      (mkClientList (RLProxy :: _ remRoutes) basePath baseParams)
+      (mkClientList opts (RLProxy :: _ remRoutes) basePath baseParams)
     where
       childRoutes = mkClientList
+                    opts
                     (RLProxy :: _ childRoutesList)
                     (SProxy :: _ childBasePath)
                     (Proxy :: _ (Record childParams))
@@ -148,7 +155,13 @@ class ClientQueryable
   payload
   res
   | route -> payload, route -> res where
-  request :: route -> SProxy basePath -> Proxy (Record baseParams) -> Options -> payload -> Aff (Either String res)
+  request :: route
+             -> SProxy basePath
+             -> Proxy (Record baseParams)
+             -> Options
+             -> ModifyRequest
+             -> payload
+             -> Aff (Either String res)
 
 instance clientQueryableGetRoute ::
        ( Row.Union route DefaultRequest mergedRoute
@@ -165,10 +178,15 @@ instance clientQueryableGetRoute ::
        , SimpleJson.ReadForeign res
        )
     => ClientQueryable (Route "GET" path (Record route)) basePath baseParams (Record fullParams) res where
-  request _ _ _ opts payload = do
+  request _ _ _ opts modifyReq payload = do
     let params = payload
     let url = encodeUrl opts (SProxy :: _ fullPath) params
-    res <- AX.get ResponseFormat.string url
+    let defaultReq = AX.defaultRequest
+          { method = Left GET
+          , url = url
+          , responseFormat = ResponseFormat.string }
+    let req = modifyReq defaultReq
+    res <- AX.request req
     pure (decodeResponse res)
 else instance clientQueryablePostRoute ::
        ( Row.Union route DefaultRequest mergedRoute
@@ -191,23 +209,28 @@ else instance clientQueryablePostRoute ::
        , SimpleJson.ReadForeign res
        )
     => ClientQueryable (Route "POST" path (Record route)) basePath baseParams (Record payload) res where
-  request _ _ _ opts payload = do
+  request _ _ _ opts modifyReq payload = do
     let p = to payload
     let (params :: Record fullParams) = Record.delete (SProxy :: SProxy "body") p
     let url = encodeUrl opts (SProxy :: SProxy fullPath) params
     let (body :: body) = Record.get (SProxy :: SProxy "body") p
     let encodedBody = RequestBody.String (SimpleJson.writeJSON body)
-    res <- AX.post ResponseFormat.string url encodedBody
+    let defaultReq = AX.defaultRequest
+          { method = Left POST
+          , url = url
+          , content = Just encodedBody
+          , responseFormat = ResponseFormat.string }
+    let req = modifyReq defaultReq
+    res <- AX.request req
     pure (decodeResponse res)
 
 encodeUrl :: forall path params
   . EncodeUrl path params
   => Options -> SProxy path -> Record params -> String
 encodeUrl opts pathProxy params =
-  "http://" <> opts.hostname <> ":" <> show opts.port <> path <> queryStr
+  "http://" <> opts.hostname <> ":" <> show opts.port <> path
   where
     path = PayloadUrl.encodeUrl pathProxy params
-    queryStr = maybe "" (\q -> "?" <> q) opts.query
 
 decodeResponse :: forall res. IsRespondable res =>
                  (AX.Response (Either AX.ResponseFormatError String)) -> Either String res
