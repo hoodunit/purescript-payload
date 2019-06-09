@@ -36,7 +36,7 @@ tests = suite "Response" do
         Assert.equal (Right 200) (res >>= _status)
       test "sets Content-Type to text/plain" do
         res <- mkResponse "foo"
-        Assert.equal (Right "text/plain") (res >>= _header "Content-Type")
+        Assert.equal (Right "text/plain; charset=utf-8") (res >>= _header "Content-Type")
       test "leaves body untouched" do
         res <- mkResponse "foo"
         Assert.equal (Right (StringBody "foo")) (res >>= _body)

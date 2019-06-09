@@ -18,6 +18,7 @@ import Node.Encoding (Encoding(..))
 import Node.Encoding as Encoding
 import Node.HTTP as HTTP
 import Node.Stream as Stream
+import Payload.ContentType as ContentType
 import Payload.Status (HttpStatus)
 import Payload.Status as Status
 import Simple.JSON as SimpleJson
@@ -74,7 +75,7 @@ instance responderResponse :: (Responder a) => Responder (Response a) where
 instance responderString :: Responder String where
   mkResponse s = pure $ Right $ RawResponse
                    { status: Status.ok
-                   , headers: Map.fromFoldable [ Tuple "Content-Type" "text/plain" ]
+                   , headers: Map.fromFoldable [ Tuple "Content-Type" ContentType.plain ]
                    , body: StringBody s }
 
 instance responderStream ::
@@ -83,7 +84,7 @@ instance responderStream ::
   ) => Responder (Stream.Stream r) where
   mkResponse s = pure $ Right $ RawResponse
                    { status: Status.ok
-                   , headers: Map.fromFoldable [ Tuple "Content-Type" "text/plain" ]
+                   , headers: Map.fromFoldable [ Tuple "Content-Type" ContentType.plain ]
                    , body: StreamBody (unsafeCoerce s) }
 
 instance responderStatus :: Responder a => Responder (Status a) where
@@ -99,7 +100,7 @@ instance responderRecord ::
   ) => Responder (Record r) where
   mkResponse record = pure $ Right $ RawResponse
                         { status: Status.ok
-                        , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
+                        , headers: Map.fromFoldable [ Tuple "Content-Type" ContentType.json ]
                         , body: StringBody (SimpleJson.writeJSON record) }
 
 instance responderArray ::
@@ -107,7 +108,7 @@ instance responderArray ::
   ) => Responder (Array r) where
   mkResponse arr = pure $ Right $ RawResponse
                      { status: Status.ok
-                     , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
+                     , headers: Map.fromFoldable [ Tuple "Content-Type" ContentType.json ]
                      , body: StringBody (SimpleJson.writeJSON arr) }
 
 instance responderJson ::
@@ -116,7 +117,7 @@ instance responderJson ::
   mkResponse (Json content) =
     pure $ Right $ RawResponse
       { status: Status.ok
-      , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
+      , headers: Map.fromFoldable [ Tuple "Content-Type" ContentType.json ]
       , body: StringBody (SimpleJson.writeJSON content) }
 
 instance responderMaybe :: Responder a => Responder (Maybe a) where
@@ -185,7 +186,7 @@ sendError
   -> Effect Unit
 sendError res {body, status} = do
   let outputStream = HTTP.responseAsStream res
-  HTTP.setHeader res "Content-Type" "text/plain"
+  HTTP.setHeader res "Content-Type" ContentType.plain
   HTTP.setHeader res "Content-Length" (show $ Encoding.byteLength body UTF8)
   HTTP.setStatusCode res status.code
   HTTP.setStatusMessage res status.reason
