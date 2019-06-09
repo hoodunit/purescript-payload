@@ -33,7 +33,7 @@ tests = suite "Response" do
       test "leaves body untouched" do
         res <- mkResponse "foo"
         Assert.equal (Right (StringBody "foo")) (res >>= _body)
-    suite "record" do
+    suite "record (treated as JSON)" do
       test "sets status to 200" do
         res <- mkResponse { id: 1 }
         Assert.equal (Right 200) (res >>= _status)
@@ -43,3 +43,13 @@ tests = suite "Response" do
       test "encodes body" do
         res <- mkResponse { id: 1 }
         Assert.equal (Right (StringBody "{\"id\":1}")) (res >>= _body)
+    suite "array (treated as JSON)" do
+      test "sets status to 200" do
+        res <- mkResponse [1, 2, 3]
+        Assert.equal (Right 200) (res >>= _status)
+      test "sets Content-Type to application/json" do
+        res <- mkResponse [1, 2, 3]
+        Assert.equal (Right "application/json") (res >>= _header "Content-Type")
+      test "encodes body" do
+        res <- mkResponse [1, 2, 3]
+        Assert.equal (Right (StringBody "[1,2,3]")) (res >>= _body)
