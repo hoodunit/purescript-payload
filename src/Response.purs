@@ -6,6 +6,7 @@ import Data.Either (Either(..))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map (Map)
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Traversable (sequence_)
 import Data.Tuple (Tuple(..))
@@ -117,6 +118,11 @@ instance responderJson ::
       { status: Status.ok
       , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
       , body: StringBody (SimpleJson.writeJSON content) }
+
+instance responderMaybe :: Responder a => Responder (Maybe a) where
+  mkResponse Nothing =
+    pure $ Right $ RawResponse { status: Status.notFound, headers: Map.empty, body: EmptyBody }
+  mkResponse (Just r) = mkResponse r
 
 class IsResponseBody body where
   writeBody :: HTTP.Response -> body -> Effect Unit

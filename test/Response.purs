@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Either (Either(..), note)
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Payload.Response (Json(..), RawResponse(..), ResponseBody(..), Status(..), mkResponse)
 import Payload.Status as Status
@@ -79,3 +80,16 @@ tests = suite "Response" do
       test "encodes int body as JSON" do
         res <- mkResponse (Json 1)
         Assert.equal (Right (StringBody "1")) (res >>= _body)
+    suite "Maybe" do
+      test "returns 404 if response is Nothing" do
+        res <- mkResponse (Nothing :: Maybe String)
+        Assert.equal (Right 404) (res >>= _status)
+      test "returns empty body if response is Nothing" do
+        res <- mkResponse (Nothing :: Maybe String)
+        Assert.equal (Right EmptyBody) (res >>= _body)
+      test "returns inner response status if response is Just" do
+        res <- mkResponse (Just {foo: 1})
+        Assert.equal (Right 200) (res >>= _status)
+      test "returns inner response body if response is Just" do
+        res <- mkResponse (Just {foo: 1})
+        Assert.equal (Right (StringBody "{\"foo\":1}")) (res >>= _body)
