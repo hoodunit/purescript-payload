@@ -1,4 +1,4 @@
-module Payload.Client where
+module Payload.Client.Client where
 
 import Prelude
 
@@ -15,7 +15,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
-import Payload.FromResponse (class ReadResponse, readResponse)
+import Payload.Client.FromResponse (class ReadResponse, readResponse)
 import Payload.Response (class IsRespondable, ResponseBody(..))
 import Payload.Route (DefaultRequest, Route(..))
 import Payload.Routing (API(..), DefaultParentRoute, Routes(..))

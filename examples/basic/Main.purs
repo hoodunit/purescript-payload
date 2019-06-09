@@ -13,8 +13,8 @@ import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Node.HTTP as HTTP
-import Payload.Client (mkClient)
-import Payload.Client as Client
+import Payload.Client.Client (mkClient)
+import Payload.Client.Client as Client
 import Payload.Examples.Basic.Api (AdminUser(..), Post, User, apiStructured)
 import Payload.Guards (GuardFn)
 import Payload.Guards as Guards

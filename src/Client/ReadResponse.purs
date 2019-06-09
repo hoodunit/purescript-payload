@@ -1,4 +1,4 @@
-module Payload.FromResponse where
+module Payload.Client.FromResponse where
 
 import Prelude
 

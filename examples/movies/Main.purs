@@ -17,8 +17,8 @@ import Data.Tuple (Tuple(..))
 import Debug.Trace as Debug
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Payload.Client (class ClientApi, mkClient)
-import Payload.Client as Client
+import Payload.Client.Client (class ClientApi, mkClient)
+import Payload.Client.Client as Client
 import Payload.Cookies (requestCookies)
 import Payload.Cookies as Cookies
 import Payload.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
