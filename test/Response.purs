@@ -5,7 +5,7 @@ import Prelude
 import Data.Either (Either(..), note)
 import Data.Map as Map
 import Data.Newtype (unwrap)
-import Payload.Response (RawResponse(..), ResponseBody(..), mkResponse)
+import Payload.Response (Json(..), RawResponse(..), ResponseBody(..), mkResponse)
 import Payload.Status as Status
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
@@ -59,3 +59,19 @@ tests = suite "Response" do
       test "encodes body" do
         res <- mkResponse [1, 2, 3]
         Assert.equal (Right (StringBody "[1,2,3]")) (res >>= _body)
+    suite "Json" do
+      test "sets status to 200" do
+        res <- mkResponse (Json [1, 2, 3])
+        Assert.equal (Right 200) (res >>= _status)
+      test "sets Content-Type to application/json" do
+        res <- mkResponse (Json [1, 2, 3])
+        Assert.equal (Right "application/json") (res >>= _header "Content-Type")
+      test "encodes body as JSON" do
+        res <- mkResponse (Json [1, 2, 3])
+        Assert.equal (Right (StringBody "[1,2,3]")) (res >>= _body)
+      test "encodes string body as JSON" do
+        res <- mkResponse (Json "hello")
+        Assert.equal (Right (StringBody "\"hello\"")) (res >>= _body)
+      test "encodes int body as JSON" do
+        res <- mkResponse (Json 1)
+        Assert.equal (Right (StringBody "1")) (res >>= _body)

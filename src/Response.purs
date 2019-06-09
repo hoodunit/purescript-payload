@@ -23,6 +23,8 @@ import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals, to)
 import Unsafe.Coerce (unsafeCoerce)
 
+newtype Json a = Json a
+
 type ServerError = String
 
 newtype Response r = Response
@@ -97,6 +99,15 @@ instance responderArray ::
                      { status: Status.ok
                      , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
                      , body: StringBody (SimpleJson.writeJSON arr) }
+
+instance responderJson ::
+  ( SimpleJson.WriteForeign r
+  ) => Responder (Json r) where
+  mkResponse (Json content) =
+    pure $ Right $ RawResponse
+      { status: Status.ok
+      , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
+      , body: StringBody (SimpleJson.writeJSON content) }
 
 class IsResponseBody body where
   writeBody :: HTTP.Response -> body -> Effect Unit
