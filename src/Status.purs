@@ -2,6 +2,9 @@ module Payload.Status where
 
 type HttpStatus = { code :: Int, reason :: String }
 
+custom :: Int -> String -> HttpStatus
+custom code reason = { code, reason }
+
 continue :: HttpStatus
 continue = { code: 100, reason: "Continue" }
 
