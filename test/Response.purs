@@ -23,6 +23,11 @@ _body res = Right $ (unwrap res).body
 tests :: TestSuite
 tests = suite "Response" do
   suite "Responder" do
+    suite "RawResponse" do
+      test "leaves response untouched" do
+        let rawRes = RawResponse {status: 202, headers: Map.empty, body: StringBody "foo"}
+        res <- mkResponse rawRes
+        Assert.equal (Right rawRes) res
     suite "string" do
       test "sets status to 200" do
         res <- mkResponse "foo"
