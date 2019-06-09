@@ -7,7 +7,8 @@ import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
-import Payload.Response (Empty(..), Json(..), RawResponse(..), ResponseBody(..), Status(..), mkResponse)
+import Data.Tuple (Tuple(..))
+import Payload.Response (Empty(..), Json(..), RawResponse(..), ResponseBody(..), SetHeaders(..), Status(..), mkResponse)
 import Payload.Status as Status
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
@@ -104,3 +105,13 @@ tests = suite "Response" do
       test "returns no headers" do
         res <- mkResponse Empty
         Assert.equal (Right Map.empty) (res >>= _headers)
+    suite "SetHeaders" do
+      test "merges in new headers" do
+        let headers = Map.fromFoldable [Tuple "foo" "fooVal"]
+        let expected = Map.fromFoldable [Tuple "foo" "fooVal", Tuple "Content-Type" "text/plain; charset=utf-8"]
+        res <- mkResponse (SetHeaders headers "foo")
+        Assert.equal (Right expected) (res >>= _headers)
+      test "replaces original headers" do
+        let headers = Map.fromFoldable [Tuple "foo" "fooVal", Tuple "Content-Type" "magic"]
+        res <- mkResponse (SetHeaders headers "foo")
+        Assert.equal (Right headers) (res >>= _headers)

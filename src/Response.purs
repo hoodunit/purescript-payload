@@ -28,6 +28,7 @@ import Unsafe.Coerce (unsafeCoerce)
 newtype Json a = Json a
 data Status a = Status HttpStatus a
 data Empty = Empty
+data SetHeaders a = SetHeaders (Map String String) a
 
 type ServerError = String
 
@@ -131,6 +132,17 @@ instance responderEmpty :: Responder Empty where
                    { status: Status.ok
                    , headers: Map.empty
                    , body: EmptyBody }
+
+instance responderSetHeaders :: Responder a => Responder (SetHeaders a) where
+  mkResponse (SetHeaders newHeaders inner) = do
+    innerResult <- mkResponse inner
+    case innerResult of
+      Right (RawResponse {status, headers, body}) -> do
+        pure $ Right $ RawResponse
+          { status: Status.ok
+          , headers: Map.union newHeaders headers
+          , body: EmptyBody }
+      Left err -> pure $ Left $ err
 
 class IsResponseBody body where
   writeBody :: HTTP.Response -> body -> Effect Unit
