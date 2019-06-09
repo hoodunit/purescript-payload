@@ -2,7 +2,6 @@ module Payload.Response where
 
 import Prelude
 
-import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map (Map)
@@ -18,11 +17,12 @@ import Node.Encoding (Encoding(..))
 import Node.Encoding as Encoding
 import Node.HTTP as HTTP
 import Node.Stream as Stream
+import Payload.Status (HttpStatus)
+import Payload.Status as Status
 import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals, to)
 import Unsafe.Coerce (unsafeCoerce)
 
-type HttpStatus = Int
 type ServerError = String
 
 newtype Response r = Response
@@ -69,7 +69,7 @@ instance responderResponse :: (Responder a) => Responder (Response a) where
 
 instance responderString :: Responder String where
   mkResponse s = pure $ Right $ RawResponse
-                   { status: 200
+                   { status: Status.ok
                    , headers: Map.fromFoldable [ Tuple "Content-Type" "text/plain" ]
                    , body: StringBody s }
 
@@ -78,7 +78,7 @@ instance responderStream ::
   , IsResponseBody (Stream.Stream r)
   ) => Responder (Stream.Stream r) where
   mkResponse s = pure $ Right $ RawResponse
-                   { status: 200
+                   { status: Status.ok
                    , headers: Map.fromFoldable [ Tuple "Content-Type" "text/plain" ]
                    , body: StreamBody (unsafeCoerce s) }
 
@@ -86,7 +86,7 @@ instance responderRecord ::
   ( SimpleJson.WriteForeign (Record r)
   ) => Responder (Record r) where
   mkResponse record = pure $ Right $ RawResponse
-                        { status: 200
+                        { status: Status.ok
                         , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
                         , body: StringBody (SimpleJson.writeJSON record) }
 
@@ -94,7 +94,7 @@ instance responderArray ::
   ( SimpleJson.WriteForeign (Array r)
   ) => Responder (Array r) where
   mkResponse arr = pure $ Right $ RawResponse
-                     { status: 200
+                     { status: Status.ok
                      , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
                      , body: StringBody (SimpleJson.writeJSON arr) }
 
@@ -118,7 +118,7 @@ sendInternalError :: forall err. Show err => HTTP.Response -> err -> Aff Unit
 sendInternalError res err = liftEffect $ sendError res (internalError (show err))
 
 internalError :: String -> ErrorResponse
-internalError body = { status: 500, statusMsg: "Internal error", body }
+internalError body = { status: Status.internalServerError, body }
 
 sendResponse :: forall res. Responder res => HTTP.Response -> res -> Effect Unit
 sendResponse res handlerRes = Aff.runAff_ onComplete do
@@ -128,17 +128,20 @@ sendResponse res handlerRes = Aff.runAff_ onComplete do
       let contentLengthHdr = Tuple "Content-Length" (show $ Encoding.byteLength str UTF8)
       let defaultHeaders = Map.fromFoldable [ contentLengthHdr ]
       let headers = serverRes.headers <> defaultHeaders
-      HTTP.setStatusCode res serverRes.status
+      HTTP.setStatusCode res serverRes.status.code
+      HTTP.setStatusMessage res serverRes.status.reason
       writeHeaders res headers
       writeBody res str
     Right (RawResponse serverRes@{ body: StreamBody stream }) -> do
-      HTTP.setStatusCode res serverRes.status
+      HTTP.setStatusCode res serverRes.status.code
+      HTTP.setStatusMessage res serverRes.status.reason
       writeHeaders res serverRes.headers
       writeBody res stream
     Right (RawResponse serverRes@{ body: EmptyBody }) -> do
-      HTTP.setStatusCode res serverRes.status
+      HTTP.setStatusCode res serverRes.status.code
+      HTTP.setStatusMessage res serverRes.status.reason
       writeHeaders res serverRes.headers
-    Left errors -> sendError res { status: 500, statusMsg: "Error encoding response", body: (show errors) }
+    Left errors -> sendError res { status: Status.internalServerError, body: (show errors) }
   where
     onComplete (Left errors) = sendError res (internalError (show errors))
     onComplete (Right _) = pure unit
@@ -148,18 +151,17 @@ writeHeaders res headers = sequence_ $ Map.values $ mapWithIndex (HTTP.setHeader
 
 type ErrorResponse =
   { body :: String
-  , status :: Int
-  , statusMsg :: String }
+  , status :: Status.HttpStatus }
 
 sendError
   :: HTTP.Response
   -> ErrorResponse
   -> Effect Unit
-sendError res {body, status, statusMsg} = do
+sendError res {body, status} = do
   let outputStream = HTTP.responseAsStream res
   HTTP.setHeader res "Content-Type" "text/plain"
   HTTP.setHeader res "Content-Length" (show $ Encoding.byteLength body UTF8)
-  HTTP.setStatusCode res status
-  HTTP.setStatusMessage res statusMsg
+  HTTP.setStatusCode res status.code
+  HTTP.setStatusMessage res status.reason
   _ <- Stream.writeString outputStream UTF8 body (pure unit)
   Stream.end outputStream (pure unit)

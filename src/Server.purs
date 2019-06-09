@@ -26,6 +26,7 @@ import Node.URL (URL)
 import Node.URL as Url
 import Payload.Response (sendError)
 import Payload.Routing (class Routable, API(..), HandlerEntry, Outcome(..), mkRouter)
+import Payload.Status as Status
 import Payload.Trie (Trie)
 import Payload.Trie as Trie
 import Record as Record
@@ -126,8 +127,7 @@ handleRequest { logger } routerTrie req res = do
   logger.logDebug (HTTP.requestMethod req <> " " <> show (url.path))
   case requestSegments req of
     Right reqSegments -> runHandlers routerTrie reqSegments req res
-    Left err -> sendError res { status: 500,
-                                statusMsg: "Internal Error",
+    Left err -> sendError res { status: Status.internalServerError,
                                 body: "Path could not be decoded: " <> show err }
 
 runHandlers :: Trie HandlerEntry -> List String -> HTTP.Request -> HTTP.Response -> Effect Unit
@@ -136,7 +136,7 @@ runHandlers routerTrie pathSegments req res = do
   Aff.launchAff_ $ do
     outcome <- handleNext (Forward "Dummy forward") matches
     case outcome of
-      (Forward _) -> liftEffect $ sendError res { status: 404, statusMsg: "Not Found", body: "" }
+      (Forward _) -> liftEffect $ sendError res { status: Status.notFound, body: "" }
       _ -> pure unit
   where
     handleNext :: Outcome -> List HandlerEntry -> Aff Outcome

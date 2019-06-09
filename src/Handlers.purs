@@ -15,6 +15,7 @@ import Node.FS.Stats as Stats
 import Node.FS.Stream (createReadStream)
 import Payload.MimeTypes as MimeTypes
 import Payload.Response (class Responder, RawResponse(..), ResponseBody(..))
+import Payload.Status as Status
 import Simple.JSON (class ReadForeign)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -28,7 +29,7 @@ instance responderFile :: Responder File where
        then do
          fileStream <- liftEffect $ createReadStream path
          pure $ Right $ RawResponse
-           { status: 200
+           { status: Status.ok
            , headers: Map.fromFoldable
                [ Tuple "Content-Type" mimeType
                , Tuple "Content-Length" (show (fileSize stat))

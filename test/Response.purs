@@ -6,6 +6,7 @@ import Data.Either (Either(..), note)
 import Data.Map as Map
 import Data.Newtype (unwrap)
 import Payload.Response (RawResponse(..), ResponseBody(..), mkResponse)
+import Payload.Status as Status
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 
@@ -15,7 +16,7 @@ _header key res = do
   note ("No header with key '" <> key <> "'") $ Map.lookup key headers
 
 _status :: forall r. RawResponse r -> Either String Int
-_status res = Right $ (unwrap res).status
+_status res = Right $ (unwrap res).status.code
 
 _body :: forall r. RawResponse r -> Either String (ResponseBody r)
 _body res = Right $ (unwrap res).body
@@ -25,7 +26,7 @@ tests = suite "Response" do
   suite "Responder" do
     suite "RawResponse" do
       test "leaves response untouched" do
-        let rawRes = RawResponse {status: 202, headers: Map.empty, body: StringBody "foo"}
+        let rawRes = RawResponse {status: Status.accepted, headers: Map.empty, body: StringBody "foo"}
         res <- mkResponse rawRes
         Assert.equal (Right rawRes) res
     suite "string" do
