@@ -7,6 +7,7 @@ import Data.Either (Either(..))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map (Map)
 import Data.Map as Map
+import Data.Newtype (class Newtype)
 import Data.Traversable (sequence_)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -34,8 +35,23 @@ newtype RawResponse r = RawResponse
   , headers :: Map String String
   , body :: ResponseBody r }
 
+derive instance newtypeRawResponse :: Newtype (RawResponse r) _
+instance eqRawResponse :: Eq (RawResponse r) where
+  eq (RawResponse r1) (RawResponse r2) = r1 == r2
+instance showRawResponse :: Show (RawResponse r) where
+  show (RawResponse r) = show r
+
 data ResponseBody r = StringBody String | StreamBody (Stream.Readable r) | EmptyBody
 
+instance eqResponseBody :: Eq (ResponseBody r) where
+  eq (StringBody s1) (StringBody s2) = s1 == s2
+  eq EmptyBody EmptyBody = true
+  eq (StreamBody _) (StreamBody _) = false
+  eq _ _ = false
+instance showResponseBody :: Show (ResponseBody r) where
+  show (StringBody s) = s
+  show EmptyBody = "EmptyBody"
+  show (StreamBody _) = "StreamBody"
 
 class Responder r where
   mkResponse :: forall s. r -> Aff (Either ServerError (RawResponse s))

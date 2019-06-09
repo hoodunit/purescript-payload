@@ -12,6 +12,7 @@ import Payload.Test.Cookies as CookiesTest
 import Payload.Test.GuardParsing as GuardParsingTest
 import Payload.Test.Guards as GuardsTest
 import Payload.Test.Params as ParamsTest
+import Payload.Test.Response as ResponseTest
 import Payload.Test.Routing as RoutingTest
 import Payload.Test.Trie as TrieTest
 import Payload.Test.UrlParsing as UrlParsingTest
@@ -26,6 +27,7 @@ tests = do
   TrieTest.tests
   GuardParsingTest.tests
   CookiesTest.tests
+  ResponseTest.tests
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do
