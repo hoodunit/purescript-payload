@@ -23,7 +23,7 @@ import Payload.Data as Data
 import Payload.GuardParsing (GNil, GuardTypes(..), Guards(..), kind GuardList)
 import Payload.GuardParsing as GuardParsing
 import Payload.Guards (class RunGuards, runGuards)
-import Payload.Response (class IsRespondable, internalError, sendError, sendInternalError, sendResponse)
+import Payload.Response (class Responder, internalError, sendError, sendInternalError, sendResponse)
 import Payload.Route (DefaultRequest, Route(..))
 import Payload.Trie (Trie)
 import Payload.Trie as Trie
@@ -223,7 +223,7 @@ instance handleablePostRoute ::
            , guards :: Guards guardNames
            | r }
        , IsSymbol path
-       , IsRespondable res
+       , Responder res
        , Symbol.Append basePath path fullPath
        , FromData body
 
@@ -270,7 +270,7 @@ instance handleableGetRoute ::
            , guards :: Guards guardNames
            | r }
        , IsSymbol path
-       , IsRespondable res
+       , Responder res
        , Symbol.Append basePath path fullPath
 
        , Row.Union baseParams params fullParams

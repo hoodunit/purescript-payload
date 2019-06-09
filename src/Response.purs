@@ -37,13 +37,13 @@ newtype RawResponse r = RawResponse
 data ResponseBody r = StringBody String | StreamBody (Stream.Readable r) | EmptyBody
 
 
-class IsRespondable r where
+class Responder r where
   mkResponse :: forall s. r -> Aff (Either ServerError (RawResponse s))
 
-instance isRespondableRawResponse :: IsRespondable (RawResponse a) where
+instance responderRawResponse :: Responder (RawResponse a) where
   mkResponse r = pure $ Right (unsafeCoerce r)
 
-instance isRespondableResponse :: (IsRespondable a) => IsRespondable (Response a) where
+instance responderResponse :: (Responder a) => Responder (Response a) where
   mkResponse (Response {status, headers, response}) = do
     innerRespResult <- mkResponse response
     case innerRespResult of
@@ -51,32 +51,32 @@ instance isRespondableResponse :: (IsRespondable a) => IsRespondable (Response a
         pure $ Right $ RawResponse $ { status, headers, body: innerResp.body }
       Left err -> pure $ Left err
 
-instance isRespondableString :: IsRespondable String where
+instance responderString :: Responder String where
   mkResponse s = pure $ Right $ RawResponse
                    { status: 200
                    , headers: Map.fromFoldable [ Tuple "Content-Type" "text/plain" ]
                    , body: StringBody s }
 
-instance isRespondableStream ::
+instance responderStream ::
   ( TypeEquals (Stream.Stream r) (Stream.Stream (read :: Stream.Read | r'))
   , IsResponseBody (Stream.Stream r)
-  ) => IsRespondable (Stream.Stream r) where
+  ) => Responder (Stream.Stream r) where
   mkResponse s = pure $ Right $ RawResponse
                    { status: 200
                    , headers: Map.fromFoldable [ Tuple "Content-Type" "text/plain" ]
                    , body: StreamBody (unsafeCoerce s) }
 
-instance isRespondableRecord ::
+instance responderRecord ::
   ( SimpleJson.WriteForeign (Record r)
-  ) => IsRespondable (Record r) where
+  ) => Responder (Record r) where
   mkResponse record = pure $ Right $ RawResponse
                         { status: 200
                         , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
                         , body: StringBody (SimpleJson.writeJSON record) }
 
-instance isRespondableArray ::
+instance responderArray ::
   ( SimpleJson.WriteForeign (Array r)
-  ) => IsRespondable (Array r) where
+  ) => Responder (Array r) where
   mkResponse arr = pure $ Right $ RawResponse
                      { status: 200
                      , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
@@ -104,7 +104,7 @@ sendInternalError res err = liftEffect $ sendError res (internalError (show err)
 internalError :: String -> ErrorResponse
 internalError body = { status: 500, statusMsg: "Internal error", body }
 
-sendResponse :: forall res. IsRespondable res => HTTP.Response -> res -> Effect Unit
+sendResponse :: forall res. Responder res => HTTP.Response -> res -> Effect Unit
 sendResponse res handlerRes = Aff.runAff_ onComplete do
   serverResult <- mkResponse handlerRes
   liftEffect $ case serverResult of

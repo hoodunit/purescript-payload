@@ -14,13 +14,13 @@ import Node.FS.Aff as FsAff
 import Node.FS.Stats as Stats
 import Node.FS.Stream (createReadStream)
 import Payload.MimeTypes as MimeTypes
-import Payload.Response (class IsRespondable, RawResponse(..), ResponseBody(..))
+import Payload.Response (class Responder, RawResponse(..), ResponseBody(..))
 import Simple.JSON (class ReadForeign)
 import Unsafe.Coerce (unsafeCoerce)
 
 data File = File String
 
-instance isRespondableFile :: IsRespondable File where
+instance responderFile :: Responder File where
   mkResponse (File path) = do
     stat <- FsAff.stat path
     let mimeType = fromMaybe "text/plain" $ MimeTypes.pathToMimeType path
