@@ -15,7 +15,8 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
-import Payload.Response (class IsRespondable, ResponseBody(..), readResponse)
+import Payload.FromResponse (class ReadResponse, readResponse)
+import Payload.Response (class IsRespondable, ResponseBody(..))
 import Payload.Route (DefaultRequest, Route(..))
 import Payload.Routing (API(..), DefaultParentRoute, Routes(..))
 import Payload.Url (class EncodeUrl)
@@ -174,7 +175,7 @@ instance clientQueryableGetRoute ::
        , Symbol.Append basePath path fullPath
        , PayloadUrl.EncodeUrl fullPath fullParams
        , Row.Union baseParams params fullParams
-       , IsRespondable res
+       , ReadResponse res
        , SimpleJson.ReadForeign res
        )
     => ClientQueryable (Route "GET" path (Record route)) basePath baseParams (Record fullParams) res where
@@ -204,7 +205,7 @@ else instance clientQueryablePostRoute ::
        , IsSymbol path
        , Symbol.Append basePath path fullPath
        , PayloadUrl.EncodeUrl fullPath fullParams
-       , IsRespondable res
+       , ReadResponse res
        , SimpleJson.WriteForeign body
        , SimpleJson.ReadForeign res
        )
@@ -232,7 +233,7 @@ encodeUrl opts pathProxy params =
   where
     path = PayloadUrl.encodeUrl pathProxy params
 
-decodeResponse :: forall res. IsRespondable res =>
+decodeResponse :: forall res. ReadResponse res =>
                  (AX.Response (Either AX.ResponseFormatError String)) -> Either String res
 decodeResponse res | res.status /= StatusCode 200 = Left $ "Received HTTP " <> show res.status <> "\n" <>
   (either AX.printResponseFormatError identity res.body)

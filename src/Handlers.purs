@@ -34,12 +34,10 @@ instance isRespondableFile :: IsRespondable File where
                    ]
                  , body: StreamBody (unsafeCoerce fileStream) }
        else pure (Left "Could not read file")
-  readResponse _ = Left "Unimplemented: cannot read files with client"
 
 instance readForeignFile :: ReadForeign File where
   readImpl f = File <$> readString f
   
-
 fileSize :: Stats.Stats -> Int
 fileSize (Stats.Stats statsObj) = Int.round statsObj.size
 

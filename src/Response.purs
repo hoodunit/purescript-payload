@@ -34,14 +34,11 @@ data ResponseBody r = StringBody String | StreamBody (Stream.Readable r) | Empty
 
 class IsRespondable r where
   mkResponse :: forall s. r -> Aff (Either ServerError (Response s))
-  readResponse :: forall s. ResponseBody s -> Either String r
 
 instance isRespondableString :: IsRespondable String where
   mkResponse s = pure $ Right { status: 200
                        , headers: Map.fromFoldable [ Tuple "Content-Type" "text/plain" ]
                        , body: StringBody s }
-  readResponse (StringBody s) = Right s
-  readResponse _ = Left "Invalid response type, expected String"
 
 instance isRespondableStream ::
   ( TypeEquals (Stream.Stream r) (Stream.Stream (read :: Stream.Read | r'))
@@ -50,30 +47,22 @@ instance isRespondableStream ::
   mkResponse s = pure $ Right { status: 200
                        , headers: Map.fromFoldable [ Tuple "Content-Type" "text/plain" ]
                        , body: StreamBody (unsafeCoerce s) }
-  readResponse (StreamBody s) = Right (unsafeCoerce s)
-  readResponse _ = Left "Invalid response type, expected stream"
 
 instance isRespondableRecord ::
   ( SimpleJson.WriteForeign (Record r)
-  , SimpleJson.ReadForeign (Record r)
   ) => IsRespondable (Record r) where
   mkResponse record =
     pure $ Right { status: 200
           , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
           , body: StringBody (SimpleJson.writeJSON record) }
-  readResponse (StringBody s) = lmap show $ SimpleJson.readJSON s
-  readResponse _ = Left "Invalid response type, expected String"
 
 instance isRespondableArray ::
   ( SimpleJson.WriteForeign (Array r)
-  , SimpleJson.ReadForeign (Array r)
   ) => IsRespondable (Array r) where
   mkResponse arr =
     pure $ Right { status: 200
           , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
           , body: StringBody (SimpleJson.writeJSON arr) }
-  readResponse (StringBody s) = lmap show $ SimpleJson.readJSON s
-  readResponse _ = Left "Invalid response type, expected String"
 
 class IsResponseBody body where
   writeBody :: HTTP.Response -> body -> Effect Unit
