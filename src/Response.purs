@@ -24,6 +24,11 @@ import Unsafe.Coerce (unsafeCoerce)
 type HttpStatus = Int
 type ServerError = String
 
+newtype Response r = Response
+  { status :: HttpStatus
+  , headers :: Map String String
+  , response :: r }
+
 newtype RawResponse r = RawResponse
   { status :: HttpStatus
   , headers :: Map String String
@@ -37,6 +42,14 @@ class IsRespondable r where
 
 instance isRespondableRawResponse :: IsRespondable (RawResponse a) where
   mkResponse r = pure $ Right (unsafeCoerce r)
+
+instance isRespondableResponse :: (IsRespondable a) => IsRespondable (Response a) where
+  mkResponse (Response {status, headers, response}) = do
+    innerRespResult <- mkResponse response
+    case innerRespResult of
+      Right (RawResponse innerResp) -> do
+        pure $ Right $ RawResponse $ { status, headers, body: innerResp.body }
+      Left err -> pure $ Left err
 
 instance isRespondableString :: IsRespondable String where
   mkResponse s = pure $ Right $ RawResponse
