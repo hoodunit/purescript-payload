@@ -157,9 +157,10 @@ else instance failEmptyMulti ::
   ) => Match u ">" xs "" "multi" rest
 else instance endAtMulti ::
   Match u ">" "" acc "multi" (UrlCons (Multi acc) UrlNil)
-else instance failContinueAfterMulti ::
-  ( ParseError u xs "multi tag must be the final component of a path" doc
-  ) => Match u ">" xs acc "multi" UrlNil
+else instance queryAfterMulti ::
+  ( Symbol.Cons y ys xs
+  , Match u y ys "" "end" rest
+  ) => Match u ">" xs acc "multi" (UrlCons (Multi acc) UrlNil)
 else instance failMissingMultiEnd ::
   ( ParseError u "" "multi tag was not closed" doc
   ) => Match u x "" acc "multi" rest
@@ -206,6 +207,10 @@ else instance contKey ::
 else instance failEndKeyWithoutStart ::
   ( ParseError u xs "saw closing '>' for key without opening '<'" doc
   ) => Match u ">" xs acc mode rest
+
+-- Query ----------------------------------------------------
+else instance endLitAtQuery :: Match u "?" xs acc "lit" (UrlCons (Lit acc) UrlNil)
+else instance endAtQuery :: Match u "?" xs "" any UrlNil
 
 -- Literals ----------------------------------------------------
 else instance startLit ::

@@ -62,3 +62,6 @@ tests = suite "URL type-level parsing" do
     -- decode (SProxy :: _ "/<..re<st>") Nil
     -- decode (SProxy :: _ "/<..re<a>st>") Nil
     -- decode (SProxy :: _ "/<..rea>st>") Nil
+
+  suite "query" do
+    decode (SProxy :: _ "/<..rest>?foo") (Multi "rest" : Nil)
