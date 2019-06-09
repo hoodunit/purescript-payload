@@ -24,7 +24,7 @@ import Unsafe.Coerce (unsafeCoerce)
 type HttpStatus = Int
 type ServerError = String
 
-newtype Response r = Response
+newtype RawResponse r = RawResponse
   { status :: HttpStatus
   , headers :: Map String String
   , body :: ResponseBody r }
@@ -33,13 +33,13 @@ data ResponseBody r = StringBody String | StreamBody (Stream.Readable r) | Empty
 
 
 class IsRespondable r where
-  mkResponse :: forall s. r -> Aff (Either ServerError (Response s))
+  mkResponse :: forall s. r -> Aff (Either ServerError (RawResponse s))
 
-instance isRespondableResponse :: IsRespondable (Response a) where
+instance isRespondableRawResponse :: IsRespondable (RawResponse a) where
   mkResponse r = pure $ Right (unsafeCoerce r)
 
 instance isRespondableString :: IsRespondable String where
-  mkResponse s = pure $ Right $ Response
+  mkResponse s = pure $ Right $ RawResponse
                    { status: 200
                    , headers: Map.fromFoldable [ Tuple "Content-Type" "text/plain" ]
                    , body: StringBody s }
@@ -48,7 +48,7 @@ instance isRespondableStream ::
   ( TypeEquals (Stream.Stream r) (Stream.Stream (read :: Stream.Read | r'))
   , IsResponseBody (Stream.Stream r)
   ) => IsRespondable (Stream.Stream r) where
-  mkResponse s = pure $ Right $ Response
+  mkResponse s = pure $ Right $ RawResponse
                    { status: 200
                    , headers: Map.fromFoldable [ Tuple "Content-Type" "text/plain" ]
                    , body: StreamBody (unsafeCoerce s) }
@@ -56,7 +56,7 @@ instance isRespondableStream ::
 instance isRespondableRecord ::
   ( SimpleJson.WriteForeign (Record r)
   ) => IsRespondable (Record r) where
-  mkResponse record = pure $ Right $ Response
+  mkResponse record = pure $ Right $ RawResponse
                         { status: 200
                         , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
                         , body: StringBody (SimpleJson.writeJSON record) }
@@ -64,7 +64,7 @@ instance isRespondableRecord ::
 instance isRespondableArray ::
   ( SimpleJson.WriteForeign (Array r)
   ) => IsRespondable (Array r) where
-  mkResponse arr = pure $ Right $ Response
+  mkResponse arr = pure $ Right $ RawResponse
                      { status: 200
                      , headers: Map.fromFoldable [ Tuple "Content-Type" "application/json" ]
                      , body: StringBody (SimpleJson.writeJSON arr) }
@@ -95,18 +95,18 @@ sendResponse :: forall res. IsRespondable res => HTTP.Response -> res -> Effect 
 sendResponse res handlerRes = Aff.runAff_ onComplete do
   serverResult <- mkResponse handlerRes
   liftEffect $ case serverResult of
-    Right (Response serverRes@{ body: StringBody str }) -> do
+    Right (RawResponse serverRes@{ body: StringBody str }) -> do
       let contentLengthHdr = Tuple "Content-Length" (show $ Encoding.byteLength str UTF8)
       let defaultHeaders = Map.fromFoldable [ contentLengthHdr ]
       let headers = serverRes.headers <> defaultHeaders
       HTTP.setStatusCode res serverRes.status
       writeHeaders res headers
       writeBody res str
-    Right (Response serverRes@{ body: StreamBody stream }) -> do
+    Right (RawResponse serverRes@{ body: StreamBody stream }) -> do
       HTTP.setStatusCode res serverRes.status
       writeHeaders res serverRes.headers
       writeBody res stream
-    Right (Response serverRes@{ body: EmptyBody }) -> do
+    Right (RawResponse serverRes@{ body: EmptyBody }) -> do
       HTTP.setStatusCode res serverRes.status
       writeHeaders res serverRes.headers
     Left errors -> sendError res { status: 500, statusMsg: "Error encoding response", body: (show errors) }

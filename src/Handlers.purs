@@ -14,7 +14,7 @@ import Node.FS.Aff as FsAff
 import Node.FS.Stats as Stats
 import Node.FS.Stream (createReadStream)
 import Payload.MimeTypes as MimeTypes
-import Payload.Response (class IsRespondable, Response(..), ResponseBody(..))
+import Payload.Response (class IsRespondable, RawResponse(..), ResponseBody(..))
 import Simple.JSON (class ReadForeign)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -27,7 +27,7 @@ instance isRespondableFile :: IsRespondable File where
     if Stats.isFile stat
        then do
          fileStream <- liftEffect $ createReadStream path
-         pure $ Right $ Response
+         pure $ Right $ RawResponse
            { status: 200
            , headers: Map.fromFoldable
                [ Tuple "Content-Type" mimeType
