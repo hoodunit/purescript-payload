@@ -5,7 +5,7 @@ import Prelude
 import Data.Either (Either(..), note)
 import Data.Map as Map
 import Data.Newtype (unwrap)
-import Payload.Response (Json(..), RawResponse(..), ResponseBody(..), mkResponse)
+import Payload.Response (Json(..), RawResponse(..), ResponseBody(..), Status(..), mkResponse)
 import Payload.Status as Status
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
@@ -39,6 +39,10 @@ tests = suite "Response" do
       test "leaves body untouched" do
         res <- mkResponse "foo"
         Assert.equal (Right (StringBody "foo")) (res >>= _body)
+    suite "Status" do
+      test "overrides status of inner response" do
+        res <- mkResponse (Status Status.internalServerError "foo")
+        Assert.equal (Right Status.internalServerError.code) (res >>= _status)
     suite "record (treated as JSON)" do
       test "sets status to 200" do
         res <- mkResponse { id: 1 }

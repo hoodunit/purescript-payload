@@ -24,6 +24,7 @@ import Type.Equality (class TypeEquals, to)
 import Unsafe.Coerce (unsafeCoerce)
 
 newtype Json a = Json a
+data Status a = Status HttpStatus a
 
 type ServerError = String
 
@@ -83,6 +84,14 @@ instance responderStream ::
                    { status: Status.ok
                    , headers: Map.fromFoldable [ Tuple "Content-Type" "text/plain" ]
                    , body: StreamBody (unsafeCoerce s) }
+
+instance responderStatus :: Responder a => Responder (Status a) where
+  mkResponse (Status status inner) = do
+    innerResult <- mkResponse inner
+    case innerResult of
+      Right (RawResponse { headers, body }) -> do
+        pure $ Right $ RawResponse {status, headers, body}
+      Left err -> pure $ Left err
 
 instance responderRecord ::
   ( SimpleJson.WriteForeign (Record r)
