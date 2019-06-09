@@ -3,10 +3,11 @@ module Payload.Test.Response where
 import Prelude
 
 import Data.Either (Either(..), note)
+import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
-import Payload.Response (Json(..), RawResponse(..), ResponseBody(..), Status(..), mkResponse)
+import Payload.Response (Empty(..), Json(..), RawResponse(..), ResponseBody(..), Status(..), mkResponse)
 import Payload.Status as Status
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
@@ -15,6 +16,9 @@ _header :: forall r. String -> RawResponse r -> Either String String
 _header key res = do
   let headers = (unwrap res).headers
   note ("No header with key '" <> key <> "'") $ Map.lookup key headers
+
+_headers :: forall r. RawResponse r -> Either String (Map String String)
+_headers res = Right $ (unwrap res).headers
 
 _status :: forall r. RawResponse r -> Either String Int
 _status res = Right $ (unwrap res).status.code
@@ -93,3 +97,10 @@ tests = suite "Response" do
       test "returns inner response body if response is Just" do
         res <- mkResponse (Just {foo: 1})
         Assert.equal (Right (StringBody "{\"foo\":1}")) (res >>= _body)
+    suite "Empty" do
+      test "returns 200" do
+        res <- mkResponse Empty
+        Assert.equal (Right 200) (res >>= _status)
+      test "returns no headers" do
+        res <- mkResponse Empty
+        Assert.equal (Right Map.empty) (res >>= _headers)

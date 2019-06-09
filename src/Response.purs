@@ -27,6 +27,7 @@ import Unsafe.Coerce (unsafeCoerce)
 
 newtype Json a = Json a
 data Status a = Status HttpStatus a
+data Empty = Empty
 
 type ServerError = String
 
@@ -124,6 +125,12 @@ instance responderMaybe :: Responder a => Responder (Maybe a) where
   mkResponse Nothing =
     pure $ Right $ RawResponse { status: Status.notFound, headers: Map.empty, body: EmptyBody }
   mkResponse (Just r) = mkResponse r
+
+instance responderEmpty :: Responder Empty where
+  mkResponse s = pure $ Right $ RawResponse
+                   { status: Status.ok
+                   , headers: Map.empty
+                   , body: EmptyBody }
 
 class IsResponseBody body where
   writeBody :: HTTP.Response -> body -> Effect Unit
