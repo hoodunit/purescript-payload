@@ -146,10 +146,6 @@ else instance failNoSlashAtStart ::
   ( Symbol.Cons x xs fullUrl
   , ParseError u xs "Missing / - path segments must start with / and be separated by /" doc
   ) => Match u x xs acc "start" rest
-else instance skipInBetweenSlash ::
-  ( Symbol.Cons y ys xs
-  , Match u y ys "" "any" rest
-  ) => Match u "/" xs acc "any" rest
 
 -- Multi ----------------------------------------------------
 else instance failEmptyMulti ::
@@ -213,6 +209,10 @@ else instance endLitAtQuery :: Match u "?" xs acc "lit" (UrlCons (Lit acc) UrlNi
 else instance endAtQuery :: Match u "?" xs "" any UrlNil
 
 -- Literals ----------------------------------------------------
+else instance emptyLit ::
+  ( Symbol.Cons y ys xs
+  , Match u y ys "" "any" rest
+  ) => Match u "/" xs "" "any" (UrlCons (Lit "") rest)
 else instance startLit ::
   ( Symbol.Cons y ys xs
   , Match u y ys x "lit" rest

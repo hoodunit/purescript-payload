@@ -26,6 +26,7 @@ tests = suite "URL type-level parsing" do
     decode (SProxy :: _ "/users/profile/") (Lit "users" : Lit "profile" : Nil)
     decode (SProxy :: _ "/users/profile/all")
            (Lit "users" : Lit "profile" : Lit "all" : Nil)
+    decode (SProxy :: _ "/users//profile") (Lit "users" : Lit "" : Lit "profile" : Nil)
 
     -- Should fail at compile time:
     -- decode (SProxy :: _ "") Nil
