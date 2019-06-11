@@ -130,8 +130,6 @@ withCookies cookies req = req { withCredentials = true, headers = req.headers <>
   where
     cookieHeader = case Cookies.cookieHeader cookies of
                      Tuple field value -> RequestHeader field value
-
-foreign import setCookieHack :: String -> String -> Effect Unit
   
 -- tests :: forall routesSpec client r
 --          . ClientApi routesSpec client
