@@ -9,7 +9,7 @@ import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String as String
 import Payload.Params (class FromParam, class FromSegments, class ToParam, fromParam, fromSegments, toParam)
-import Payload.UrlParsing (class ParseUrl, FProxy(..), Key, Lit, Multi, UrlCons, UrlNil, kind UrlList)
+import Payload.UrlParsing (class ParseUrl, UrlListProxy(..), Key, Lit, Multi, UrlCons, UrlNil, kind UrlList)
 import Prim.Row as Row
 import Record as Record
 import Type.Equality (class TypeEquals, to)
@@ -23,10 +23,10 @@ instance encodeUrlRecord ::
   ( ParseUrl urlStr urlParts
   , WriteUrl urlParts params
   ) => EncodeUrl urlStr params where
-  encodeUrl _ params = writeUrl (FProxy :: FProxy urlParts) params
+  encodeUrl _ params = writeUrl (UrlListProxy :: _ urlParts) params
 
 class WriteUrl (urlParts :: UrlList) params where
-  writeUrl :: FProxy urlParts -> Record params -> String
+  writeUrl :: UrlListProxy urlParts -> Record params -> String
 
 instance writeUrlUrlNil :: WriteUrl UrlNil params where
   writeUrl _ params = ""
@@ -40,7 +40,7 @@ instance writeUrlConsKey ::
   writeUrl _ params = "/" <> encodedParam <> restOfUrl
     where
       encodedParam = toParam (Record.get (SProxy :: SProxy key) params)
-      restOfUrl = writeUrl (FProxy :: FProxy rest) params
+      restOfUrl = writeUrl (UrlListProxy :: _ rest) params
 
 instance writeUrlConsLit ::
   ( IsSymbol lit
@@ -49,7 +49,7 @@ instance writeUrlConsLit ::
   writeUrl _ params = "/" <> litStr <> restOfUrl
     where
       litStr = reflectSymbol (SProxy :: SProxy lit)
-      restOfUrl = writeUrl (FProxy :: FProxy rest) params
+      restOfUrl = writeUrl (UrlListProxy :: _ rest) params
 
 instance writeUrlConsMulti ::
   ( IsSymbol multiKey
@@ -66,10 +66,10 @@ instance decodeUrlSymbol ::
   ( ParseUrl urlStr urlParts
   , MatchUrl urlParts params () params
   ) => DecodeUrl urlStr params where
-  decodeUrl _ paramsType path = match (FProxy :: FProxy urlParts) paramsType {} path
+  decodeUrl _ paramsType path = match (UrlListProxy :: _ urlParts) paramsType {} path
 
 class MatchUrl (urlParts :: UrlList) params from to | urlParts -> from to where
-  match :: FProxy urlParts -> Proxy (Record params) -> Record from -> List String -> Either String (Record to)
+  match :: UrlListProxy urlParts -> Proxy (Record params) -> Record from -> List String -> Either String (Record to)
 
 instance matchUrlUrlNil ::
   ( TypeEquals (Record from) (Record to)
@@ -99,7 +99,7 @@ instance matchUrlConsKey ::
   match _ paramsType params (segment : rest) = case fromParam segment of
     Left errors -> Left $ show errors
     Right decoded -> let newParams = Record.insert (SProxy :: SProxy key) decoded params in
-      match (FProxy :: FProxy rest) paramsType newParams rest
+      match (UrlListProxy :: _ rest) paramsType newParams rest
 
 instance matchUrlConsLit ::
   ( IsSymbol lit
@@ -107,4 +107,4 @@ instance matchUrlConsLit ::
   ) => MatchUrl (UrlCons (Lit lit) rest) params from to where
   match _ paramsType params Nil = Left "Decoding error at literal"
   match _ paramsType params (segment : rest) =
-    match (FProxy :: FProxy rest) paramsType params rest
+    match (UrlListProxy :: _ rest) paramsType params rest

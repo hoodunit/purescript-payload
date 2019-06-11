@@ -15,10 +15,10 @@ debugShowUrl :: forall urlStr urlParts
   .  ParseUrl urlStr urlParts
   => ShowUrl urlParts
   => SProxy urlStr -> String
-debugShowUrl _ = showUrl (FProxy :: FProxy urlParts) ""
+debugShowUrl _ = showUrl (UrlListProxy :: _ urlParts) ""
 
 class ShowUrl (urlParts :: UrlList) where
-  showUrl :: FProxy urlParts -> String -> String
+  showUrl :: UrlListProxy urlParts -> String -> String
 
 instance showUrlUrlNil :: ShowUrl UrlNil where
   showUrl _ acc = acc
@@ -27,7 +27,7 @@ instance showUrlConsKey ::
   ( IsSymbol key
   , ShowUrl rest
   ) => ShowUrl (UrlCons (Key key) rest) where
-  showUrl _ str = showUrl (FProxy :: FProxy rest) (str <> "(key: " <> keyStr <> ")")
+  showUrl _ str = showUrl (UrlListProxy :: _ rest) (str <> "(key: " <> keyStr <> ")")
     where
       keyStr = reflectSymbol (SProxy :: SProxy key)
 
@@ -35,7 +35,7 @@ instance showUrlConsMulti ::
   ( IsSymbol multi
   , ShowUrl rest
   ) => ShowUrl (UrlCons (Multi multi) rest) where
-  showUrl _ str = showUrl (FProxy :: FProxy rest) (str <> "(multi: " <> multiStr <> ")")
+  showUrl _ str = showUrl (UrlListProxy :: _ rest) (str <> "(multi: " <> multiStr <> ")")
     where
       multiStr = reflectSymbol (SProxy :: SProxy multi)
 
@@ -43,7 +43,7 @@ instance showUrlConsLit ::
   ( IsSymbol lit
   , ShowUrl rest
   ) => ShowUrl (UrlCons (Lit lit) rest) where
-  showUrl _ str = showUrl (FProxy :: FProxy rest) (str <> "(lit: " <> litStr <> ")")
+  showUrl _ str = showUrl (UrlListProxy :: _ rest) (str <> "(lit: " <> litStr <> ")")
     where
       litStr = reflectSymbol (SProxy :: SProxy lit)
 
@@ -79,10 +79,10 @@ asSegments :: forall urlStr urlParts
   .  ParseUrl urlStr urlParts
   => ToSegments urlParts
   => SProxy urlStr -> List Segment
-asSegments _ = List.reverse $ toSegments (FProxy :: FProxy urlParts) Nil
+asSegments _ = List.reverse $ toSegments (UrlListProxy :: _ urlParts) Nil
 
 class ToSegments (urlParts :: UrlList) where
-  toSegments :: FProxy urlParts -> List Segment -> List Segment
+  toSegments :: UrlListProxy urlParts -> List Segment -> List Segment
 
 instance toSegmentsUrlNil :: ToSegments UrlNil where
   toSegments _ acc = acc
@@ -91,7 +91,7 @@ instance toSegmentsConsKey ::
   ( IsSymbol key
   , ToSegments rest
   ) => ToSegments (UrlCons (Key key) rest) where
-  toSegments _ segs = toSegments (FProxy :: FProxy rest) (Key keyStr : segs)
+  toSegments _ segs = toSegments (UrlListProxy :: _ rest) (Key keyStr : segs)
     where
       keyStr = reflectSymbol (SProxy :: SProxy key)
 
@@ -99,7 +99,7 @@ instance toSegmentsConsMulti ::
   ( IsSymbol multi
   , ToSegments rest
   ) => ToSegments (UrlCons (Multi multi) rest) where
-  toSegments _ segs = toSegments (FProxy :: FProxy rest) (Multi multiStr : segs)
+  toSegments _ segs = toSegments (UrlListProxy :: _ rest) (Multi multiStr : segs)
     where
       multiStr = reflectSymbol (SProxy :: SProxy multi)
 
@@ -107,13 +107,13 @@ instance toSegmentsConsLit ::
   ( IsSymbol lit
   , ToSegments rest
   ) => ToSegments (UrlCons (Lit lit) rest) where
-  toSegments _ segs = toSegments (FProxy :: FProxy rest) (Lit litStr : segs)
+  toSegments _ segs = toSegments (UrlListProxy :: _ rest) (Lit litStr : segs)
     where
       litStr = reflectSymbol (SProxy :: SProxy lit)
 
 --------------------------------------------------------------------------------
 
-data FProxy (f :: UrlList) = FProxy
+data UrlListProxy (f :: UrlList) = UrlListProxy
 
 foreign import kind UrlList
 foreign import data UrlNil :: UrlList
