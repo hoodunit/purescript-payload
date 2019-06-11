@@ -46,10 +46,10 @@ asSegments :: forall urlStr urlParts
   .  ParseQuery urlStr urlParts
   => ToSegments urlParts
   => SProxy urlStr -> List Segment
-asSegments _ = List.reverse $ toSegments (FProxy :: FProxy urlParts) Nil
+asSegments _ = List.reverse $ toSegments (QueryListProxy :: _ urlParts) Nil
 
 class ToSegments (urlParts :: QueryList) where
-  toSegments :: FProxy urlParts -> List Segment -> List Segment
+  toSegments :: QueryListProxy urlParts -> List Segment -> List Segment
 
 instance toSegmentsQueryNil :: ToSegments QueryNil where
   toSegments _ acc = acc
@@ -59,7 +59,7 @@ instance toSegmentsConsKey ::
   , IsSymbol key
   , ToSegments rest
   ) => ToSegments (QueryCons (Key name key) rest) where
-  toSegments _ segs = toSegments (FProxy :: FProxy rest) (Key nameStr keyStr : segs)
+  toSegments _ segs = toSegments (QueryListProxy :: _ rest) (Key nameStr keyStr : segs)
     where
       nameStr = reflectSymbol (SProxy :: SProxy name)
       keyStr = reflectSymbol (SProxy :: SProxy key)
@@ -68,7 +68,7 @@ instance toSegmentsConsMulti ::
   ( IsSymbol multi
   , ToSegments rest
   ) => ToSegments (QueryCons (Multi multi) rest) where
-  toSegments _ segs = toSegments (FProxy :: FProxy rest) (Multi multiStr : segs)
+  toSegments _ segs = toSegments (QueryListProxy :: _ rest) (Multi multiStr : segs)
     where
       multiStr = reflectSymbol (SProxy :: SProxy multi)
 
@@ -76,13 +76,13 @@ instance toSegmentsConsLit ::
   ( IsSymbol lit
   , ToSegments rest
   ) => ToSegments (QueryCons (Lit lit) rest) where
-  toSegments _ segs = toSegments (FProxy :: FProxy rest) (Lit litStr : segs)
+  toSegments _ segs = toSegments (QueryListProxy :: _ rest) (Lit litStr : segs)
     where
       litStr = reflectSymbol (SProxy :: SProxy lit)
 
 --------------------------------------------------------------------------------
 
-data FProxy (f :: QueryList) = FProxy
+data QueryListProxy (f :: QueryList) = QueryListProxy
 
 foreign import kind QueryList
 foreign import data QueryNil :: QueryList
