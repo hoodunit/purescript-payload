@@ -238,7 +238,13 @@ instance handleablePostRoute ::
        , GuardParsing.Append baseGuards guardNames fullGuards
        , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
        )
-    => Handleable (Route "POST" path (Record route)) (Record payload -> Aff res) basePath baseParams baseGuards guardsSpec (Record allGuards) where
+    => Handleable (Route "POST" path (Record route))
+                  (Record payload -> Aff res)
+                  basePath
+                  baseParams
+                  baseGuards
+                  guardsSpec
+                  (Record allGuards) where
   handle _ _ _ _ route handler allGuards Nil req res = do
     liftEffect $ sendError res (internalError "No path segments passed to handler")
     pure Failure
@@ -283,7 +289,13 @@ instance handleableGetRoute ::
        , GuardParsing.Append baseGuards guardNames fullGuards
        , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
        )
-    => Handleable (Route "GET" path (Record route)) (Record payload -> Aff res) basePath baseParams baseGuards guardsSpec (Record allGuards) where
+    => Handleable (Route "GET" path (Record route))
+                  (Record payload -> Aff res)
+                  basePath
+                  baseParams
+                  baseGuards
+                  guardsSpec
+                  (Record allGuards) where
   handle _ _ _ _ route handler allGuards Nil req res = do
     liftEffect $ sendError res (internalError "No path segments passed to handler")
     pure Failure
