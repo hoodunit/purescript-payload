@@ -10,7 +10,7 @@
   "devDependencies": {
     "bower": "1.8.8",
     "pulp": "13.0.0",
-    "purescript": "0.13.0",
+    "purescript": "^0.13.3",
     "purescript-psa": "0.7.3",
     "rimraf": "2.5.4",
     "xhr2": "git:ssh://git@github.com:hoodunit/node-xhr2.git#6f65a6557706842b7284191f15ec9afaba270909"
