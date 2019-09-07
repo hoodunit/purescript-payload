@@ -34,12 +34,10 @@ testLookup :: forall urlStr urlParts
   => ToSegments urlParts
   => IsSymbol urlStr
   => SProxy urlStr -> String -> List String
-testLookup route reqPath = Trie.lookup pathSegments routingTrie
+testLookup route reqPath = Trie.lookup (pathToSegments reqPath) routingTrie
   where
-    pathSegments = pathToSegments reqPath
     routeSegments = asSegments (SProxy :: SProxy urlStr)
     routingTrie = Trie.fromFoldable_ [ Tuple routeSegments "handler" ]
-    lookedUp = Trie.lookup pathSegments routingTrie
 
 tests :: TestSuite
 tests = do
@@ -77,5 +75,6 @@ tests = do
     noMatch (SProxy :: SProxy "/users/<id>/<..rest>") "/users/asdf" 
 
     -- URLs should be URL-decoded before reaching the matcher
-    match (SProxy :: SProxy "/hello there") "/hello there" 
-    noMatch (SProxy :: SProxy "/hello there") "/hello%20there" 
+    suite "URL decoding" do
+      match (SProxy :: SProxy "/hello there") "/hello there" 
+      noMatch (SProxy :: SProxy "/hello there") "/hello%20there" 
