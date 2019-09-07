@@ -22,46 +22,6 @@ newtype AdminUser = AdminUser
   , name :: String }
 
 api :: API {
-  guards ::
-    { adminUser :: AdminUser
-    , request :: HTTP.Request },
-  routes ::
-    { getUsers :: GET "/users"
-        { guards :: Guards ("adminUser" : "request" : Nil)
-        , response :: Array User }
-    , getUsersNonAdmin :: GET "/<name>"
-        { params :: { name :: String }
-        , response :: Array User }
-    , getUser :: GET "/users/<id>"
-        { params :: { id :: Int }
-        , response :: User }
-    , getUsersProfiles :: GET "/users/profiles"
-        { response :: Array String }
-    , createUser :: POST "/users/new"
-        { body :: User
-        , guards :: Guards ("adminUser" : Nil)
-        , response :: User }
-    , getUserPost :: GET "/users/<id>/posts/<postId>"
-        { params :: { id :: Int, postId :: String }
-        , response :: Post }
-    , indexPage :: GET "/"
-        { response :: File }
-    , files :: GET "/<..path>"
-        { params :: { path :: List String }
-        , response :: File }
-    , getPage :: GET "/pages/<id>"
-        { params :: { id :: String }
-        , response :: String }
-    , getPageMetadata :: GET "/pages/<id>/metadata"
-        { params :: { id :: String }
-        , response :: String }
-    , getHello :: GET "/hello there"
-        { response :: String }
-  }
-}
-api = API
-
-apiStructured :: API {
   guards :: {
      adminUser :: AdminUser,
      request :: HTTP.Request
@@ -117,4 +77,4 @@ apiStructured :: API {
     }
   }
 }
-apiStructured = API
+api = API

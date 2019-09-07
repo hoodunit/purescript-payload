@@ -15,7 +15,7 @@ import Effect.Console (log)
 import Node.HTTP as HTTP
 import Payload.Client.Client (mkClient)
 import Payload.Client.Client as Client
-import Payload.Examples.Basic.Api (AdminUser(..), Post, User, apiStructured)
+import Payload.Examples.Basic.Api (AdminUser(..), Post, User, api)
 import Payload.Guards (GuardFn)
 import Payload.Guards as Guards
 import Payload.Handlers (File(..))
@@ -71,7 +71,7 @@ assertResp req expected = do
 tests :: TestSuite
 tests = do
   suite "Example: basic" do
-    let client = mkClient Client.defaultOpts apiStructured
+    let client = mkClient Client.defaultOpts api
     test "GET /users (with secret)" $ assertResp
       (client.adminUsers.getUsers (\r -> r { url = r.url <> "?secret" }) {})
       [{ id: 1, name: "John Admin" }, { id: 1, name: "John Doe" }]
@@ -135,4 +135,4 @@ runTests = do
         getHello
   }
   let guards = { adminUser: getAdminUser, request: Guards.request }
-  withServer apiStructured { handlers, guards } (runTestWith Fancy.runTest tests)
+  withServer api { handlers, guards } (runTestWith Fancy.runTest tests)
