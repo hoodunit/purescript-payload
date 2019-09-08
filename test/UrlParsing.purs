@@ -17,7 +17,7 @@ decode path decoded = test ("'" <> (reflectSymbol path) <> "'") do
   Assert.equal decoded (asSegments path)
 
 tests :: TestSuite
-tests = suite "URL type-level parsing" do
+tests = suite "URL spec type-level parsing" do
   suite "literals" do
     decode (SProxy :: _ "/") Nil
     decode (SProxy :: _ "/users")(Lit "users" : Nil)

@@ -15,10 +15,15 @@ type POST = Route "POST"
 type PUT = Route "PUT"
 type DELETE = Route "DELETE"
 
-type DefaultRequest = ( params :: {}, body :: {}, guards :: Guards GNil )
+type DefaultRequest =
+  ( params :: {}
+  , query :: {}
+  , body :: {}
+  , guards :: Guards GNil )
 defaultSpec :: Record DefaultRequest
 defaultSpec =
   { params: {}
+  , query: {}
   , body: {}
   , guards: Guards :: _ GNil
   }

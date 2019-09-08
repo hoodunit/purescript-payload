@@ -69,12 +69,12 @@ getUser req = do
 request :: String -> Aff (Either String String)
 request path = do
   res <- AX.get ResponseFormat.string ("http://localhost:3000/" <> path)
+  let showingError = lmap ResponseFormat.printResponseFormatError
   if res.status == StatusCode 200
     then do
-      let showingError = lmap ResponseFormat.printResponseFormatError
       pure $ showingError res.body
     else
-      pure (Left $ "Received status code " <> show res.status)
+      pure (Left $ "Received status code " <> show res.status <> "\n Body:\n" <> show (showingError res.body))
 
 assertResp :: forall a err. Show err => Eq a => Show a => Aff (Either err a) -> a -> Test
 assertResp req expected = do

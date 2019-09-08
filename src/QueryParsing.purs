@@ -158,6 +158,13 @@ else instance contMulti ::
   ) => Match u x xs acc "" "multi" rest
 
 -- Keys --------------------------------------------------------
+else instance keyStart ::
+  ( Symbol.Cons y ys xs
+  , Match u y ys acc "" "key" rest
+  ) => Match u "<" xs acc "" "keyStart" rest
+else instance failedKeyStart ::
+  ( ParseError u xs "query param key name must start with opening '<', e.g. limit=<limit>" doc
+  ) => Match u x xs acc "" "keyStart" rest
 else instance switchKeyToMulti ::
   ( Symbol.Cons "." ys xs
   , Symbol.Cons z zs ys
@@ -185,6 +192,11 @@ else instance contKey ::
   , Symbol.Append acc2 x newAcc2
   , Match u y ys acc newAcc2 "key" rest
   ) => Match u x xs acc acc2 "key" rest
+
+else instance switchToKey ::
+  ( Symbol.Cons y ys xs
+  , Match u y ys acc "" "keyStart" rest
+  ) => Match u "=" xs acc "" "lit" rest
 else instance failEndKeyWithoutStart ::
   ( ParseError u xs "saw closing '>' for key without opening '<'" doc
   ) => Match u ">" xs acc acc2 mode rest
@@ -197,11 +209,14 @@ else instance startLit ::
   ( Symbol.Cons y ys xs
   , Match u y ys x "" "lit" rest
   ) => Match u x xs "" "" "any" rest
-else instance switchToKey ::
-  ( Symbol.Cons "<" ys xs
-  , Symbol.Cons z zs ys
-  , Match u z zs acc "" "key" rest
-  ) => Match u "=" xs acc "" "lit" rest
+-- else instance switchToKey ::
+--   ( Symbol.Cons "<" ys xs
+--   , Symbol.Cons z zs ys
+--   , Match u z zs acc "" "key" rest
+--   ) => Match u "=" xs acc "" "lit" rest
+-- else instance failedSwitchToKey ::
+--   ( ParseError u xs "invalid query parameter syntax - keys should be of form name=<keyName>" doc
+--   ) => Match u "=" xs acc "" "lit" rest
 else instance splitLit ::
   ( Symbol.Cons y ys xs
   , Match u y ys "" "" "any" rest

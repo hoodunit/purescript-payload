@@ -7,7 +7,7 @@ import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.List (List(..), (:))
 import Data.List as List
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (wrap)
 import Data.Nullable (toMaybe)
 import Data.String as String
@@ -24,6 +24,7 @@ import Effect.Exception (Error)
 import Node.HTTP as HTTP
 import Node.URL (URL)
 import Node.URL as Url
+import Payload.Request (RequestUrl)
 import Payload.Response (sendError)
 import Payload.Routing (class Routable, API(..), HandlerEntry, Outcome(..), mkRouter)
 import Payload.Status as Status
@@ -125,14 +126,15 @@ handleRequest :: Config -> Trie HandlerEntry -> HTTP.Request -> HTTP.Response ->
 handleRequest { logger } routerTrie req res = do
   let url = Url.parse (HTTP.requestURL req)
   logger.logDebug (HTTP.requestMethod req <> " " <> show (url.path))
-  case requestSegments req of
-    Right reqSegments -> runHandlers routerTrie reqSegments req res
-    Left err -> sendError res { status: Status.internalServerError,
-                                body: "Path could not be decoded: " <> show err }
+  case requestUrl req of
+    Right reqUrl -> runHandlers routerTrie reqUrl req res
+    Left err -> do
+      sendError res { status: Status.internalServerError
+                    , body: "Path could not be decoded: " <> show err }
 
-runHandlers :: Trie HandlerEntry -> List String -> HTTP.Request -> HTTP.Response -> Effect Unit
-runHandlers routerTrie pathSegments req res = do
-  let (matches :: List HandlerEntry) = Trie.lookup pathSegments routerTrie
+runHandlers :: Trie HandlerEntry -> RequestUrl -> HTTP.Request -> HTTP.Response -> Effect Unit
+runHandlers routerTrie reqUrl req res = do
+  let (matches :: List HandlerEntry) = Trie.lookup (reqUrl.method : reqUrl.path) routerTrie
   Aff.launchAff_ $ do
     outcome <- handleNext (Forward "Dummy forward") matches
     case outcome of
@@ -143,25 +145,29 @@ runHandlers routerTrie pathSegments req res = do
     handleNext Success _ = pure Success
     handleNext Failure _ = pure Failure
     handleNext (Forward msg) ({ handler } : rest) =
-      handler pathSegments req res >>= \o -> handleNext o rest
+      handler reqUrl req res >>= \o -> handleNext o rest
     handleNext _ Nil = pure (Forward "No match could handle")
   
-requestSegments :: HTTP.Request -> Either String (List String)
-requestSegments req = do
-  path <- requestPath req
-  let segments = pathToSegments path
-  let decodedSegments = unsafeDecodeURIComponent <$> segments
-  pure (method : decodedSegments)
+requestUrl :: HTTP.Request -> Either String RequestUrl
+requestUrl req = do
+  let parsedUrl = Url.parse (HTTP.requestURL req)
+  path <- urlPath parsedUrl
+  let query = fromMaybe "" $ toMaybe parsedUrl.query
+  let pathSegments = urlToSegments path
+  pure { method, path: pathSegments, query }
   where
     method = HTTP.requestMethod req
-  
-requestPath :: HTTP.Request -> Either String String
-requestPath = HTTP.requestURL >>> Url.parse >>> urlPath
 
 urlPath :: URL -> Either String String
 urlPath url = url.pathname
   # toMaybe
   # maybe (Left "No path") Right
+
+urlQuery :: URL -> Maybe String
+urlQuery url = url.query # toMaybe
+
+urlToSegments :: String -> List String
+urlToSegments = pathToSegments >>> (map unsafeDecodeURIComponent)
 
 pathToSegments :: String -> List String
 pathToSegments = dropEmpty <<< List.fromFoldable <<< String.split (wrap "/")

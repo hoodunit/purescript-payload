@@ -6,7 +6,7 @@ import Control.Monad.Except (ExceptT(..), except, lift, runExceptT, withExceptT)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(Nothing, Just))
+import Data.Maybe (Maybe(Nothing, Just), maybe)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -23,6 +23,9 @@ import Payload.Data as Data
 import Payload.GuardParsing (GNil, GuardTypes(..), Guards(..), kind GuardList)
 import Payload.GuardParsing as GuardParsing
 import Payload.Guards (class RunGuards, runGuards)
+import Payload.Query (decodeQuery)
+import Payload.Query as PayloadQuery
+import Payload.Request (RequestUrl)
 import Payload.Response (class Responder, internalError, sendError, sendInternalError, sendResponse)
 import Payload.Route (DefaultRequest, Route(..))
 import Payload.Trie (Trie)
@@ -42,7 +45,7 @@ import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 type HandlerEntry =
-  { handler :: List String -> HTTP.Request -> HTTP.Response -> Aff Outcome
+  { handler :: RequestUrl -> HTTP.Request -> HTTP.Response -> Aff Outcome
   , route :: List Segment }
 
 data Outcome = Success | Failure | Forward String
@@ -55,7 +58,9 @@ defaultParent :: Record DefaultParentRoute
 defaultParent =
   { params: {}, guards: Guards :: _ GNil }
 
-class Routable routesSpec guardsSpec handlers guards | routesSpec guardsSpec -> handlers, guardsSpec -> guards where
+class Routable routesSpec guardsSpec handlers guards |
+  routesSpec guardsSpec -> handlers,
+  guardsSpec -> guards where
   mkRouter :: API { routes :: routesSpec, guards :: guardsSpec }
               -> { handlers :: handlers, guards :: guards }
               -> Either String (Trie HandlerEntry)
@@ -210,7 +215,7 @@ class Handleable
             -> route
             -> handler
             -> guards
-            -> List String
+            -> RequestUrl
             -> HTTP.Request
             -> HTTP.Response
             -> Aff Outcome
@@ -227,8 +232,10 @@ instance handleablePostRoute ::
        , Symbol.Append basePath path fullPath
        , FromData body
 
-       , Row.Union baseParams params fullParams
-       , PayloadUrl.DecodeUrl fullPath fullParams
+       , Row.Union baseParams params fullUrlParams
+       , Row.Union fullUrlParams query fullParams
+       , PayloadUrl.DecodeUrl fullPath fullUrlParams
+       , PayloadQuery.DecodeQuery fullPath query
        , ParseUrl fullPath urlParts
        , ToSegments urlParts
 
@@ -245,19 +252,18 @@ instance handleablePostRoute ::
                   baseGuards
                   guardsSpec
                   (Record allGuards) where
-  handle _ _ _ _ route handler allGuards Nil req res = do
-    liftEffect $ sendError res (internalError "No path segments passed to handler")
-    pure Failure
-  handle _ _ _ _ route handler allGuards (method : pathSegments) req res =
-    (either identity identity) <$> runExceptT (runHandler)
+  handle _ _ _ _ route handler allGuards { method, path, query } req res =
+    (either identity identity) <$> runExceptT runHandler
 
     where
       runHandler :: ExceptT Outcome Aff Outcome
       runHandler = do
-        params <- except $ lmap Forward $ decodePath pathSegments
+        params <- except $ lmap Forward $ decodePath path
+        decodedQuery <- except $ lmap Forward $ decodeQuery_ query
         bodyStr <- lift $ readBody req
         body <- except $ lmap Forward (Data.fromData bodyStr :: Either String body)
-        let (payload' :: Record payload') = Record.union params { body }
+        let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
+        let (payload' :: Record payload') = Record.union fullParams { body }
         guards <- withExceptT Forward $ ExceptT $
           runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
         let (payload :: Record payload) = Record.union payload' guards
@@ -265,22 +271,27 @@ instance handleablePostRoute ::
         liftEffect $ sendResponse res handlerResp
         pure Success
 
-      decodePath :: List String -> Either String (Record fullParams)
-      -- We need the base path here
-      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullParams))
+      decodePath :: List String -> Either String (Record fullUrlParams)
+      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
+
+      decodeQuery_ :: String -> Either String (Record query)
+      decodeQuery_ = PayloadQuery.decodeQuery (SProxy :: _ fullPath) (Proxy :: _ (Record query))
 
 instance handleableGetRoute ::
        ( TypeEquals (Record route)
            { response :: res
            , params :: Record params
+           , query :: Record query
            , guards :: Guards guardNames
            | r }
        , IsSymbol path
        , Responder res
        , Symbol.Append basePath path fullPath
 
-       , Row.Union baseParams params fullParams
-       , PayloadUrl.DecodeUrl fullPath fullParams
+       , Row.Union baseParams params fullUrlParams
+       , Row.Union fullUrlParams query fullParams
+       , PayloadUrl.DecodeUrl fullPath fullUrlParams
+       , PayloadQuery.DecodeQuery fullPath query
        , ParseUrl fullPath urlParts
        , ToSegments urlParts
 
@@ -296,25 +307,27 @@ instance handleableGetRoute ::
                   baseGuards
                   guardsSpec
                   (Record allGuards) where
-  handle _ _ _ _ route handler allGuards Nil req res = do
-    liftEffect $ sendError res (internalError "No path segments passed to handler")
-    pure Failure
-  handle _ _ _ _ route handler allGuards (method : pathSegments) req res =
-    (either identity identity) <$> runExceptT (runHandler)
+  handle _ _ _ _ route handler allGuards { method, path, query } req res =
+    (either identity identity) <$> runExceptT runHandler
 
     where
       runHandler :: ExceptT Outcome Aff Outcome
       runHandler = do
-        params <- except $ lmap Forward $ decodePath pathSegments
+        params <- except $ lmap Forward $ decodePath path
+        decodedQuery <- except $ lmap Forward $ decodeQuery_ query
         guards <- withExceptT Forward $ ExceptT $
           runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
-        let (payload :: Record payload) = from (Record.union params guards)
+        let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
+        let (payload :: Record payload) = from (Record.union fullParams guards)
         handlerResp <- lift $ handler payload
         liftEffect $ sendResponse res handlerResp
         pure Success
 
-      decodePath :: List String -> Either String (Record fullParams)
-      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullParams))
+      decodePath :: List String -> Either String (Record fullUrlParams)
+      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
+
+      decodeQuery_ :: String -> Either String (Record query)
+      decodeQuery_ = PayloadQuery.decodeQuery (SProxy :: _ fullPath) (Proxy :: _ (Record query))
 
 readBody :: HTTP.Request -> Aff String
 readBody req = Aff.makeAff (readBody_ req)
