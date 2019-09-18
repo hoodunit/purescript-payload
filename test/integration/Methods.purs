@@ -8,9 +8,12 @@ import Affjax.RequestBody as RequestBody
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Data.Either (Either(..), either)
+import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
-import Payload.Route (GET, POST)
+import Payload.Response (Status(..))
+import Payload.Route (GET, POST, HEAD)
 import Payload.Routing (API(..))
+import Payload.Status as Status
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
@@ -30,14 +33,29 @@ api :: API
     , fooPost :: POST "/foo"
       { body :: { message :: String }
       , response :: String }
-      }}
+    , fooHead :: HEAD "/fooHead"
+      { response :: Unit }
+    , bar :: GET "/bar"
+      { response :: String }
+    , barHead :: HEAD "/bar"
+      { response :: Status Unit }
+    }}
 api = API
 
 foo :: {} -> Aff String
 foo _ = pure "Response"
 
+bar :: {} -> Aff String
+bar _ = pure "bar"
+
+barHead :: {} -> Aff (Status Unit)
+barHead _ = pure (Status Status.accepted unit)
+
 fooPost :: { body :: { message :: String } } -> Aff String
 fooPost { body: { message } } = pure $ "Received '" <> message <> "'"
+
+fooHead :: {} -> Aff Unit
+fooHead _ = pure unit
 
 type ApiResponse =
   { status :: Int
@@ -55,6 +73,17 @@ postRequest host path reqBody = do
   let body = either ResponseFormat.printResponseFormatError identity res.body
   pure { status: unwrapStatusCode res.status, body }
 
+headRequest :: String -> String -> Aff ApiResponse
+headRequest host path = do
+  let req = AX.defaultRequest
+        { method = Left HEAD
+        , responseFormat = ResponseFormat.string
+        , url = host <> "/" <> path
+        }
+  res <- AX.request req
+  let body = either ResponseFormat.printResponseFormatError identity res.body
+  pure { status: unwrapStatusCode res.status, body }
+
 unwrapStatusCode :: StatusCode -> Int
 unwrapStatusCode (StatusCode c) = c
 
@@ -69,6 +98,7 @@ tests :: TestSuite
 tests = do
   let get = getRequest "http://localhost:3000"
   let post = postRequest "http://localhost:3000"
+  let head = headRequest "http://localhost:3000"
   suite "Methods" do
     suite "GET" do
       test "GET succeeds" $ do
@@ -78,9 +108,18 @@ tests = do
       test "POST succeeds" $ do
         res <- post "/foo" "{ \"message\": \"Hi there\" }"
         Assert.equal { status: 200, body: "Received 'Hi there'" } res
+    suite "HEAD" do
+      test "HEAD succeeds" $ do
+        res <- head "/fooHead"
+        Assert.equal { status: 200, body: "" } res
+      test "HEAD is accepted where GET route is defined" $ do
+        res <- head "/foo"
+        Assert.equal { status: 200, body: "" } res
+      test "user-specified HEAD route overrides default GET HEAD route" $ do
+        res <- head "/bar"
+        Assert.equal { status: 202, body: "" } res
 
 runTests :: Aff Unit
 runTests = do
-  let guards = {}
-  let handlers = { foo, fooPost }
-  withServer api { guards, handlers } (runTestWith Fancy.runTest tests)
+  let handlers = { foo, fooPost, fooHead, bar, barHead }
+  withServer api { guards: {}, handlers } (runTestWith Fancy.runTest tests)

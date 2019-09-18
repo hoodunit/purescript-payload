@@ -13,18 +13,18 @@ import Payload.Status as Status
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 
-_header :: forall r. String -> RawResponse r -> Either String String
+_header :: String -> RawResponse -> Either String String
 _header key res = do
   let headers = (unwrap res).headers
   note ("No header with key '" <> key <> "'") $ Map.lookup key headers
 
-_headers :: forall r. RawResponse r -> Either String (Map String String)
+_headers :: RawResponse -> Either String (Map String String)
 _headers res = Right $ (unwrap res).headers
 
-_status :: forall r. RawResponse r -> Either String Int
+_status :: RawResponse -> Either String Int
 _status res = Right $ (unwrap res).status.code
 
-_body :: forall r. RawResponse r -> Either String (ResponseBody r)
+_body :: RawResponse -> Either String ResponseBody
 _body res = Right $ (unwrap res).body
 
 tests :: TestSuite

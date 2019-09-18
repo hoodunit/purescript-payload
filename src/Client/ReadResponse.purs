@@ -11,7 +11,7 @@ import Type.Equality (class TypeEquals)
 import Unsafe.Coerce (unsafeCoerce)
 
 class ReadResponse r where
-  readResponse :: forall s. ResponseBody s -> Either String r
+  readResponse :: ResponseBody -> Either String r
 
 instance readResponseString :: ReadResponse String where
   readResponse (StringBody s) = Right s

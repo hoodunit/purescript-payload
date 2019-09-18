@@ -25,6 +25,15 @@ import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals, to)
 import Unsafe.Coerce (unsafeCoerce)
 
+foreign import endResponse_ :: HTTP.Response -> Unit -> (Unit -> Effect Unit) -> Effect Unit
+
+data UnsafeStream
+
+endResponse :: HTTP.Response -> Aff Unit
+endResponse res = Aff.makeAff \cb -> do
+  endResponse_ res unit (\_ -> cb (Right unit))
+  pure Aff.nonCanceler
+
 newtype Json a = Json a
 data Status a = Status HttpStatus a
 data Empty = Empty
@@ -37,33 +46,33 @@ newtype Response r = Response
   , headers :: Map String String
   , response :: r }
 
-newtype RawResponse r = RawResponse
+newtype RawResponse = RawResponse
   { status :: HttpStatus
   , headers :: Map String String
-  , body :: ResponseBody r }
+  , body :: ResponseBody }
 
-derive instance newtypeRawResponse :: Newtype (RawResponse r) _
-instance eqRawResponse :: Eq (RawResponse r) where
+derive instance newtypeRawResponse :: Newtype RawResponse _
+instance eqRawResponse :: Eq RawResponse where
   eq (RawResponse r1) (RawResponse r2) = r1 == r2
-instance showRawResponse :: Show (RawResponse r) where
+instance showRawResponse :: Show RawResponse where
   show (RawResponse r) = show r
 
-data ResponseBody r = StringBody String | StreamBody (Stream.Readable r) | EmptyBody
+data ResponseBody = StringBody String | StreamBody UnsafeStream | EmptyBody
 
-instance eqResponseBody :: Eq (ResponseBody r) where
+instance eqResponseBody :: Eq ResponseBody where
   eq (StringBody s1) (StringBody s2) = s1 == s2
   eq EmptyBody EmptyBody = true
   eq (StreamBody _) (StreamBody _) = false
   eq _ _ = false
-instance showResponseBody :: Show (ResponseBody r) where
+instance showResponseBody :: Show ResponseBody where
   show (StringBody s) = s
   show EmptyBody = "EmptyBody"
   show (StreamBody _) = "StreamBody"
 
 class Responder r where
-  mkResponse :: forall s. r -> Aff (Either ServerError (RawResponse s))
+  mkResponse :: r -> Aff (Either ServerError RawResponse)
 
-instance responderRawResponse :: Responder (RawResponse a) where
+instance responderRawResponse :: Responder RawResponse where
   mkResponse r = pure $ Right (unsafeCoerce r)
 
 instance responderResponse :: (Responder a) => Responder (Response a) where
@@ -133,6 +142,12 @@ instance responderEmpty :: Responder Empty where
                    , headers: Map.empty
                    , body: EmptyBody }
 
+instance responderUnit :: Responder Unit where
+  mkResponse _ = pure $ Right $ RawResponse
+                   { status: Status.ok
+                   , headers: Map.empty
+                   , body: EmptyBody }
+
 instance responderSetHeaders :: Responder a => Responder (SetHeaders a) where
   mkResponse (SetHeaders newHeaders inner) = do
     innerResult <- mkResponse inner
@@ -153,11 +168,9 @@ instance isResponseBodyString :: IsResponseBody String where
     _ <- Stream.writeString out UTF8 str (pure unit)
     Stream.end out (pure unit)
 
-instance isResponseBodyStream ::
-  ( TypeEquals (Stream.Stream r) (Stream.Stream (read :: Stream.Read | r'))
-  ) => IsResponseBody (Stream.Stream r) where
+instance isResponseBodyStream :: IsResponseBody UnsafeStream where
   writeBody res stream = do
-    _ <- Stream.pipe (to stream) (HTTP.responseAsStream res)
+    _ <- Stream.pipe (to (unsafeCoerce stream)) (HTTP.responseAsStream res)
     pure unit
 
 sendInternalError :: forall err. Show err => HTTP.Response -> err -> Aff Unit
@@ -166,9 +179,8 @@ sendInternalError res err = liftEffect $ sendError res (internalError (show err)
 internalError :: String -> ErrorResponse
 internalError body = { status: Status.internalServerError, body }
 
-sendResponse :: forall res. Responder res => HTTP.Response -> res -> Effect Unit
-sendResponse res handlerRes = Aff.runAff_ onComplete do
-  serverResult <- mkResponse handlerRes
+sendResponse :: forall s. HTTP.Response -> Either ServerError RawResponse -> Effect Unit
+sendResponse res serverResult = Aff.runAff_ onComplete do
   liftEffect $ case serverResult of
     Right (RawResponse serverRes@{ body: StringBody str }) -> do
       let contentLengthHdr = Tuple "Content-Length" (show $ Encoding.byteLength str UTF8)
@@ -187,6 +199,7 @@ sendResponse res handlerRes = Aff.runAff_ onComplete do
       HTTP.setStatusCode res serverRes.status.code
       HTTP.setStatusMessage res serverRes.status.reason
       writeHeaders res serverRes.headers
+      Aff.launchAff_ $ endResponse res
     Left errors -> sendError res { status: Status.internalServerError, body: (show errors) }
   where
     onComplete (Left errors) = sendError res (internalError (show errors))

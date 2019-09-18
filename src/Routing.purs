@@ -7,7 +7,9 @@ import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(Nothing, Just), maybe)
+import Data.Newtype (over)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -26,7 +28,7 @@ import Payload.Guards (class RunGuards, runGuards)
 import Payload.Query (decodeQuery)
 import Payload.Query as PayloadQuery
 import Payload.Request (RequestUrl)
-import Payload.Response (class Responder, internalError, sendError, sendInternalError, sendResponse)
+import Payload.Response (class Responder, Empty(..), RawResponse(..), ResponseBody(..), ServerError, internalError, mkResponse, sendError, sendInternalError, sendResponse)
 import Payload.Route (DefaultRequest, Route(..))
 import Payload.Trie (Trie)
 import Payload.Trie as Trie
@@ -47,6 +49,10 @@ import Unsafe.Coerce (unsafeCoerce)
 type HandlerEntry =
   { handler :: RequestUrl -> HTTP.Request -> HTTP.Response -> Aff Outcome
   , route :: List Segment }
+
+type Handler = RequestUrl -> HTTP.Request -> HTTP.Response -> Aff Outcome
+
+type HandlerResult = Either ServerError RawResponse
 
 data Outcome = Success | Failure | Forward String
 
@@ -127,14 +133,46 @@ instance routableListCons ::
                     where
   mkRouterList _ basePath baseParams baseGuards guardsSpec handlers guards trie = do
     newTrie <- lmap wrapError $ Trie.insert { route: routeSegments, handler } routeSegments trie
-    mkRouterList (RLProxy :: RLProxy remRoutes) basePath baseParams baseGuards guardsSpec handlers guards newTrie
+    let trieWithRestResult = mkRouterList (RLProxy :: RLProxy remRoutes)
+          basePath
+          baseParams
+          baseGuards
+          guardsSpec
+          handlers
+          guards
+          newTrie
+    case Tuple method trieWithRestResult of
+      Tuple "GET" (Right trieWithRest) ->
+        either (const $ Right trieWithRest) Right $ Trie.insert { route: headRouteSegments, handler: headHandler } headRouteSegments trieWithRest
+      _ -> trieWithRestResult
     where
       method = reflectSymbol (SProxy :: SProxy method)
       routeSegments = (Lit method : Nil) <> UrlParsing.asSegments (SProxy :: SProxy fullPath)
+      headRouteSegments = (Lit "HEAD" : Nil) <> UrlParsing.asSegments (SProxy :: SProxy fullPath)
+
       payloadHandler = (get (SProxy :: SProxy routeName) handlers)
       route = Route :: Route method path (Record specWithDefaults)
       guardTypes = (GuardTypes :: GuardTypes (Record guardsSpec))
-      handler = handle (SProxy :: _ basePath) baseParams baseGuards guardTypes route payloadHandler guards
+      methodHandler = handle (SProxy :: _ basePath) baseParams baseGuards guardTypes route payloadHandler guards
+
+      handler :: Handler
+      handler url req res = do
+        methodHandlerResult <- methodHandler url req res
+        case methodHandlerResult of
+          Right rawResponse -> do
+            liftEffect $ sendResponse res rawResponse
+            pure Success
+          Left outcome -> pure outcome
+
+      headHandler :: Handler
+      headHandler url req res = do
+        methodHandlerResult <- methodHandler url req res
+        case methodHandlerResult of
+          Right rawResponse -> do
+            let emptyBodyResp = (\(RawResponse r) -> RawResponse (r { body = EmptyBody })) <$> rawResponse
+            liftEffect $ sendResponse res emptyBodyResp
+            pure Success
+          Left outcome -> pure outcome
 
       wrapError :: String -> String
       wrapError e = "Could not insert route for path '" <>
@@ -218,7 +256,7 @@ class Handleable
             -> RequestUrl
             -> HTTP.Request
             -> HTTP.Response
-            -> Aff Outcome
+            -> Aff (Either Outcome HandlerResult)
 
 instance handleablePostRoute ::
        ( TypeEquals (Record route)
@@ -253,10 +291,10 @@ instance handleablePostRoute ::
                   guardsSpec
                   (Record allGuards) where
   handle _ _ _ _ route handler allGuards { method, path, query } req res =
-    (either identity identity) <$> runExceptT runHandler
+    runExceptT runHandler
 
     where
-      runHandler :: ExceptT Outcome Aff Outcome
+      runHandler :: ExceptT Outcome Aff HandlerResult
       runHandler = do
         params <- except $ lmap Forward $ decodePath path
         decodedQuery <- except $ lmap Forward $ decodeQuery_ query
@@ -268,8 +306,8 @@ instance handleablePostRoute ::
           runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
         let (payload :: Record payload) = Record.union payload' guards
         handlerResp <- lift $ handler payload
-        liftEffect $ sendResponse res handlerResp
-        pure Success
+        rawResp <- lift $ mkResponse handlerResp
+        pure rawResp
 
       decodePath :: List String -> Either String (Record fullUrlParams)
       decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
@@ -308,10 +346,10 @@ instance handleableGetRoute ::
                   guardsSpec
                   (Record allGuards) where
   handle _ _ _ _ route handler allGuards { method, path, query } req res =
-    (either identity identity) <$> runExceptT runHandler
+    runExceptT runHandler
 
     where
-      runHandler :: ExceptT Outcome Aff Outcome
+      runHandler :: ExceptT Outcome Aff HandlerResult
       runHandler = do
         params <- except $ lmap Forward $ decodePath path
         decodedQuery <- except $ lmap Forward $ decodeQuery_ query
@@ -320,8 +358,60 @@ instance handleableGetRoute ::
         let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
         let (payload :: Record payload) = from (Record.union fullParams guards)
         handlerResp <- lift $ handler payload
-        liftEffect $ sendResponse res handlerResp
-        pure Success
+        rawResp <- lift $ mkResponse handlerResp
+        pure rawResp
+
+      decodePath :: List String -> Either String (Record fullUrlParams)
+      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
+
+      decodeQuery_ :: String -> Either String (Record query)
+      decodeQuery_ = PayloadQuery.decodeQuery (SProxy :: _ fullPath) (Proxy :: _ (Record query))
+
+instance handleableHeadRoute ::
+       ( TypeEquals (Record route)
+           { response :: res
+           , params :: Record params
+           , query :: Record query
+           , guards :: Guards guardNames
+           | r }
+       , IsSymbol path
+       , Symbol.Append basePath path fullPath
+       , Responder res
+
+       , Row.Union baseParams params fullUrlParams
+       , Row.Union fullUrlParams query fullParams
+       , PayloadUrl.DecodeUrl fullPath fullUrlParams
+       , PayloadQuery.DecodeQuery fullPath query
+       , ParseUrl fullPath urlParts
+       , ToSegments urlParts
+
+       , Row.Union fullParams routeGuardSpec payload
+
+       , GuardParsing.Append baseGuards guardNames fullGuards
+       , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
+       )
+    => Handleable (Route "HEAD" path (Record route))
+                  (Record payload -> Aff res)
+                  basePath
+                  baseParams
+                  baseGuards
+                  guardsSpec
+                  (Record allGuards) where
+  handle _ _ _ _ route handler allGuards { method, path, query } req res =
+    runExceptT runHandler
+
+    where
+      runHandler :: ExceptT Outcome Aff HandlerResult
+      runHandler = do
+        params <- except $ lmap Forward $ decodePath path
+        decodedQuery <- except $ lmap Forward $ decodeQuery_ query
+        guards <- withExceptT Forward $ ExceptT $
+          runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
+        let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
+        let (payload :: Record payload) = from (Record.union fullParams guards)
+        handlerResp <- lift $ handler payload
+        rawResp <- lift $ mkResponse handlerResp
+        pure ((over RawResponse (_ { body = EmptyBody })) <$> rawResp)
 
       decodePath :: List String -> Either String (Record fullUrlParams)
       decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
