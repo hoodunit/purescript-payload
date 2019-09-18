@@ -11,7 +11,6 @@ import Payload.Examples.Movies.Main as MoviesExample
 import Payload.Test.Integration.Guards as GuardsTest
 import Payload.Test.Integration.Methods as MethodsTest
 import Payload.Test.Integration.QueryParams as QueryParamsTest
-import Payload.Test.Integration.Routing as RoutingTest
 import Payload.Test.Unit.Cookies as CookiesTest
 import Payload.Test.Unit.GuardParsing as GuardParsingTest
 import Payload.Test.Unit.Params as ParamsTest
@@ -33,7 +32,6 @@ tests = do
   GuardParsingTest.tests
   CookiesTest.tests
   ResponseTest.tests
-  RoutingTest.tests
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do
