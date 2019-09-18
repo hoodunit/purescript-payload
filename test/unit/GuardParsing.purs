@@ -1,4 +1,4 @@
-module Payload.Test.GuardParsing where
+module Payload.Test.Unit.GuardParsing where
 
 import Prelude
 

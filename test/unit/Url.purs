@@ -1,4 +1,4 @@
-module Payload.Test.Url where
+module Payload.Test.Unit.Url where
 
 import Prelude
 

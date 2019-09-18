@@ -1,4 +1,4 @@
-module Payload.Test.Routing where
+module Payload.Test.Integration.Routing where
 
 import Prelude
 

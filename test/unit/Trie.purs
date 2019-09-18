@@ -1,4 +1,4 @@
-module Payload.Test.Trie where
+module Payload.Test.Unit.Trie where
 
 import Prelude
 

@@ -1,4 +1,4 @@
-module Payload.Test.Params where
+module Payload.Test.Unit.Params where
 
 import Prelude
 
