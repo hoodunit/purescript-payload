@@ -1,4 +1,4 @@
-module Payload.Test.Integration.Query where
+module Payload.Test.Integration.QueryParams where
 
 import Prelude
 
@@ -75,7 +75,7 @@ tests :: TestSuite
 tests = do
   let get = getRequest "http://localhost:3000"
   let post = postRequest "http://localhost:3000"
-  suite "Query requests" do
+  suite "Query parameter requests" do
     suite "keys (foo=<myFoo>)" do
       test "GET /search?limit=3 succeeds" $ do
         res <- get "/search?limit=3"
@@ -92,7 +92,7 @@ tests = do
       test "POST /profile?id=3.0&foo=asdf fails" $ do
         res <- post "/profile?id=3.0&foo=asdf" ""
         Assert.equal { status: 404, body: "" } res
-  suite "Query decoding" do
+  suite "Query parameter decoding" do
     test "decoding int succeeds for valid int" do
       Assert.equal
         (Right {limit: 12})

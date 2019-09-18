@@ -9,7 +9,7 @@ import Payload.Examples.Basic.Main as BasicExample
 import Payload.Examples.Files.Main as FilesExample
 import Payload.Examples.Movies.Main as MoviesExample
 import Payload.Test.Integration.Guards as GuardsTest
-import Payload.Test.Integration.Query as QueryTest
+import Payload.Test.Integration.QueryParams as QueryParamsTest
 import Payload.Test.Integration.Routing as RoutingTest
 import Payload.Test.Unit.Cookies as CookiesTest
 import Payload.Test.Unit.GuardParsing as GuardParsingTest
@@ -38,7 +38,7 @@ main :: Effect Unit
 main = Aff.launchAff_ $ do
   liftEffect $ runTest tests
   GuardsTest.runTests
-  QueryTest.runTests
+  QueryParamsTest.runTests
   FilesExample.runTests
   BasicExample.runTests
   MoviesExample.runTests
