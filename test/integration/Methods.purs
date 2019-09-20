@@ -12,7 +12,7 @@ import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
 import Payload.Response (Status(..))
 import Payload.Route (GET, POST, HEAD)
-import Payload.Routing (API(..))
+import Payload.Routable (API(..))
 import Payload.Status as Status
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)

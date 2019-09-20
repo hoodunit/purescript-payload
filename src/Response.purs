@@ -7,7 +7,7 @@ import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype)
+import Data.Newtype (class Newtype, over)
 import Data.Traversable (sequence_)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -56,6 +56,9 @@ instance eqRawResponse :: Eq RawResponse where
   eq (RawResponse r1) (RawResponse r2) = r1 == r2
 instance showRawResponse :: Show RawResponse where
   show (RawResponse r) = show r
+
+setEmptyBody :: RawResponse -> RawResponse
+setEmptyBody = over RawResponse (_ { body = EmptyBody })
 
 data ResponseBody = StringBody String | StreamBody UnsafeStream | EmptyBody
 

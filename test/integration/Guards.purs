@@ -17,7 +17,7 @@ import Payload.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
 import Payload.Guards (GuardFn)
 import Payload.Handlers (File(..))
 import Payload.Route (GET, Route(..))
-import Payload.Routing (API(..))
+import Payload.Routable (API(..))
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert

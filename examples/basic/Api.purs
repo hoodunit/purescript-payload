@@ -6,7 +6,7 @@ import Node.HTTP as HTTP
 import Payload.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
 import Payload.Handlers (File)
 import Payload.Route (DELETE, GET, POST, Route(..))
-import Payload.Routing (API(..), Routes(..))
+import Payload.Routable (API(..), Routes(..))
 import Type.Proxy (Proxy(..))
 
 type User =

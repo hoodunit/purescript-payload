@@ -2,9 +2,7 @@ module Payload.Server where
 
 import Prelude
 
-import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (foldl)
 import Data.List (List(..), (:))
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -12,9 +10,6 @@ import Data.Newtype (wrap)
 import Data.Nullable (toMaybe)
 import Data.String as String
 import Data.Symbol (SProxy(..))
-import Data.Traversable (sequence, traverse)
-import Data.Tuple as Tuple
-import Debug.Trace as Debug
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -26,7 +21,7 @@ import Node.URL (URL)
 import Node.URL as Url
 import Payload.Request (RequestUrl)
 import Payload.Response (sendError)
-import Payload.Routing (class Routable, API(..), HandlerEntry, Outcome(..), mkRouter)
+import Payload.Routable (class Routable, API, HandlerEntry, Outcome(..), mkRouter)
 import Payload.Status as Status
 import Payload.Trie (Trie)
 import Payload.Trie as Trie

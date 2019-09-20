@@ -13,7 +13,7 @@ import Data.Symbol (SProxy(..))
 import Effect.Aff (Aff)
 import Payload.Query as Query
 import Payload.Route (GET, POST)
-import Payload.Routing (API(..))
+import Payload.Routable (API(..))
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert

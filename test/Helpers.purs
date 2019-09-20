@@ -7,7 +7,7 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Payload.Routing (class Routable, API(..))
+import Payload.Routable (class Routable, API(..))
 import Payload.Server as Payload
 import Test.Unit (Test, failure, success)
 import Test.Unit.Assert as Assert

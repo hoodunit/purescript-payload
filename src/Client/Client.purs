@@ -18,7 +18,7 @@ import Effect.Aff (Aff)
 import Payload.Client.FromResponse (class ReadResponse, readResponse)
 import Payload.Response (ResponseBody(..))
 import Payload.Route (DefaultRequest, Route(..))
-import Payload.Routing (API(..), DefaultParentRoute, Routes(..))
+import Payload.Routable (API(..), DefaultParentRoute, Routes(..))
 import Payload.Url (class EncodeUrl)
 import Payload.Url as PayloadUrl
 import Prim.Row (class Cons)
