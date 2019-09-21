@@ -10,16 +10,16 @@ import Affjax.StatusCode (StatusCode(..))
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
-import Payload.Response (Status(..))
-import Payload.Route (GET, POST, HEAD)
+import Payload.Response (Response(..))
+import Payload.Response as Response
 import Payload.Routable (API(..))
+import Payload.Route (GET, POST, HEAD)
 import Payload.Status as Status
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
 import Test.Unit.Main (runTestWith)
 import Test.Unit.Output.Fancy as Fancy
-import Type.Proxy (Proxy(..))
 
 newtype User = User
   { id :: Int
@@ -38,7 +38,7 @@ api :: API
     , bar :: GET "/bar"
       { response :: String }
     , barHead :: HEAD "/bar"
-      { response :: Status Unit }
+      { response :: Unit }
     }}
 api = API
 
@@ -48,8 +48,8 @@ foo _ = pure "Response"
 bar :: {} -> Aff String
 bar _ = pure "bar"
 
-barHead :: {} -> Aff (Status Unit)
-barHead _ = pure (Status Status.accepted unit)
+barHead :: {} -> Aff (Response Unit)
+barHead _ = pure (Response.status Status.accepted unit)
 
 fooPost :: { body :: { message :: String } } -> Aff String
 fooPost { body: { message } } = pure $ "Received '" <> message <> "'"

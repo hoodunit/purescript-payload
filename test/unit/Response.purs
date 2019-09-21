@@ -2,23 +2,33 @@ module Payload.Test.Unit.Response where
 
 import Prelude
 
+import Control.Monad.Except (runExceptT)
 import Data.Either (Either(..), note)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
-import Payload.Response (Empty(..), Json(..), RawResponse(..), ResponseBody(..), SetHeaders(..), Status(..), mkResponse)
+import Effect.Aff (Aff)
+import Payload.Headers (Headers(..))
+import Payload.Headers as Headers
+import Payload.Response (class EncodeResponse, Empty(..), Json(..), RawResponse(..), Response(..), ResponseBody(..), encodeResponse)
+import Payload.Response as Response
 import Payload.Status as Status
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 
-_header :: String -> RawResponse -> Either String String
-_header key res = do
-  let headers = (unwrap res).headers
-  note ("No header with key '" <> key <> "'") $ Map.lookup key headers
+ok_ :: forall a. a -> Response a
+ok_ = Response.status Status.ok
 
-_headers :: RawResponse -> Either String (Map String String)
+accepted_ :: forall a. a -> Response a
+accepted_ = Response.status Status.accepted
+
+_header :: String -> RawResponse -> Either String String
+_header key res =
+    note ("No header with key '" <> key <> "'") $ Headers.lookup key (unwrap res).headers
+
+_headers :: RawResponse -> Either String Headers
 _headers res = Right $ (unwrap res).headers
 
 _status :: RawResponse -> Either String Int
@@ -27,91 +37,103 @@ _status res = Right $ (unwrap res).status.code
 _body :: RawResponse -> Either String ResponseBody
 _body res = Right $ (unwrap res).body
 
+encodeOk :: forall a. EncodeResponse a => a -> Aff (Either String RawResponse)
+encodeOk = runExceptT <<< encodeResponse <<< ok_
+
+encode :: forall a. EncodeResponse a => Response a -> Aff (Either String RawResponse)
+encode = runExceptT <<< encodeResponse
+
 tests :: TestSuite
 tests = suite "Response" do
   suite "Responder" do
-    suite "RawResponse" do
-      test "leaves response untouched" do
-        let rawRes = RawResponse {status: Status.accepted, headers: Map.empty, body: StringBody "foo"}
-        res <- mkResponse rawRes
-        Assert.equal (Right rawRes) res
     suite "string" do
       test "sets status to 200" do
-        res <- mkResponse "foo"
+        res <- encodeOk "foo"
         Assert.equal (Right 200) (res >>= _status)
-      test "sets Content-Type to text/plain" do
-        res <- mkResponse "foo"
-        Assert.equal (Right "text/plain; charset=utf-8") (res >>= _header "Content-Type")
+      test "sets content-type to text/plain" do
+        res <- encodeOk "foo"
+        Assert.equal (Right "text/plain; charset=utf-8") (res >>= _header "content-type")
       test "leaves body untouched" do
-        res <- mkResponse "foo"
+        res <- encodeOk "foo"
         Assert.equal (Right (StringBody "foo")) (res >>= _body)
-    suite "Status" do
-      test "overrides status of inner response" do
-        res <- mkResponse (Status Status.internalServerError "foo")
-        Assert.equal (Right Status.internalServerError.code) (res >>= _status)
     suite "record (treated as JSON)" do
       test "sets status to 200" do
-        res <- mkResponse { id: 1 }
+        res <- encodeOk { id: 1 }
         Assert.equal (Right 200) (res >>= _status)
-      test "sets Content-Type to application/json" do
-        res <- mkResponse { id: 1 }
-        Assert.equal (Right "application/json") (res >>= _header "Content-Type")
+      test "sets content-type to application/json" do
+        res <- encodeOk { id: 1 }
+        Assert.equal (Right "application/json") (res >>= _header "content-type")
       test "encodes body" do
-        res <- mkResponse { id: 1 }
+        res <- encodeOk { id: 1 }
         Assert.equal (Right (StringBody "{\"id\":1}")) (res >>= _body)
     suite "array (treated as JSON)" do
       test "sets status to 200" do
-        res <- mkResponse [1, 2, 3]
+        res <- encodeOk [1, 2, 3]
         Assert.equal (Right 200) (res >>= _status)
-      test "sets Content-Type to application/json" do
-        res <- mkResponse [1, 2, 3]
-        Assert.equal (Right "application/json") (res >>= _header "Content-Type")
+      test "sets content-type to application/json" do
+        res <- encodeOk [1, 2, 3]
+        Assert.equal (Right "application/json") (res >>= _header "content-type")
       test "encodes body" do
-        res <- mkResponse [1, 2, 3]
+        res <- encodeOk [1, 2, 3]
         Assert.equal (Right (StringBody "[1,2,3]")) (res >>= _body)
     suite "Json" do
       test "sets status to 200" do
-        res <- mkResponse (Json [1, 2, 3])
+        res <- encodeOk (Json [1, 2, 3])
         Assert.equal (Right 200) (res >>= _status)
-      test "sets Content-Type to application/json" do
-        res <- mkResponse (Json [1, 2, 3])
-        Assert.equal (Right "application/json") (res >>= _header "Content-Type")
+      test "sets content-type to application/json" do
+        res <- encodeOk (Json [1, 2, 3])
+        Assert.equal (Right "application/json") (res >>= _header "content-type")
       test "encodes body as JSON" do
-        res <- mkResponse (Json [1, 2, 3])
+        res <- encodeOk (Json [1, 2, 3])
         Assert.equal (Right (StringBody "[1,2,3]")) (res >>= _body)
       test "encodes string body as JSON" do
-        res <- mkResponse (Json "hello")
+        res <- encodeOk (Json "hello")
         Assert.equal (Right (StringBody "\"hello\"")) (res >>= _body)
       test "encodes int body as JSON" do
-        res <- mkResponse (Json 1)
+        res <- encodeOk (Json 1)
         Assert.equal (Right (StringBody "1")) (res >>= _body)
     suite "Maybe" do
       test "returns 404 if response is Nothing" do
-        res <- mkResponse (Nothing :: Maybe String)
+        res <- encodeOk (Nothing :: Maybe String)
         Assert.equal (Right 404) (res >>= _status)
       test "returns empty body if response is Nothing" do
-        res <- mkResponse (Nothing :: Maybe String)
+        res <- encodeOk (Nothing :: Maybe String)
         Assert.equal (Right EmptyBody) (res >>= _body)
       test "returns inner response status if response is Just" do
-        res <- mkResponse (Just {foo: 1})
+        res <- encodeOk (Just {foo: 1})
         Assert.equal (Right 200) (res >>= _status)
       test "returns inner response body if response is Just" do
-        res <- mkResponse (Just {foo: 1})
+        res <- encodeOk (Just {foo: 1})
         Assert.equal (Right (StringBody "{\"foo\":1}")) (res >>= _body)
     suite "Empty" do
       test "returns 200" do
-        res <- mkResponse Empty
+        res <- encodeOk Empty
         Assert.equal (Right 200) (res >>= _status)
       test "returns no headers" do
-        res <- mkResponse Empty
-        Assert.equal (Right Map.empty) (res >>= _headers)
-    suite "SetHeaders" do
-      test "merges in new headers" do
-        let headers = Map.fromFoldable [Tuple "foo" "fooVal"]
-        let expected = Map.fromFoldable [Tuple "foo" "fooVal", Tuple "Content-Type" "text/plain; charset=utf-8"]
-        res <- mkResponse (SetHeaders headers "foo")
-        Assert.equal (Right expected) (res >>= _headers)
-      test "replaces original headers" do
-        let headers = Map.fromFoldable [Tuple "foo" "fooVal", Tuple "Content-Type" "magic"]
-        res <- mkResponse (SetHeaders headers "foo")
-        Assert.equal (Right headers) (res >>= _headers)
+        res <- encodeOk Empty
+        Assert.equal (Right Headers.empty) (res >>= _headers)
+    suite "Response" do
+      test "returning response with raw String ResponseBody leaves response untouched" do
+        let rawRes = Response {status: Status.accepted, headers: Headers.empty, body: StringBody "foo"}
+        res <- encode rawRes
+        Assert.equal (Right rawRes) res
+      suite "adding/overriding headers" do
+        test "setting new headers in own response -> default header is added to new headers" do
+          let headers = Headers.fromFoldable [Tuple "foo" "fooVal"]
+          let expected = Headers.fromFoldable [Tuple "foo" "fooVal", Tuple "content-type" "text/plain; charset=utf-8"]
+          res <- encode (Response { status: Status.ok, headers, body: "foo" })
+          Assert.equal (Right expected) (res >>= _headers)
+        test "setting same header in own response -> default header is not added" do
+          let headers = Headers.fromFoldable [Tuple "content-type" "magic"]
+          res <- encode (Response { status: Status.ok, headers, body: "foo" })
+          Assert.equal (Right headers) (res >>= _headers)
+        test "setting same header in different case in own response -> default header is not added" do
+          let headers = Headers.fromFoldable [Tuple "cOnTeNt-TyPe" "magic"]
+          let expected = Headers.fromFoldable [Tuple "content-type" "magic"]
+          res <- encode (Response { status: Status.ok, headers, body: "foo" })
+          Assert.equal (Right headers) (res >>= _headers)
+        test "added header names are converted to lower case" do
+          let headers = Headers.fromFoldable [Tuple "FOO" "fooVal"]
+          let expected = Headers.fromFoldable [Tuple "foo" "fooVal"]
+          res <- encode (Response { status: Status.ok, headers, body: StringBody "foo" })
+          Assert.equal (Right expected) (res >>= _headers)

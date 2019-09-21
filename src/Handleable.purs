@@ -22,7 +22,6 @@ import Payload.GuardParsing as GuardParsing
 import Payload.Guards (class RunGuards, runGuards)
 import Payload.Query as PayloadQuery
 import Payload.Request (RequestUrl)
-import Payload.Response (class Responder, RawResponse, ServerError)
 import Payload.Response as Resp
 import Payload.Route (Route)
 import Payload.Url as PayloadUrl
@@ -32,9 +31,10 @@ import Prim.Symbol as Symbol
 import Record as Record
 import Type.Equality (class TypeEquals, from)
 import Type.Proxy (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 
-type MethodHandler = RequestUrl -> HTTP.Request -> HTTP.Response -> HandlerM RawResponse
-data HandlerFailure = MatchFail String | HandlerError ServerError
+type MethodHandler = RequestUrl -> HTTP.Request -> HTTP.Response -> HandlerM Resp.RawResponse
+data HandlerFailure = MatchFail String | HandlerError Resp.ServerError
 type HandlerM a = ExceptT HandlerFailure Aff a
 
 class Handleable
@@ -55,7 +55,7 @@ class Handleable
             -> RequestUrl
             -> HTTP.Request
             -> HTTP.Response
-            -> HandlerM RawResponse
+            -> HandlerM Resp.RawResponse
 
 instance handleablePostRoute ::
        ( TypeEquals (Record route)
@@ -65,7 +65,8 @@ instance handleablePostRoute ::
            , guards :: Guards guardNames
            | r }
        , IsSymbol path
-       , Responder res
+       , Resp.ToResponse handlerRes res
+       , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
        , FromData body
 
@@ -83,7 +84,7 @@ instance handleablePostRoute ::
        , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
        )
     => Handleable (Route "POST" path (Record route))
-                  (Record payload -> Aff res)
+                  (Record payload -> Aff handlerRes)
                   basePath
                   baseParams
                   baseGuards
@@ -99,7 +100,8 @@ instance handleablePostRoute ::
     let (payload' :: Record payload') = Record.union fullParams { body }
     let (payload :: Record payload) = Record.union payload' guards
     handlerResp <- lift $ handler payload
-    rawResp <- withExceptT HandlerError $ ExceptT $ Resp.mkResponse handlerResp
+    (specResp :: Resp.Response res) <- pure $ Resp.toResponse handlerResp
+    (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
     pure rawResp
 
     where
@@ -109,7 +111,7 @@ instance handleablePostRoute ::
       decodeQuery :: String -> Either String (Record query)
       decodeQuery = PayloadQuery.decodeQuery (SProxy :: _ fullPath) (Proxy :: _ (Record query))
 
-instance handleableGetRoute ::
+instance handleableRoute ::
        ( TypeEquals (Record route)
            { response :: res
            , params :: Record params
@@ -117,7 +119,8 @@ instance handleableGetRoute ::
            , guards :: Guards guardNames
            | r }
        , IsSymbol path
-       , Responder res
+       , Resp.ToResponse handlerRes res
+       , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
 
        , Row.Union baseParams params fullUrlParams
@@ -133,7 +136,7 @@ instance handleableGetRoute ::
        , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
        )
     => Handleable (Route "GET" path (Record route))
-                  (Record payload -> Aff res)
+                  (Record payload -> Aff handlerRes)
                   basePath
                   baseParams
                   baseGuards
@@ -146,7 +149,8 @@ instance handleableGetRoute ::
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload :: Record payload) = from (Record.union fullParams guards)
     handlerResp <- withExceptT HandlerError $ lift $ handler payload
-    rawResp <- withExceptT HandlerError $ ExceptT $ Resp.mkResponse handlerResp
+    (specResp :: Resp.Response res) <- pure $ Resp.toResponse handlerResp
+    (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
     pure rawResp
 
     where
@@ -165,7 +169,8 @@ instance handleableHeadRoute ::
            | r }
        , IsSymbol path
        , Symbol.Append basePath path fullPath
-       , Responder res
+       , Resp.ToResponse handlerRes res
+       , Resp.EncodeResponse res
 
        , Row.Union baseParams params fullUrlParams
        , Row.Union fullUrlParams query fullParams
@@ -180,7 +185,7 @@ instance handleableHeadRoute ::
        , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
        )
     => Handleable (Route "HEAD" path (Record route))
-                  (Record payload -> Aff res)
+                  (Record payload -> Aff handlerRes)
                   basePath
                   baseParams
                   baseGuards
@@ -193,7 +198,8 @@ instance handleableHeadRoute ::
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload :: Record payload) = from (Record.union fullParams guards)
     handlerResp <- lift $ handler payload
-    rawResp <- withExceptT HandlerError $ ExceptT $ Resp.mkResponse handlerResp
+    (specResp :: Resp.Response res) <- pure $ Resp.toResponse handlerResp
+    (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
     pure (Resp.setEmptyBody rawResp)
 
     where

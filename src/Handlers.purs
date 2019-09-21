@@ -2,6 +2,7 @@ module Payload.Handlers where
 
 import Prelude
 
+import Control.Monad.Except (ExceptT(..))
 import Data.Either (Either(..))
 import Data.Int as Int
 import Data.Map as Map
@@ -13,24 +14,26 @@ import Foreign (readString)
 import Node.FS.Aff as FsAff
 import Node.FS.Stats as Stats
 import Node.FS.Stream (createReadStream)
+import Payload.Headers (Headers(..))
+import Payload.Headers as Headers
 import Payload.MimeTypes as MimeTypes
-import Payload.Response (class Responder, RawResponse(..), ResponseBody(..))
+import Payload.Response (class EncodeResponse, Response(..), ResponseBody(..))
 import Payload.Status as Status
 import Simple.JSON (class ReadForeign)
 import Unsafe.Coerce (unsafeCoerce)
 
 data File = File String
 
-instance responderFile :: Responder File where
-  mkResponse (File path) = do
+instance encodeResponseFile :: EncodeResponse File where
+  encodeResponse (Response r@{ body: File path }) = ExceptT $ do
     stat <- FsAff.stat path
     let mimeType = fromMaybe "text/plain" $ MimeTypes.pathToMimeType path
     if Stats.isFile stat
        then do
          fileStream <- liftEffect $ createReadStream path
-         pure $ Right $ RawResponse
+         pure $ Right $ Response
            { status: Status.ok
-           , headers: Map.fromFoldable
+           , headers: Headers.fromFoldable
                [ Tuple "Content-Type" mimeType
                , Tuple "Content-Length" (show (fileSize stat))
                ]
