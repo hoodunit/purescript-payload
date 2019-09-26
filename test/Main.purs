@@ -4,7 +4,6 @@ import Prelude
 
 import Effect (Effect)
 import Effect.Aff as Aff
-import Effect.Class (liftEffect)
 import Payload.Examples.Basic.Main as BasicExample
 import Payload.Examples.Files.Main as FilesExample
 import Payload.Examples.Movies.Main as MoviesExample
@@ -20,7 +19,8 @@ import Payload.Test.Unit.Trie as TrieTest
 import Payload.Test.Unit.Url as UrlTest
 import Payload.Test.Unit.UrlParsing as UrlParsingTest
 import Test.Unit (TestSuite)
-import Test.Unit.Main (runTest)
+import Test.Unit.Main (runTestWith)
+import Test.Unit.Output.Fancy as Fancy
 
 tests :: TestSuite
 tests = do
@@ -32,11 +32,11 @@ tests = do
   GuardParsingTest.tests
   CookiesTest.tests
   ResponseTest.tests
+  MethodsTest.tests
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do
-  liftEffect $ runTest tests
-  MethodsTest.runTests
+  runTestWith Fancy.runTest tests
   GuardsTest.runTests
   QueryParamsTest.runTests
   FilesExample.runTests

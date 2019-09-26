@@ -143,8 +143,3 @@ tests = do
         withRoutes spec handlers do
           res <- delete "/foo"
           Assert.equal { status: 200, body: "Delete" } res
-
-runTests :: Aff Unit
-runTests = do
-  runTestWith Fancy.runTest tests
-
