@@ -12,12 +12,5 @@ type DELETE = Route "DELETE"
 type DefaultRequest =
   ( params :: {}
   , query :: {}
-  , body :: {}
+  , body :: String
   , guards :: Guards GNil )
-defaultSpec :: Record DefaultRequest
-defaultSpec =
-  { params: {}
-  , query: {}
-  , body: {}
-  , guards: Guards :: _ GNil
-  }

@@ -10,10 +10,10 @@ import Affjax.StatusCode (StatusCode(..))
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
-import Payload.Response (Response(..))
+import Payload.Response (Response(..), ResponseBody(..))
 import Payload.Response as Response
 import Payload.Routable (API(..))
-import Payload.Route (GET, POST, HEAD)
+import Payload.Route (DELETE, GET, HEAD, POST, PUT)
 import Payload.Status as Status
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
@@ -33,6 +33,13 @@ api :: API
     , fooPost :: POST "/foo"
       { body :: { message :: String }
       , response :: String }
+    , fooPostEmpty :: POST "/fooEmpty"
+      { body :: String
+      , response :: String }
+    , fooDelete :: DELETE "/foo"
+      { response :: String }
+    , fooPut :: PUT "/foo"
+      { response :: String }
     , fooHead :: HEAD "/fooHead"
       { response :: Unit }
     , bar :: GET "/bar"
@@ -54,8 +61,17 @@ barHead _ = pure (Response.status Status.accepted unit)
 fooPost :: { body :: { message :: String } } -> Aff String
 fooPost { body: { message } } = pure $ "Received '" <> message <> "'"
 
+fooPostEmpty :: { body :: String } -> Aff String
+fooPostEmpty _ = pure $ "fooEmpty"
+
 fooHead :: {} -> Aff Unit
 fooHead _ = pure unit
+
+fooPut :: forall r. { | r} -> Aff String
+fooPut _ = pure "Put"
+
+fooDelete :: forall r. { | r} -> Aff String
+fooDelete _ = pure "Delete"
 
 type ApiResponse =
   { status :: Int
@@ -70,6 +86,18 @@ getRequest host path = do
 postRequest :: String -> String -> String -> Aff ApiResponse
 postRequest host path reqBody = do
   res <- AX.post ResponseFormat.string ("http://localhost:3000/" <> path) (RequestBody.String reqBody)
+  let body = either ResponseFormat.printResponseFormatError identity res.body
+  pure { status: unwrapStatusCode res.status, body }
+
+putRequest :: String -> String -> String -> Aff ApiResponse
+putRequest host path reqBody = do
+  res <- AX.put ResponseFormat.string ("http://localhost:3000/" <> path) (RequestBody.String reqBody)
+  let body = either ResponseFormat.printResponseFormatError identity res.body
+  pure { status: unwrapStatusCode res.status, body }
+
+deleteRequest :: String -> String -> Aff ApiResponse
+deleteRequest host path = do
+  res <- AX.delete ResponseFormat.string ("http://localhost:3000/" <> path)
   let body = either ResponseFormat.printResponseFormatError identity res.body
   pure { status: unwrapStatusCode res.status, body }
 
@@ -99,6 +127,8 @@ tests = do
   let get = getRequest "http://localhost:3000"
   let post = postRequest "http://localhost:3000"
   let head = headRequest "http://localhost:3000"
+  let put = putRequest "http://localhost:3000"
+  let delete = deleteRequest "http://localhost:3000"
   suite "Methods" do
     suite "GET" do
       test "GET succeeds" $ do
@@ -108,6 +138,9 @@ tests = do
       test "POST succeeds" $ do
         res <- post "/foo" "{ \"message\": \"Hi there\" }"
         Assert.equal { status: 200, body: "Received 'Hi there'" } res
+      test "POST succeeds with empty body route" $ do
+        res <- post "/fooEmpty" ""
+        Assert.equal { status: 200, body: "fooEmpty" } res
     suite "HEAD" do
       test "HEAD succeeds" $ do
         res <- head "/fooHead"
@@ -118,8 +151,16 @@ tests = do
       test "user-specified HEAD route overrides default GET HEAD route" $ do
         res <- head "/bar"
         Assert.equal { status: 202, body: "" } res
+    suite "PUT" do
+      test "PUT succeeds" $ do
+        res <- put "/foo" ""
+        Assert.equal { status: 200, body: "Put" } res
+    suite "DELETE" do
+      test "DELETE succeeds" $ do
+        res <- delete "/foo"
+        Assert.equal { status: 200, body: "Delete" } res
 
 runTests :: Aff Unit
 runTests = do
-  let handlers = { foo, fooPost, fooHead, bar, barHead }
+  let handlers = { foo, fooPost, fooPostEmpty, fooHead, fooPut, fooDelete, bar, barHead }
   withServer api { guards: {}, handlers } (runTestWith Fancy.runTest tests)

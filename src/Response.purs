@@ -115,9 +115,8 @@ else instance encodeResponseString :: EncodeResponse String where
                    , headers: Headers.setIfNotDefined "content-type" ContentType.plain r.headers
                    , body: StringBody r.body }
 else instance encodeResponseStream ::
-  ( TypeEquals (Stream.Stream r) (Stream.Stream (read :: Stream.Read | r'))
-  , IsResponseBody (Stream.Stream r)
-  ) => EncodeResponse (Stream.Stream r) where
+  ( TypeEquals (Stream.Stream r) (Stream.Stream (read :: Stream.Read | r')))
+  => EncodeResponse (Stream.Stream r) where
   encodeResponse (Response r) = pure $ Response
                    { status: r.status
                    , headers: Headers.setIfNotDefined "content-type" ContentType.plain r.headers
@@ -143,20 +142,6 @@ else instance encodeResponseUnit :: EncodeResponse Unit where
                    , headers: r.headers
                    , body: EmptyBody }
 
-class IsResponseBody body where
-  writeBody :: HTTP.Response -> body -> Effect Unit
-
-instance isResponseBodyString :: IsResponseBody String where
-  writeBody res str = do
-    let out = HTTP.responseAsStream res
-    _ <- Stream.writeString out UTF8 str (pure unit)
-    Stream.end out (pure unit)
-
-instance isResponseBodyStream :: IsResponseBody UnsafeStream where
-  writeBody res stream = do
-    _ <- Stream.pipe (to (unsafeCoerce stream)) (HTTP.responseAsStream res)
-    pure unit
-
 sendInternalError :: forall err. Show err => HTTP.Response -> err -> Aff Unit
 sendInternalError res err = liftEffect $ sendError res (internalError (show err))
 
@@ -174,10 +159,10 @@ sendResponse res serverResult = Aff.runAff_ onComplete do
           let contentLength = show $ Encoding.byteLength str UTF8
           let headers = Headers.setIfNotDefined "content-length" contentLength serverRes.headers
           writeHeaders res headers
-          writeBody res str
+          writeStringBody res str
         StreamBody stream -> do
           writeHeaders res serverRes.headers
-          writeBody res stream
+          writeStreamBody res stream
         EmptyBody -> do
           writeHeaders res serverRes.headers
           Aff.launchAff_ $ endResponse res
@@ -190,6 +175,17 @@ writeHeaders :: HTTP.Response -> Headers -> Effect Unit
 writeHeaders res headers = do
   let (sets :: Array (Effect Unit)) = map (\(Tuple k v) -> HTTP.setHeader res k v) (Headers.toUnfoldable headers)
   sequence_ sets
+
+writeStringBody :: HTTP.Response -> String -> Effect Unit
+writeStringBody res str = do
+  let out = HTTP.responseAsStream res
+  _ <- Stream.writeString out UTF8 str (pure unit)
+  Stream.end out (pure unit)
+
+writeStreamBody :: HTTP.Response -> UnsafeStream -> Effect Unit
+writeStreamBody res stream = do
+  _ <- Stream.pipe (to (unsafeCoerce stream)) (HTTP.responseAsStream res)
+  pure unit
 
 type ErrorResponse =
   { body :: String
