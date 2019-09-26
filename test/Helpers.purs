@@ -11,6 +11,7 @@ import Payload.Routable (class Routable, API(..))
 import Payload.Server as Payload
 import Test.Unit (Test, failure, success)
 import Test.Unit.Assert as Assert
+import Type.Proxy (Proxy(..))
 
 withServer
   :: forall routesSpec guardsSpec handlers guards
@@ -28,6 +29,16 @@ withServer apiSpec api_ aff = do
     runAff (Right _) = aff
     completed (Left err) = liftEffect $ log ("Could not start server: " <> err)
     completed (Right server) = Payload.close server
+
+withRoutes :: forall routesSpec handlers
+  . Routable routesSpec {} handlers {}
+  => Proxy routesSpec
+  -> handlers
+  -> Aff Unit
+  -> Aff Unit
+withRoutes _ handlers = 
+  withServer (API :: API { guards :: {}, routes :: routesSpec })
+             { guards: {}, handlers }
 
 assertRes :: forall a err. Show err => Eq a => Show a => Aff (Either err a) -> a -> Test
 assertRes req expected = do
