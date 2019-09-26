@@ -1,5 +1,6 @@
 module Payload.Route where
 
+import Prelude
 import Payload.GuardParsing (GNil, Guards(..))
 
 data Route (m :: Symbol) (p :: Symbol) spec = Route
@@ -13,4 +14,5 @@ type DefaultRequest =
   ( params :: {}
   , query :: {}
   , body :: String
-  , guards :: Guards GNil )
+  , guards :: Guards GNil
+  , response :: Unit )
