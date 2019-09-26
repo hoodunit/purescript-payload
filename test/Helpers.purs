@@ -2,7 +2,13 @@ module Payload.Test.Helpers where
 
 import Prelude
 
-import Data.Either (Either(..))
+import Affjax as AX
+import Affjax.RequestBody as AX
+import Affjax.RequestBody as RequestBody
+import Affjax.ResponseFormat as ResponseFormat
+import Affjax.StatusCode (StatusCode(..))
+import Data.Either (Either(..), either)
+import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -21,7 +27,7 @@ withServer
   -> Aff Unit
   -> Aff Unit
 withServer apiSpec api_ aff = do
-  let opts = Payload.defaultOpts { logLevel = Payload.LogError }
+  let opts = Payload.defaultOpts { logLevel = Payload.LogError, port = 3000 }
   Aff.bracket (Payload.start opts apiSpec api_) completed runAff
   pure unit
   where
@@ -39,6 +45,54 @@ withRoutes :: forall routesSpec handlers
 withRoutes _ handlers = 
   withServer (API :: API { guards :: {}, routes :: routesSpec })
              { guards: {}, handlers }
+
+type ApiResponse =
+  { status :: Int
+  , body :: String }
+
+type RequestClient =
+  { get :: String -> Aff ApiResponse
+  , post :: String -> String -> Aff ApiResponse
+  , put :: String -> String -> Aff ApiResponse
+  , delete :: String -> Aff ApiResponse
+  , head :: String -> Aff ApiResponse }
+
+request :: String -> RequestClient
+request host =
+  { get: get host
+  , post: post host
+  , put: put host
+  , delete: delete host
+  , head: head host }
+
+get :: String -> String -> Aff ApiResponse
+get host path = decodeBody <$> AX.get ResponseFormat.string (host <> "/" <> path)
+
+post :: String -> String -> String -> Aff ApiResponse
+post host path reqBody = decodeBody <$> AX.post ResponseFormat.string (host <> path) body
+  where body = RequestBody.String reqBody
+
+put :: String -> String -> String -> Aff ApiResponse
+put host path reqBody = decodeBody <$> AX.put ResponseFormat.string (host <> "/" <> path) (RequestBody.String reqBody)
+
+delete :: String -> String -> Aff ApiResponse
+delete host path = decodeBody <$> AX.delete ResponseFormat.string (host <> "/" <> path)
+
+head :: String -> String -> Aff ApiResponse
+head host path = decodeBody <$> AX.request req
+  where
+    req = AX.defaultRequest
+      { method = Left HEAD
+      , responseFormat = ResponseFormat.string
+      , url = host <> "/" <> path }
+
+decodeBody :: AX.Response (Either AX.ResponseFormatError String) -> ApiResponse
+decodeBody res =
+  { status: unwrapStatusCode res.status,
+    body: either ResponseFormat.printResponseFormatError identity res.body }
+
+unwrapStatusCode :: StatusCode -> Int
+unwrapStatusCode (StatusCode c) = c
 
 assertRes :: forall a err. Show err => Eq a => Show a => Aff (Either err a) -> a -> Test
 assertRes req expected = do

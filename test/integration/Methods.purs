@@ -18,68 +18,16 @@ import Payload.Routable (class Routable, API(..))
 import Payload.Route (DELETE, GET, HEAD, POST, PUT)
 import Payload.Status as Status
 import Payload.Test.Helpers (withRoutes, withServer)
+import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
 import Test.Unit.Main (runTestWith)
 import Test.Unit.Output.Fancy as Fancy
 import Type.Proxy (Proxy(..))
-
-type ApiResponse =
-  { status :: Int
-  , body :: String }
-
-getRequest :: String -> String -> Aff ApiResponse
-getRequest host path = do
-  res <- AX.get ResponseFormat.string (host <> "/" <> path)
-  let body = either ResponseFormat.printResponseFormatError identity res.body
-  pure { status: unwrapStatusCode res.status, body }
-
-postRequest :: String -> String -> String -> Aff ApiResponse
-postRequest host path reqBody = do
-  res <- AX.post ResponseFormat.string ("http://localhost:3000/" <> path) (RequestBody.String reqBody)
-  let body = either ResponseFormat.printResponseFormatError identity res.body
-  pure { status: unwrapStatusCode res.status, body }
-
-putRequest :: String -> String -> String -> Aff ApiResponse
-putRequest host path reqBody = do
-  res <- AX.put ResponseFormat.string ("http://localhost:3000/" <> path) (RequestBody.String reqBody)
-  let body = either ResponseFormat.printResponseFormatError identity res.body
-  pure { status: unwrapStatusCode res.status, body }
-
-deleteRequest :: String -> String -> Aff ApiResponse
-deleteRequest host path = do
-  res <- AX.delete ResponseFormat.string ("http://localhost:3000/" <> path)
-  let body = either ResponseFormat.printResponseFormatError identity res.body
-  pure { status: unwrapStatusCode res.status, body }
-
-headRequest :: String -> String -> Aff ApiResponse
-headRequest host path = do
-  let req = AX.defaultRequest
-        { method = Left HEAD
-        , responseFormat = ResponseFormat.string
-        , url = host <> "/" <> path
-        }
-  res <- AX.request req
-  let body = either ResponseFormat.printResponseFormatError identity res.body
-  pure { status: unwrapStatusCode res.status, body }
-
-unwrapStatusCode :: StatusCode -> Int
-unwrapStatusCode (StatusCode c) = c
-
-assertResp :: forall a err. Show err => Eq a => Show a => Aff (Either err a) -> a -> Test
-assertResp req expected = do
-  res <- req
-  case res of
-    Right val -> Assert.equal expected val
-    Left errors -> failure $ "Request failed: " <> show errors
   
 tests :: TestSuite
 tests = do
-  let get = getRequest "http://localhost:3000"
-  let post = postRequest "http://localhost:3000"
-  let head = headRequest "http://localhost:3000"
-  let put = putRequest "http://localhost:3000"
-  let delete = deleteRequest "http://localhost:3000"
+  let { get, put, post, head, delete } = Helpers.request "http://localhost:3000"
   suite "Methods" do
     suite "GET" do
       test "GET succeeds" $ do
