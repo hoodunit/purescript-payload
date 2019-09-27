@@ -6,9 +6,13 @@ import Affjax as AX
 import Affjax.RequestBody as AX
 import Affjax.RequestBody as RequestBody
 import Affjax.ResponseFormat as ResponseFormat
+import Affjax.ResponseHeader (ResponseHeader(..))
 import Affjax.StatusCode (StatusCode(..))
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
+import Data.Map (Map)
+import Data.Map as Map
+import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -48,7 +52,8 @@ withRoutes _ handlers =
 
 type ApiResponse =
   { status :: Int
-  , body :: String }
+  , body :: String
+  , headers :: Map String String }
 
 type RequestClient =
   { get :: String -> Aff ApiResponse
@@ -88,11 +93,18 @@ head host path = decodeBody <$> AX.request req
 
 decodeBody :: AX.Response (Either AX.ResponseFormatError String) -> ApiResponse
 decodeBody res =
-  { status: unwrapStatusCode res.status,
-    body: either ResponseFormat.printResponseFormatError identity res.body }
+  { status: unwrapStatusCode res.status
+  , body: either ResponseFormat.printResponseFormatError identity res.body
+  , headers: Map.fromFoldable $ unwrapHeader <$> res.headers }
+  where
+    unwrapHeader (ResponseHeader name value) = Tuple name value
 
 unwrapStatusCode :: StatusCode -> Int
 unwrapStatusCode (StatusCode c) = c
+
+respMatches :: { status :: Int, body :: String } -> ApiResponse -> Test
+respMatches expected received =
+  Assert.equal expected { status: received.status, body: received.body }
 
 assertRes :: forall a err. Show err => Eq a => Show a => Aff (Either err a) -> a -> Test
 assertRes req expected = do

@@ -100,7 +100,7 @@ instance handleablePostRoute ::
     let (payload' :: Record payload') = Record.union fullParams { body }
     let (payload :: Record payload) = Record.union payload' guards
     handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- pure $ Resp.toResponse handlerResp
+    (specResp :: Resp.Response res) <- withExceptT HandlerError $ Resp.toResponse handlerResp
     (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
     pure rawResp
 
@@ -149,7 +149,7 @@ instance handleableRoute ::
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload :: Record payload) = from (Record.union fullParams guards)
     handlerResp <- withExceptT HandlerError $ lift $ handler payload
-    (specResp :: Resp.Response res) <- pure $ Resp.toResponse handlerResp
+    (specResp :: Resp.Response res) <- withExceptT HandlerError $ Resp.toResponse handlerResp
     (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
     pure rawResp
 
@@ -198,7 +198,7 @@ instance handleableHeadRoute ::
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload :: Record payload) = from (Record.union fullParams guards)
     handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- pure $ Resp.toResponse handlerResp
+    (specResp :: Resp.Response res) <- withExceptT HandlerError $ Resp.toResponse handlerResp
     (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
     pure (Resp.setEmptyBody rawResp)
 
@@ -252,7 +252,7 @@ instance handleablePutRoute ::
     let (payload' :: Record payload') = Record.union fullParams { body }
     let (payload :: Record payload) = Record.union payload' guards
     handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- pure $ Resp.toResponse handlerResp
+    (specResp :: Resp.Response res) <- withExceptT HandlerError $ Resp.toResponse handlerResp
     (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
     pure rawResp
 
@@ -300,7 +300,7 @@ instance handleableDeleteRoute ::
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload :: Record payload) = Record.union fullParams guards
     handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- pure $ Resp.toResponse handlerResp
+    (specResp :: Resp.Response res) <- withExceptT HandlerError $ Resp.toResponse handlerResp
     (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
     pure rawResp
 

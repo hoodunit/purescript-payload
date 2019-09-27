@@ -3,6 +3,7 @@ module Payload.Test.Unit.Response where
 import Prelude
 
 import Control.Monad.Except (runExceptT)
+import Data.Bifunctor (lmap)
 import Data.Either (Either(..), note)
 import Data.Map (Map)
 import Data.Map as Map
@@ -38,10 +39,10 @@ _body :: RawResponse -> Either String ResponseBody
 _body res = Right $ (unwrap res).body
 
 encodeOk :: forall a. EncodeResponse a => a -> Aff (Either String RawResponse)
-encodeOk = runExceptT <<< encodeResponse <<< ok_
+encodeOk = (map $ lmap show) <<< runExceptT <<< encodeResponse <<< ok_
 
 encode :: forall a. EncodeResponse a => Response a -> Aff (Either String RawResponse)
-encode = runExceptT <<< encodeResponse
+encode = (map $ lmap show) <<< runExceptT <<< encodeResponse
 
 tests :: TestSuite
 tests = suite "Response" do

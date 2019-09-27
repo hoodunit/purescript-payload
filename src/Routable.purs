@@ -9,13 +9,15 @@ import Data.List (List(..), (:))
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
+import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Console (errorShow, log)
 import Node.HTTP as HTTP
 import Payload.GuardParsing (GNil, GuardTypes(..), Guards(..), kind GuardList)
 import Payload.GuardParsing as GuardParsing
 import Payload.Handleable (class Handleable, HandlerFailure(..), HandlerM, MethodHandler, handle)
 import Payload.Request (RequestUrl)
-import Payload.Response (RawResponse(..))
+import Payload.Response (RawResponse(..), ServerError(..))
 import Payload.Response as Resp
 import Payload.Route (DefaultRequest, Route(..))
 import Payload.Trie (Trie)
@@ -151,15 +153,19 @@ instance routableListCons ::
 
       executeHandler :: HTTP.Response -> HandlerM RawResponse -> Aff Outcome
       executeHandler res mHandler = do
-        result <- runExceptT mHandler
+        result <- Aff.attempt $ runExceptT mHandler
         case result of
-          Right rawResponse -> do
+          Right (Right rawResponse) -> do
             liftEffect $ Resp.sendResponse res (Right rawResponse)
             pure Success
-          Left (HandlerError error) -> do
+          Right (Left (HandlerError error)) -> do
             liftEffect $ Resp.sendResponse res (Left error)
             pure Failure
-          Left (MatchFail error) -> pure (Forward error)
+          Right (Left (MatchFail error)) -> pure (Forward error)
+          Left error -> do
+            liftEffect $ errorShow error
+            liftEffect $ Resp.sendResponse res (Left (InternalError "Internal error"))
+            pure Failure
       
       methodHandler :: MethodHandler
       methodHandler = handle

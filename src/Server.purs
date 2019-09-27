@@ -20,7 +20,8 @@ import Node.HTTP as HTTP
 import Node.URL (URL)
 import Node.URL as Url
 import Payload.Request (RequestUrl)
-import Payload.Response (sendError)
+import Payload.Response (ResponseBody(..), internalError, writeResponse)
+import Payload.Response as Response
 import Payload.Routable (class Routable, API, HandlerEntry, Outcome(..), mkRouter)
 import Payload.Status as Status
 import Payload.Trie (Trie)
@@ -124,8 +125,7 @@ handleRequest { logger } routerTrie req res = do
   case requestUrl req of
     Right reqUrl -> runHandlers routerTrie reqUrl req res
     Left err -> do
-      sendError res { status: Status.internalServerError
-                    , body: "Path could not be decoded: " <> show err }
+      writeResponse res (internalError $ "Path could not be decoded: " <> show err)
 
 runHandlers :: Trie HandlerEntry -> RequestUrl -> HTTP.Request -> HTTP.Response -> Effect Unit
 runHandlers routerTrie reqUrl req res = do
@@ -133,7 +133,7 @@ runHandlers routerTrie reqUrl req res = do
   Aff.launchAff_ $ do
     outcome <- handleNext (Forward "Dummy forward") matches
     case outcome of
-      (Forward _) -> liftEffect $ sendError res { status: Status.notFound, body: "" }
+      (Forward _) -> liftEffect $ writeResponse res (Response.status Status.notFound (StringBody ""))
       _ -> pure unit
   where
     handleNext :: Outcome -> List HandlerEntry -> Aff Outcome

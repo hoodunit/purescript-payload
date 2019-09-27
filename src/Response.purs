@@ -2,7 +2,7 @@ module Payload.Response where
 
 import Prelude
 
-import Control.Monad.Except (ExceptT(..))
+import Control.Monad.Except (ExceptT(..), throwError)
 import Data.Either (Either(..))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map (Map)
@@ -30,6 +30,14 @@ import Type.Equality (class TypeEquals, to)
 import Unsafe.Coerce (unsafeCoerce)
 
 type Handler a = ExceptT ServerError Aff a
+data ServerError = InternalError String | ErrorResponse RawResponse
+
+instance showServerError :: Show ServerError where
+  show (InternalError s) = show s
+  show (ErrorResponse r) = show r
+
+serverError :: HttpStatus -> String -> ServerError
+serverError s msg = ErrorResponse (status s (StringBody msg))
 
 foreign import endResponse_ :: HTTP.Response -> Unit -> (Unit -> Effect Unit) -> Effect Unit
 
@@ -42,8 +50,6 @@ endResponse res = Aff.makeAff \cb -> do
 
 newtype Json a = Json a
 data Empty = Empty
-
-type ServerError = String
 
 newtype Response r = Response
   { status :: HttpStatus
@@ -79,13 +85,27 @@ instance showResponseBody :: Show ResponseBody where
 -- which that type can be produced (e.g. a full response with different
 -- headers or a different status code).
 class ToResponse a b where
-  toResponse :: a -> Response b
+  toResponse :: a -> Handler (Response b)
 
 instance toResponseResponse :: ToResponse (Response a) a where
-  toResponse res = res
+  toResponse res = pure res
+else instance toResponseEitherString :: ToResponse (Either String (Response a)) a where
+  toResponse (Left res) = throwError (InternalError res)
+  toResponse (Right res) = pure res
+else instance toResponseEitherServerErrorVal ::
+  ToResponse (Either ServerError a) a where
+  toResponse (Left err) = throwError err
+  toResponse (Right res) = pure (ok res)
+else instance toResponseEitherServerErrorResponse ::
+  ToResponse (Either ServerError (Response a)) a where
+  toResponse (Left err) = throwError err
+  toResponse (Right res) = pure res
+else instance toResponseEitherResponse ::
+  ToResponse (Either (Response ResponseBody) (Response a)) a where
+  toResponse (Left res) = throwError (ErrorResponse res)
+  toResponse (Right res) = pure res
 else instance toResponseIdentity :: ToResponse a a where
-  toResponse res  =
-    Response { status: Status.ok, headers: Headers.empty, body: res }
+  toResponse res = pure (ok res)
 
 -- Types with in an instance for EncodeResponse are those that
 -- can appear in the response field of an API spec and ultimately
@@ -135,7 +155,6 @@ else instance encodeResponseEmpty :: EncodeResponse Empty where
                    { status: r.status
                    , headers: r.headers
                    , body: EmptyBody }
-
 else instance encodeResponseUnit :: EncodeResponse Unit where
   encodeResponse (Response r) = pure $ Response
                    { status: r.status
@@ -143,33 +162,36 @@ else instance encodeResponseUnit :: EncodeResponse Unit where
                    , body: EmptyBody }
 
 sendInternalError :: forall err. Show err => HTTP.Response -> err -> Aff Unit
-sendInternalError res err = liftEffect $ sendError res (internalError (show err))
-
-internalError :: String -> ErrorResponse
-internalError body = { status: Status.internalServerError, body }
+sendInternalError res err = liftEffect $ writeResponse res (internalError (show err))
 
 sendResponse :: HTTP.Response -> Either ServerError RawResponse -> Effect Unit
 sendResponse res serverResult = Aff.runAff_ onComplete do
   liftEffect $ case serverResult of
-    Right (Response serverRes) -> do
-      HTTP.setStatusCode res serverRes.status.code
-      HTTP.setStatusMessage res serverRes.status.reason
-      case serverRes.body of
-        StringBody str -> do
-          let contentLength = show $ Encoding.byteLength str UTF8
-          let headers = Headers.setIfNotDefined "content-length" contentLength serverRes.headers
-          writeHeaders res headers
-          writeStringBody res str
-        StreamBody stream -> do
-          writeHeaders res serverRes.headers
-          writeStreamBody res stream
-        EmptyBody -> do
-          writeHeaders res serverRes.headers
-          Aff.launchAff_ $ endResponse res
-    Left errors -> sendError res { status: Status.internalServerError, body: (show errors) }
+    Right serverRes -> writeResponse res serverRes
+    Left (ErrorResponse err) -> writeResponse res err
+    Left (InternalError err) -> writeResponse res (internalError err)
   where
-    onComplete (Left errors) = sendError res (internalError (show errors))
+    onComplete (Left errors) = writeResponse res (internalError (show errors))
     onComplete (Right _) = pure unit
+
+writeResponse :: HTTP.Response -> RawResponse -> Effect Unit
+writeResponse res (Response serverRes) = do
+  HTTP.setStatusCode res serverRes.status.code
+  HTTP.setStatusMessage res serverRes.status.reason
+  writeBodyAndHeaders res serverRes.headers serverRes.body
+
+writeBodyAndHeaders :: HTTP.Response -> Headers -> ResponseBody -> Effect Unit
+writeBodyAndHeaders res headers (StringBody str) = do
+  let contentLength = show $ Encoding.byteLength str UTF8
+  let newHeaders = Headers.setIfNotDefined "content-length" contentLength headers
+  writeHeaders res newHeaders
+  writeStringBody res str
+writeBodyAndHeaders res headers (StreamBody stream) = do
+  writeHeaders res headers
+  writeStreamBody res stream
+writeBodyAndHeaders res headers EmptyBody = do
+  writeHeaders res headers
+  Aff.launchAff_ $ endResponse res
 
 writeHeaders :: HTTP.Response -> Headers -> Effect Unit
 writeHeaders res headers = do
@@ -187,22 +209,11 @@ writeStreamBody res stream = do
   _ <- Stream.pipe (to (unsafeCoerce stream)) (HTTP.responseAsStream res)
   pure unit
 
-type ErrorResponse =
-  { body :: String
-  , status :: Status.HttpStatus }
-
-sendError
-  :: HTTP.Response
-  -> ErrorResponse
-  -> Effect Unit
-sendError res {body, status} = do
-  let outputStream = HTTP.responseAsStream res
-  HTTP.setHeader res "content-type" ContentType.plain
-  HTTP.setHeader res "content-length" (show $ Encoding.byteLength body UTF8)
-  HTTP.setStatusCode res status.code
-  HTTP.setStatusMessage res status.reason
-  _ <- Stream.writeString outputStream UTF8 body (pure unit)
-  Stream.end outputStream (pure unit)
+internalError :: String -> RawResponse
+internalError msg = status Status.internalServerError (StringBody msg)
 
 status :: forall a. HttpStatus -> a -> Response a
 status s body = Response { status: s, headers: Headers.empty, body }
+
+ok :: forall a. a -> Response a
+ok body = Response { status: Status.ok, headers: Headers.empty, body }
