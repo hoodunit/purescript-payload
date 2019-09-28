@@ -89,7 +89,10 @@ class ToResponse a b where
 
 instance toResponseResponse :: ToResponse (Response a) a where
   toResponse res = pure res
-else instance toResponseEitherString :: ToResponse (Either String (Response a)) a where
+else instance toResponseEitherStringVal :: ToResponse (Either String a) a where
+  toResponse (Left res) = throwError (InternalError res)
+  toResponse (Right res) = pure (ok res)
+else instance toResponseEitherStringResp :: ToResponse (Either String (Response a)) a where
   toResponse (Left res) = throwError (InternalError res)
   toResponse (Right res) = pure res
 else instance toResponseEitherServerErrorVal ::
@@ -100,10 +103,14 @@ else instance toResponseEitherServerErrorResponse ::
   ToResponse (Either ServerError (Response a)) a where
   toResponse (Left err) = throwError err
   toResponse (Right res) = pure res
-else instance toResponseEitherResponse ::
+else instance toResponseEitherResponseResponse ::
   ToResponse (Either (Response ResponseBody) (Response a)) a where
   toResponse (Left res) = throwError (ErrorResponse res)
   toResponse (Right res) = pure res
+else instance toResponseEitherResponseVal ::
+  ToResponse (Either (Response ResponseBody) a) a where
+  toResponse (Left res) = throwError (ErrorResponse res)
+  toResponse (Right res) = pure (ok res)
 else instance toResponseIdentity :: ToResponse a a where
   toResponse res = pure (ok res)
 
