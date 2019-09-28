@@ -11,13 +11,10 @@ type Message =
   , text :: String }
 
 api :: API {
-  guards :: {},
-  routes :: {
-    getMessages :: GET "/user/<id>/messages?limit=<limit>" {
-      params :: { id :: Int },
-      query :: { limit :: Int },
-      response :: Array Message
-    }
+  getMessages :: GET "/user/<id>/messages?limit=<limit>" {
+    params :: { id :: Int },
+    query :: { limit :: Int },
+    response :: Array Message
   }
 }
 api = API
@@ -25,4 +22,4 @@ api = API
 getMessages { id, limit } = pure
   [{ id: 1, text: "Hey there"}, { id: 2, text: "Limit " <> show limit }]
 
-main = Payload.start_ api { guards: {}, handlers: { getMessages } }
+main = Payload.start_ api { getMessages }

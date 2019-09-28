@@ -22,7 +22,7 @@ import Node.URL as Url
 import Payload.Request (RequestUrl)
 import Payload.Response (ResponseBody(..), internalError, writeResponse)
 import Payload.Response as Response
-import Payload.Routable (class Routable, API, HandlerEntry, Outcome(..), mkRouter)
+import Payload.Routable (class Routable, API(API), HandlerEntry, Outcome(..), mkRouter)
 import Payload.Status as Status
 import Payload.Trie (Trie)
 import Payload.Trie as Trie
@@ -72,22 +72,41 @@ type Logger =
 
 foreign import unsafeDecodeURIComponent :: String -> String
 
+start
+  :: forall routesSpec handlers
+   . Routable routesSpec {} handlers {}
+  => Options
+  -> API routesSpec
+  -> handlers
+  -> Aff (Either String PayloadServer)
+start opts routeSpec handlers = startGuarded opts api { handlers, guards: {} }
+  where
+    api = API :: API { routes :: routesSpec, guards :: {} }
+
 start_
+  :: forall routesSpec handlers
+   . Routable routesSpec {} handlers {}
+  => API routesSpec
+  -> handlers
+  -> Aff (Either String PayloadServer)
+start_ = start defaultOpts
+
+startGuarded_
   :: forall routesSpec guardsSpec handlers guards
    . Routable routesSpec guardsSpec handlers guards
   => API { routes :: routesSpec, guards :: guardsSpec }
   -> { handlers :: handlers, guards :: guards }
   -> Aff (Either String PayloadServer)
-start_ = start defaultOpts
+startGuarded_ = startGuarded defaultOpts
 
-start
+startGuarded
   :: forall routesSpec guardsSpec handlers guards
    . Routable routesSpec guardsSpec handlers guards
   => Options
   -> API { guards :: guardsSpec, routes :: routesSpec }
   -> { handlers :: handlers, guards :: guards }
   -> Aff (Either String PayloadServer)
-start opts apiSpec api = do
+startGuarded opts apiSpec api = do
   let cfg = mkConfig opts
   case mkRouter apiSpec api of
     Right routerTrie -> do

@@ -32,7 +32,7 @@ withServer
   -> Aff Unit
 withServer apiSpec api_ aff = do
   let opts = Payload.defaultOpts { logLevel = Payload.LogError, port = 3000 }
-  Aff.bracket (Payload.start opts apiSpec api_) completed runAff
+  Aff.bracket (Payload.startGuarded opts apiSpec api_) completed runAff
   pure unit
   where
     runAff (Left _) = pure unit
