@@ -1,4 +1,9 @@
 /*
+This file was originally copied from mime-db project:
+the https://github.com/jshttp/mime-db
+*/
+
+/*
 The MIT License (MIT)
 
 Copyright (c) 2014 Jonathan Ong me@jongleberry.com
