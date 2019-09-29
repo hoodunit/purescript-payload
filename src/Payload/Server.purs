@@ -1,4 +1,17 @@
-module Payload.Server where
+module Payload.Server
+       ( Options
+       , LogLevel(..)
+       , Server
+       , close
+       , defaultOpts
+       , start
+       , start_
+       , startGuarded
+       , startGuarded_
+
+       , pathToSegments
+       , urlToSegments
+       ) where
 
 import Prelude
 
@@ -60,7 +73,7 @@ defaultOpts =
   , port: 3000
   , logLevel: LogNormal }
 
-type PayloadServer = HTTP.Server
+newtype Server = Server HTTP.Server
 
 type Config =
   { logger :: Logger }
@@ -79,7 +92,7 @@ start
   => Options
   -> API routesSpec
   -> handlers
-  -> Aff (Either String PayloadServer)
+  -> Aff (Either String Server)
 start opts routeSpec handlers = startGuarded opts api { handlers, guards: {} }
   where
     api = API :: API { routes :: routesSpec, guards :: {} }
@@ -89,7 +102,7 @@ start_
    . Routable routesSpec {} handlers {}
   => API routesSpec
   -> handlers
-  -> Aff (Either String PayloadServer)
+  -> Aff (Either String Server)
 start_ = start defaultOpts
 
 startGuarded_
@@ -97,7 +110,7 @@ startGuarded_
    . Routable routesSpec guardsSpec handlers guards
   => API { routes :: routesSpec, guards :: guardsSpec }
   -> { handlers :: handlers, guards :: guards }
-  -> Aff (Either String PayloadServer)
+  -> Aff (Either String Server)
 startGuarded_ = startGuarded defaultOpts
 
 startGuarded
@@ -106,12 +119,12 @@ startGuarded
   => Options
   -> API { guards :: guardsSpec, routes :: routesSpec }
   -> { handlers :: handlers, guards :: guards }
-  -> Aff (Either String PayloadServer)
+  -> Aff (Either String Server)
 startGuarded opts apiSpec api = do
   let cfg = mkConfig opts
   case mkRouter apiSpec api of
     Right routerTrie -> do
-      server <- liftEffect $ HTTP.createServer (handleRequest cfg routerTrie)
+      server <- Server <$> (liftEffect $ HTTP.createServer (handleRequest cfg routerTrie))
       let httpOpts = Record.delete (SProxy :: SProxy "logLevel") opts
       listenResult <- listen cfg server httpOpts
       pure (const server <$> listenResult)
@@ -192,16 +205,16 @@ pathToSegments = dropEmpty <<< List.fromFoldable <<< String.split (wrap "/")
 
 foreign import onError :: HTTP.Server -> (Error -> Effect Unit) -> Effect Unit
 
-listen :: Config -> HTTP.Server -> HTTP.ListenOptions -> Aff (Either String Unit)
-listen { logger } server opts = Aff.makeAff $ \cb -> do
-  onError server \error -> cb (Right (Left (show error)))
-  HTTP.listen server opts (logger.log startedMsg *> cb (Right (Right unit)))
+listen :: Config -> Server -> HTTP.ListenOptions -> Aff (Either String Unit)
+listen { logger } server@(Server httpServer) opts = Aff.makeAff $ \cb -> do
+  onError httpServer \error -> cb (Right (Left (show error)))
+  HTTP.listen httpServer opts (logger.log startedMsg *> cb (Right (Right unit)))
   pure $ Aff.Canceler (\error -> liftEffect (logger.logError (errorMsg error)) *> close server)
   where
     startedMsg = "Listening on port " <> show opts.port
     errorMsg e = "Closing server due to error: " <> show e
 
-close :: PayloadServer -> Aff Unit
-close server = Aff.makeAff $ \cb -> do
+close :: Server -> Aff Unit
+close (Server server) = Aff.makeAff $ \cb -> do
   HTTP.close server (cb (Right unit))
   pure Aff.nonCanceler
