@@ -5,18 +5,14 @@ import Prelude
 import Affjax as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
-import Data.Array as Array
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), isLeft)
-import Data.List (List)
-import Data.String as String
 import Data.String.Utils as StringUtils
 import Effect.Aff (Aff)
 import Node.HTTP as HTTP
 import Payload.Guards (GuardFn)
-import Payload.Handlers (File(..))
-import Payload.Internal.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
-import Payload.Route (GET, Route(..))
+import Payload.Internal.GuardParsing (type (:), Guards, Nil)
+import Payload.Spec (GET)
 import Payload.Routable (API(..))
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)

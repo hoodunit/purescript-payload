@@ -24,8 +24,8 @@ import Payload.Cookies as Cookies
 import Payload.Guards (GuardFn)
 import Payload.Handlers (File(..))
 import Payload.Internal.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
-import Payload.Route (GET, POST, Route(..), DELETE)
 import Payload.Routable (API(..), Routes(..))
+import Payload.Spec (GET, POST, Route, DELETE)
 import Payload.Test.Helpers (assertFail, assertRes, withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert

@@ -19,7 +19,8 @@ import Payload.Client.FromResponse (class ReadResponse, readResponse)
 import Payload.Internal.Url (class EncodeUrl)
 import Payload.Internal.Url as PayloadUrl
 import Payload.Response (ResponseBody(..))
-import Payload.Route (DefaultRequest, Route(..))
+import Payload.Route (DefaultRequest)
+import Payload.Spec (Route(Route))
 import Payload.Routable (API(..), DefaultParentRoute, Routes(..))
 import Prim.Row (class Cons)
 import Prim.Row as Row

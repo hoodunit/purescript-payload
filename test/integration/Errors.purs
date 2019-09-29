@@ -6,7 +6,7 @@ import Data.Either (Either(..))
 import Data.Map as Map
 import Payload.Headers as Headers
 import Payload.Response (RawResponse, Response(..), ResponseBody(..), ServerError(..), serverError)
-import Payload.Route (GET)
+import Payload.Spec (GET)
 import Payload.Status as Status
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers

@@ -19,8 +19,8 @@ import Payload.Examples.Basic.Api (AdminUser(..), Post, User, api)
 import Payload.Guards (GuardFn)
 import Payload.Guards as Guards
 import Payload.Handlers (File(..))
-import Payload.Route (GET, Route(..), POST)
 import Payload.Server as Payload
+import Payload.Spec (GET, Route, POST)
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert

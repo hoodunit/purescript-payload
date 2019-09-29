@@ -24,7 +24,7 @@ import Payload.Internal.Url as PayloadUrl
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments)
 import Payload.Request (RequestUrl)
 import Payload.Response as Resp
-import Payload.Route (Route)
+import Payload.Spec (Route)
 import Prim.Row as Row
 import Prim.Symbol as Symbol
 import Record as Record

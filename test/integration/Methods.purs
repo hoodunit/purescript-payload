@@ -3,7 +3,7 @@ module Payload.Test.Integration.Methods where
 import Prelude
 
 import Payload.Response as Response
-import Payload.Route (DELETE, GET, HEAD, POST, PUT)
+import Payload.Spec (DELETE, GET, HEAD, POST, PUT)
 import Payload.Status as Status
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers

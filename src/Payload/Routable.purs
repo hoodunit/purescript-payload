@@ -24,7 +24,8 @@ import Payload.Handleable (class Handleable, HandlerFailure(..), HandlerM, Metho
 import Payload.Request (RequestUrl)
 import Payload.Response (RawResponse(..), ServerError(..))
 import Payload.Response as Resp
-import Payload.Route (DefaultRequest, Route(..))
+import Payload.Route (DefaultRequest)
+import Payload.Spec (Route(Route))
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList

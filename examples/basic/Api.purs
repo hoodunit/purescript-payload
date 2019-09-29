@@ -4,8 +4,8 @@ import Data.List (List)
 import Node.HTTP as HTTP
 import Payload.Handlers (File)
 import Payload.Internal.GuardParsing (type (:), Guards(..), Nil)
-import Payload.Route (GET, POST)
 import Payload.Routable (API(..), Routes(..))
+import Payload.Spec (GET, POST)
 
 type User =
   { id :: Int
