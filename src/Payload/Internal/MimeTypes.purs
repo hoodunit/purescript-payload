@@ -1,4 +1,4 @@
-module Payload.MimeTypes where
+module Payload.Internal.MimeTypes where
 
 import Prelude
 

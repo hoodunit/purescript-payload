@@ -20,7 +20,7 @@ import Node.FS.Stats as Stats
 import Node.FS.Stream (createReadStream)
 import Payload.Headers (Headers(..))
 import Payload.Headers as Headers
-import Payload.MimeTypes as MimeTypes
+import Payload.Internal.MimeTypes as MimeTypes
 import Payload.Path as Path
 import Payload.Response (class EncodeResponse, Response(..), ResponseBody(..), ServerError(..), Handler)
 import Payload.Response as Response
