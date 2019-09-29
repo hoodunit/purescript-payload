@@ -15,6 +15,8 @@ import Effect.Console (errorShow, log)
 import Node.HTTP as HTTP
 import Payload.Internal.GuardParsing (GNil, GuardTypes(..), Guards(..), kind GuardList)
 import Payload.Internal.GuardParsing as GuardParsing
+import Payload.Internal.Trie (Trie)
+import Payload.Internal.Trie as Trie
 import Payload.Internal.Url as PayloadUrl
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments, Segment(..))
 import Payload.Internal.UrlParsing as UrlParsing
@@ -23,8 +25,6 @@ import Payload.Request (RequestUrl)
 import Payload.Response (RawResponse(..), ServerError(..))
 import Payload.Response as Resp
 import Payload.Route (DefaultRequest, Route(..))
-import Payload.Trie (Trie)
-import Payload.Trie as Trie
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList

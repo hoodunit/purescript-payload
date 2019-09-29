@@ -19,13 +19,13 @@ import Effect.Exception (Error)
 import Node.HTTP as HTTP
 import Node.URL (URL)
 import Node.URL as Url
+import Payload.Internal.Trie (Trie)
+import Payload.Internal.Trie as Trie
 import Payload.Request (RequestUrl)
 import Payload.Response (ResponseBody(..), internalError, writeResponse)
 import Payload.Response as Response
 import Payload.Routable (class Routable, API(API), HandlerEntry, Outcome(..), mkRouter)
 import Payload.Status as Status
-import Payload.Trie (Trie)
-import Payload.Trie as Trie
 import Record as Record
 
 type Options =

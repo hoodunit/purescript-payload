@@ -1,4 +1,4 @@
-module Payload.Test.Unit.Trie where
+module Payload.Test.Unit.Internal.Trie where
 
 import Prelude
 
@@ -8,8 +8,8 @@ import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Payload.Server (pathToSegments)
-import Payload.Trie (Trie(..))
-import Payload.Trie as Trie
+import Payload.Internal.Trie (Trie(..))
+import Payload.Internal.Trie as Trie
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments, Segment(Lit, Key, Multi), asSegments)
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
