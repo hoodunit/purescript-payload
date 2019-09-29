@@ -86,7 +86,7 @@ moviesApi :: API {
              body :: { requestToken :: String },
              response :: SessionIdResponse
            },
-           -- DELETE not supported yet
+           -- DELETE not supported yet in client
            -- delete :: DELETE "/" {
            delete :: GET "/" {
              body :: { sessionId :: String },
@@ -112,7 +112,7 @@ moviesApi :: API {
                body :: RatingValue,
                response :: StatusCodeResponse
              },
-             -- DELETE not supported yet
+             -- DELETE not supported yet in client
              -- delete :: DELETE "/rating" {
              delete :: GET "/rating" {
                response :: StatusCodeResponse
