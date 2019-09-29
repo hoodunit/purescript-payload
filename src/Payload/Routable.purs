@@ -13,8 +13,10 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Console (errorShow, log)
 import Node.HTTP as HTTP
-import Payload.GuardParsing (GNil, GuardTypes(..), Guards(..), kind GuardList)
-import Payload.GuardParsing as GuardParsing
+import Payload.Internal.GuardParsing (GNil, GuardTypes(..), Guards(..), kind GuardList)
+import Payload.Internal.GuardParsing as GuardParsing
+import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments, Segment(..))
+import Payload.Internal.UrlParsing as UrlParsing
 import Payload.Handleable (class Handleable, HandlerFailure(..), HandlerM, MethodHandler, handle)
 import Payload.Request (RequestUrl)
 import Payload.Response (RawResponse(..), ServerError(..))
@@ -23,8 +25,6 @@ import Payload.Route (DefaultRequest, Route(..))
 import Payload.Trie (Trie)
 import Payload.Trie as Trie
 import Payload.Url as PayloadUrl
-import Payload.UrlParsing (class ParseUrl, class ToSegments, Segment(..))
-import Payload.UrlParsing as UrlParsing
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList

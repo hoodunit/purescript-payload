@@ -3,8 +3,8 @@ module Payload.Examples.Basic.Api where
 import Data.List (List)
 import Data.Symbol (SProxy(..))
 import Node.HTTP as HTTP
-import Payload.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
 import Payload.Handlers (File)
+import Payload.Internal.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
 import Payload.Route (DELETE, GET, POST, Route(..))
 import Payload.Routable (API(..), Routes(..))
 import Type.Proxy (Proxy(..))

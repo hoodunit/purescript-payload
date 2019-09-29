@@ -9,7 +9,7 @@ import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String as String
 import Payload.Params (class FromParam, class FromSegments, class ToParam, fromParam, fromSegments, toParam)
-import Payload.UrlParsing (class ParseUrl, UrlListProxy(..), Key, Lit, Multi, UrlCons, UrlNil, kind UrlList)
+import Payload.Internal.UrlParsing (class ParseUrl, UrlListProxy(..), Key, Lit, Multi, UrlCons, UrlNil, kind UrlList)
 import Prim.Row as Row
 import Record as Record
 import Type.Equality (class TypeEquals, to)

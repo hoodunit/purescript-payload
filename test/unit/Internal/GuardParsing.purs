@@ -1,11 +1,11 @@
-module Payload.Test.Unit.GuardParsing where
+module Payload.Test.Unit.Internal.GuardParsing where
 
 import Prelude
 
 import Data.List (List(..), (:))
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
-import Payload.GuardParsing (class ParseGuardList, class ToGuardList)
-import Payload.GuardParsing as GuardParsing
+import Payload.Internal.GuardParsing (class ParseGuardList, class ToGuardList)
+import Payload.Internal.GuardParsing as GuardParsing
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 

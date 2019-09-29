@@ -21,9 +21,9 @@ import Payload.Client.Client (class ClientApi, mkClient)
 import Payload.Client.Client as Client
 import Payload.Cookies (requestCookies)
 import Payload.Cookies as Cookies
-import Payload.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
 import Payload.Guards (GuardFn)
 import Payload.Handlers (File(..))
+import Payload.Internal.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
 import Payload.Route (GET, POST, Route(..), DELETE)
 import Payload.Routable (API(..), Routes(..))
 import Payload.Test.Helpers (assertFail, assertRes, withServer)

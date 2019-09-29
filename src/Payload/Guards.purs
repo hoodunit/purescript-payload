@@ -8,7 +8,7 @@ import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
 import Node.HTTP as HTTP
 import Payload.Cookies as Cookies
-import Payload.GuardParsing (GCons, GNil, GuardTypes(..), Guards(..), kind GuardList)
+import Payload.Internal.GuardParsing (GCons, GNil, GuardTypes(..), Guards(..), kind GuardList)
 import Prim.Row as Row
 import Record as Record
 import Type.Equality (to)

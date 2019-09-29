@@ -1,10 +1,10 @@
-module Payload.Test.Unit.QueryParsing where
+module Payload.Test.Unit.Internal.QueryParsing where
 
 import Prelude
 
 import Data.List (List(..), (:))
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
-import Payload.QueryParsing (class ParseQuery, class ToSegments, Segment(..), asSegments)
+import Payload.Internal.QueryParsing (class ParseQuery, class ToSegments, Segment(..), asSegments)
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 

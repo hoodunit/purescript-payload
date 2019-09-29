@@ -12,7 +12,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
-import Payload.UrlParsing (Segment(Lit, Key, Multi), showUrl)
+import Payload.Internal.UrlParsing (Segment(Lit, Key, Multi), showUrl)
 
 data Trie a = Trie
   { value :: Maybe a

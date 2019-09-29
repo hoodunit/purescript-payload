@@ -15,17 +15,16 @@ import Effect.Ref as Ref
 import Node.Encoding (Encoding(..))
 import Node.HTTP as HTTP
 import Node.Stream (onDataString, onEnd, onError)
-import Payload.Data (class FromData)
-import Payload.Data as Data
-import Payload.GuardParsing (GuardTypes(..), Guards(..), kind GuardList)
-import Payload.GuardParsing as GuardParsing
+import Payload.FromData (class FromData, fromData)
 import Payload.Guards (class RunGuards, runGuards)
+import Payload.Internal.GuardParsing (GuardTypes(..), Guards(..), kind GuardList)
+import Payload.Internal.GuardParsing as GuardParsing
+import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments)
 import Payload.Query as PayloadQuery
 import Payload.Request (RequestUrl)
 import Payload.Response as Resp
 import Payload.Route (Route)
 import Payload.Url as PayloadUrl
-import Payload.UrlParsing (class ParseUrl, class ToSegments)
 import Prim.Row as Row
 import Prim.Symbol as Symbol
 import Record as Record
@@ -94,7 +93,7 @@ instance handleablePostRoute ::
     params <- withExceptT MatchFail $ except $ decodePath path
     decodedQuery <- withExceptT MatchFail $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
-    body <- withExceptT MatchFail $ except $ (Data.fromData bodyStr :: Either String body)
+    body <- withExceptT MatchFail $ except $ (fromData bodyStr :: Either String body)
     guards <- withExceptT MatchFail $ ExceptT $ runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload' :: Record payload') = Record.union fullParams { body }
@@ -246,7 +245,7 @@ instance handleablePutRoute ::
     params <- withExceptT MatchFail $ except $ decodePath path
     decodedQuery <- withExceptT MatchFail $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
-    body <- withExceptT MatchFail $ except $ (Data.fromData bodyStr :: Either String body)
+    body <- withExceptT MatchFail $ except $ (fromData bodyStr :: Either String body)
     guards <- withExceptT MatchFail $ ExceptT $ runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload' :: Record payload') = Record.union fullParams { body }

@@ -10,9 +10,9 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String as String
 import Foreign.Object (Object)
 import Foreign.Object as Object
+import Payload.Internal.QueryParsing (kind QueryPart, Lit, Key, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
 import Payload.Params (class FromParam, class FromSegments, class ToParam, fromParam, fromSegments, toParam)
 import Payload.QueryParams (class FromQueryParam, fromQueryParam)
-import Payload.QueryParsing (kind QueryPart, Lit, Key, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
 import Payload.Querystring.Qs as Qs
 import Prim.Row as Row
 import Record as Record

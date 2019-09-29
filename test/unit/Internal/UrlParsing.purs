@@ -1,10 +1,10 @@
-module Payload.Test.Unit.UrlParsing where
+module Payload.Test.Unit.Internal.UrlParsing where
 
 import Prelude
 
 import Data.List (List(..), (:))
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
-import Payload.UrlParsing (class ParseUrl, class ToSegments, Segment(..), asSegments)
+import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments, Segment(..), asSegments)
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 

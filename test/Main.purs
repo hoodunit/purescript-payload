@@ -11,13 +11,13 @@ import Payload.Test.Integration.Guards as GuardsTest
 import Payload.Test.Integration.Methods as MethodsTest
 import Payload.Test.Integration.QueryParams as QueryParamsTest
 import Payload.Test.Unit.Cookies as CookiesTest
-import Payload.Test.Unit.GuardParsing as GuardParsingTest
+import Payload.Test.Unit.Internal.GuardParsing as GuardParsingTest
+import Payload.Test.Unit.Internal.QueryParsing as QueryParsingTest
+import Payload.Test.Unit.Internal.UrlParsing as UrlParsingTest
 import Payload.Test.Unit.Params as ParamsTest
-import Payload.Test.Unit.QueryParsing as QueryParsingTest
 import Payload.Test.Unit.Response as ResponseTest
 import Payload.Test.Unit.Trie as TrieTest
 import Payload.Test.Unit.Url as UrlTest
-import Payload.Test.Unit.UrlParsing as UrlParsingTest
 import Test.Unit (TestSuite)
 import Test.Unit.Main (runTestWith)
 import Test.Unit.Output.Fancy as Fancy

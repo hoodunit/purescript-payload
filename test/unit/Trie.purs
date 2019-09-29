@@ -10,7 +10,7 @@ import Data.Tuple (Tuple(..))
 import Payload.Server (pathToSegments)
 import Payload.Trie (Trie(..))
 import Payload.Trie as Trie
-import Payload.UrlParsing (class ParseUrl, class ToSegments, Segment(Lit, Key, Multi), asSegments)
+import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments, Segment(Lit, Key, Multi), asSegments)
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 

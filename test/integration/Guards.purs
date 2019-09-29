@@ -13,9 +13,9 @@ import Data.String as String
 import Data.String.Utils as StringUtils
 import Effect.Aff (Aff)
 import Node.HTTP as HTTP
-import Payload.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
 import Payload.Guards (GuardFn)
 import Payload.Handlers (File(..))
+import Payload.Internal.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
 import Payload.Route (GET, Route(..))
 import Payload.Routable (API(..))
 import Payload.Test.Helpers (withServer)

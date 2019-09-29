@@ -12,9 +12,9 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Effect.Aff (Aff)
-import Payload.GuardParsing (GuardTypes(..))
 import Payload.Handlers (File(..), directory, file)
 import Payload.Handlers as Handlers
+import Payload.Internal.GuardParsing (GuardTypes(..))
 import Payload.Response (ServerError)
 import Payload.Routable (API(..))
 import Payload.Route (GET, Route(..))
