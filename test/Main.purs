@@ -12,6 +12,7 @@ import Payload.Test.Integration.Methods as MethodsTest
 import Payload.Test.Integration.QueryParams as QueryParamsTest
 import Payload.Test.Unit.Cookies as CookiesTest
 import Payload.Test.Unit.Internal.GuardParsing as GuardParsingTest
+import Payload.Test.Unit.Internal.Query as QueryTest
 import Payload.Test.Unit.Internal.QueryParsing as QueryParsingTest
 import Payload.Test.Unit.Internal.Trie as TrieTest
 import Payload.Test.Unit.Internal.Url as UrlTest
@@ -26,6 +27,7 @@ tests :: TestSuite
 tests = do
   UrlParsingTest.tests
   UrlTest.tests
+  QueryTest.tests
   QueryParsingTest.tests
   ParamsTest.tests
   TrieTest.tests

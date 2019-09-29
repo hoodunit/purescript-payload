@@ -3,15 +3,11 @@ module Payload.Test.Integration.QueryParams where
 import Prelude
 
 import Affjax as AX
-import Affjax.RequestBody as AX
 import Affjax.RequestBody as RequestBody
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
-import Data.Bifunctor (lmap)
-import Data.Either (Either(..), either, isLeft)
-import Data.Symbol (SProxy(..))
+import Data.Either (Either(..), either)
 import Effect.Aff (Aff)
-import Payload.Internal.Query as Query
 import Payload.Route (GET, POST)
 import Payload.Routable (API(..))
 import Payload.Test.Helpers (withServer)
@@ -19,7 +15,6 @@ import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
 import Test.Unit.Main (runTestWith)
 import Test.Unit.Output.Fancy as Fancy
-import Type.Proxy (Proxy(..))
 
 newtype User = User
   { id :: Int
@@ -92,36 +87,6 @@ tests = do
       test "POST /profile?id=3.0&foo=asdf fails" $ do
         res <- post "/profile?id=3.0&foo=asdf" ""
         Assert.equal { status: 404, body: "" } res
-  suite "Query parameter decoding" do
-    test "decoding int succeeds for valid int" do
-      Assert.equal
-        (Right {limit: 12})
-          (Query.decodeQuery
-            (SProxy :: SProxy "/search?limit=<limit>")
-            (Proxy :: Proxy { limit :: Int })
-            "limit=12")
-    test "decoding int fails for invalid int" do
-      Assert.equal
-        true
-        (isLeft
-          (Query.decodeQuery
-            (SProxy :: SProxy "/search?limit=<limit>")
-            (Proxy :: Proxy { limit :: Int })
-            "limit=asdf"))
-    test "decoding string succeeds" do
-      Assert.equal
-        (Right {query: "whatever"})
-          (Query.decodeQuery
-            (SProxy :: SProxy "/search?query=<query>")
-            (Proxy :: Proxy { query :: String })
-            "query=whatever")
-    test "extra parameters are ignored" do
-      Assert.equal
-        (Right {limit: 12})
-          (Query.decodeQuery
-            (SProxy :: SProxy "/search?limit=<limit>")
-            (Proxy :: Proxy { limit :: Int })
-            "foo=blah&limit=12&a=b")
 
 runTests :: Aff Unit
 runTests = do
