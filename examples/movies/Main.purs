@@ -23,8 +23,7 @@ import Payload.Cookies (requestCookies)
 import Payload.Cookies as Cookies
 import Payload.Guards (GuardFn)
 import Payload.Handlers (File(..))
-import Payload.Internal.GuardParsing (type (:), GuardTypes(..), Guards(..), Nil)
-import Payload.Spec (API(API), GET, POST, Route, Routes, DELETE)
+import Payload.Spec (type (:), API(API), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
 import Payload.Test.Helpers (assertFail, assertRes, withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert

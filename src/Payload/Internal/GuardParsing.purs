@@ -6,20 +6,12 @@ import Data.List (List(..), (:))
 import Data.List as List
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Debug.Trace as Debug
+import Payload.Spec (GCons, GNil, Guards(..), kind GuardList)
 import Prim.Symbol as Symbol
 import Prim.TypeError (class Fail, Above, Beside, Text, kind Doc)
 
 infixr 2 type Beside as <>
 infixr 1 type Above as |>
-
-data Guards (g :: GuardList) = Guards
-
-foreign import kind GuardList
-foreign import data GNil :: GuardList
-foreign import data GCons :: Symbol -> GuardList -> GuardList
-
-infixr 1 type GCons as :
-type Nil = GNil
 
 data GuardTypes types = GuardTypes
 

@@ -11,8 +11,7 @@ import Data.String.Utils as StringUtils
 import Effect.Aff (Aff)
 import Node.HTTP as HTTP
 import Payload.Guards (GuardFn)
-import Payload.Internal.GuardParsing (type (:), Guards, Nil)
-import Payload.Spec (API(API), GET)
+import Payload.Spec (type (:), API(API), GET, Guards(..), Nil)
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert

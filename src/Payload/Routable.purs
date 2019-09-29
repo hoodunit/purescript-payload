@@ -14,7 +14,7 @@ import Effect.Class (liftEffect)
 import Effect.Console (errorShow, log)
 import Node.HTTP as HTTP
 import Payload.Handleable (class Handleable, HandlerFailure(..), HandlerM, MethodHandler, handle)
-import Payload.Internal.GuardParsing (GNil, GuardTypes(..), Guards(..), kind GuardList)
+import Payload.Internal.GuardParsing (GuardTypes(GuardTypes))
 import Payload.Internal.GuardParsing as GuardParsing
 import Payload.Internal.Trie (Trie)
 import Payload.Internal.Trie as Trie
@@ -25,7 +25,7 @@ import Payload.Request (RequestUrl)
 import Payload.Response (RawResponse(..), ServerError(..))
 import Payload.Response as Resp
 import Payload.Route (DefaultRequest)
-import Payload.Spec (API(..), Route(Route), Routes(..))
+import Payload.Spec (kind GuardList, API(..), GNil, Guards(Guards), Route(Route), Routes(..))
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList

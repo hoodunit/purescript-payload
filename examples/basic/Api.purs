@@ -3,8 +3,7 @@ module Payload.Examples.Basic.Api where
 import Data.List (List)
 import Node.HTTP as HTTP
 import Payload.Handlers (File)
-import Payload.Internal.GuardParsing (type (:), Guards(..), Nil)
-import Payload.Spec (API(API), GET, POST, Routes)
+import Payload.Spec (type (:), API(API), GET, Guards, Nil, POST, Routes)
 
 type User =
   { id :: Int

@@ -17,14 +17,14 @@ import Node.HTTP as HTTP
 import Node.Stream (onDataString, onEnd, onError)
 import Payload.FromData (class FromData, fromData)
 import Payload.Guards (class RunGuards, runGuards)
-import Payload.Internal.GuardParsing (GuardTypes(..), Guards(..), kind GuardList)
+import Payload.Internal.GuardParsing (GuardTypes(..))
 import Payload.Internal.GuardParsing as GuardParsing
 import Payload.Internal.Query as PayloadQuery
 import Payload.Internal.Url as PayloadUrl
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments)
 import Payload.Request (RequestUrl)
 import Payload.Response as Resp
-import Payload.Spec (Route)
+import Payload.Spec (Guards(..), Route, kind GuardList)
 import Prim.Row as Row
 import Prim.Symbol as Symbol
 import Record as Record
