@@ -1,4 +1,4 @@
-module Payload.Data where
+module Payload.FromData where
 
 import Prelude
 
