@@ -12,8 +12,7 @@ import Effect.Aff (Aff)
 import Node.HTTP as HTTP
 import Payload.Guards (GuardFn)
 import Payload.Internal.GuardParsing (type (:), Guards, Nil)
-import Payload.Spec (GET)
-import Payload.Routable (API(..))
+import Payload.Spec (API(API), GET)
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert

@@ -24,7 +24,8 @@ import Payload.Internal.Trie as Trie
 import Payload.Request (RequestUrl)
 import Payload.Response (ResponseBody(..), internalError, writeResponse)
 import Payload.Response as Response
-import Payload.Routable (class Routable, API(API), HandlerEntry, Outcome(..), mkRouter)
+import Payload.Routable (class Routable, HandlerEntry, Outcome(..), mkRouter)
+import Payload.Spec (API(API))
 import Payload.Status as Status
 import Record as Record
 

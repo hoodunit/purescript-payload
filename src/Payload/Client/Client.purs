@@ -20,8 +20,8 @@ import Payload.Internal.Url (class EncodeUrl)
 import Payload.Internal.Url as PayloadUrl
 import Payload.Response (ResponseBody(..))
 import Payload.Route (DefaultRequest)
-import Payload.Spec (Route(Route))
-import Payload.Routable (API(..), DefaultParentRoute, Routes(..))
+import Payload.Routable (DefaultParentRoute)
+import Payload.Spec (API, Route(Route), Routes)
 import Prim.Row (class Cons)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)

@@ -8,8 +8,7 @@ import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Data.Either (Either(..), either)
 import Effect.Aff (Aff)
-import Payload.Routable (API(..))
-import Payload.Spec (GET, POST)
+import Payload.Spec (API(API), GET, POST)
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert

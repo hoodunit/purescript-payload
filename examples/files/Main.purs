@@ -16,8 +16,7 @@ import Payload.Handlers (File(..), directory, file)
 import Payload.Handlers as Handlers
 import Payload.Internal.GuardParsing (GuardTypes(..))
 import Payload.Response (ServerError)
-import Payload.Routable (API(..))
-import Payload.Spec (GET, Route)
+import Payload.Spec (API(API), GET, Route)
 import Payload.Test.Helpers (respMatches, withServer)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, Test, failure, suite, test)

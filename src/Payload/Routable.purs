@@ -13,6 +13,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Console (errorShow, log)
 import Node.HTTP as HTTP
+import Payload.Handleable (class Handleable, HandlerFailure(..), HandlerM, MethodHandler, handle)
 import Payload.Internal.GuardParsing (GNil, GuardTypes(..), Guards(..), kind GuardList)
 import Payload.Internal.GuardParsing as GuardParsing
 import Payload.Internal.Trie (Trie)
@@ -20,12 +21,11 @@ import Payload.Internal.Trie as Trie
 import Payload.Internal.Url as PayloadUrl
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments, Segment(..))
 import Payload.Internal.UrlParsing as UrlParsing
-import Payload.Handleable (class Handleable, HandlerFailure(..), HandlerM, MethodHandler, handle)
 import Payload.Request (RequestUrl)
 import Payload.Response (RawResponse(..), ServerError(..))
 import Payload.Response as Resp
 import Payload.Route (DefaultRequest)
-import Payload.Spec (Route(Route))
+import Payload.Spec (API(..), Route(Route), Routes(..))
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList
@@ -45,9 +45,6 @@ type HandlerEntry =
 type Handler = RequestUrl -> HTTP.Request -> HTTP.Response -> Aff Outcome
 
 data Outcome = Success | Failure | Forward String
-
-data API apiSpec = API
-data Routes (path :: Symbol) routesSpec = Routes
 
 type DefaultParentRoute = ( params :: {}, guards :: Guards GNil )
 defaultParent :: Record DefaultParentRoute

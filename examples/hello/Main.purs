@@ -2,8 +2,7 @@ module Payload.Examples.Hello.Main where
 
 import Prelude
 
-import Payload.Routable (API(..))
-import Payload.Spec (GET)
+import Payload.Spec (API(API), GET)
 import Payload.Server as Payload
 
 type Message = 
