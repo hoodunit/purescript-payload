@@ -4,15 +4,12 @@ import Prelude
 
 import Affjax as AX
 import Affjax.RequestBody as RequestBody
-import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
-import Data.Map (Map)
-import Data.Map as Map
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
 import Payload.Client.FromResponse (class ReadResponse, readResponse)
@@ -22,18 +19,15 @@ import Payload.Response (ResponseBody(..))
 import Payload.Route (DefaultRequest)
 import Payload.Routable (DefaultParentRoute)
 import Payload.Spec (API, Route(Route), Routes)
-import Prim.Row (class Cons)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList
 import Prim.Symbol as Symbol
-import Prim.TypeError (class Fail, Text)
 import Record as Record
 import Simple.JSON as SimpleJson
 import Type.Data.RowList (RLProxy(..))
 import Type.Equality (class TypeEquals, to)
 import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
 
 type Options =
   { hostname :: String
