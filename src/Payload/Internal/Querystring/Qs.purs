@@ -1,4 +1,4 @@
-module Payload.Querystring.Qs where
+module Payload.Internal.Querystring.Qs where
 
 import Prelude
 
