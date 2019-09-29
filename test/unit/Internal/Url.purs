@@ -1,4 +1,4 @@
-module Payload.Test.Unit.Url where
+module Payload.Test.Unit.Internal.Url where
 
 import Prelude
 
@@ -7,8 +7,8 @@ import Data.List (List(..), (:))
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Effect.Class (liftEffect)
+import Payload.Internal.Url as Url
 import Payload.Server (urlToSegments)
-import Payload.Url as Url
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 import Type.Proxy (Proxy(..))

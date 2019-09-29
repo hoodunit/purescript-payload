@@ -11,7 +11,7 @@ import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either, isLeft)
 import Data.Symbol (SProxy(..))
 import Effect.Aff (Aff)
-import Payload.Query as Query
+import Payload.Internal.Query as Query
 import Payload.Route (GET, POST)
 import Payload.Routable (API(..))
 import Payload.Test.Helpers (withServer)

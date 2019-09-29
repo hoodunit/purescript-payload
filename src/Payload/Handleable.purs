@@ -19,12 +19,12 @@ import Payload.FromData (class FromData, fromData)
 import Payload.Guards (class RunGuards, runGuards)
 import Payload.Internal.GuardParsing (GuardTypes(..), Guards(..), kind GuardList)
 import Payload.Internal.GuardParsing as GuardParsing
+import Payload.Internal.Query as PayloadQuery
+import Payload.Internal.Url as PayloadUrl
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments)
-import Payload.Query as PayloadQuery
 import Payload.Request (RequestUrl)
 import Payload.Response as Resp
 import Payload.Route (Route)
-import Payload.Url as PayloadUrl
 import Prim.Row as Row
 import Prim.Symbol as Symbol
 import Record as Record

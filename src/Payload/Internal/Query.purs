@@ -1,4 +1,4 @@
-module Payload.Query where
+module Payload.Internal.Query where
 
 import Prelude
 
