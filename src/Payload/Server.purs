@@ -15,6 +15,7 @@ module Payload.Server
 
 import Prelude
 
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.List as List
@@ -34,6 +35,7 @@ import Node.URL (URL)
 import Node.URL as Url
 import Payload.Internal.Trie (Trie)
 import Payload.Internal.Trie as Trie
+import Payload.Internal.UrlParsing (Segment)
 import Payload.Request (RequestUrl)
 import Payload.Response (ResponseBody(..), internalError, writeResponse)
 import Payload.Response as Response
@@ -131,7 +133,10 @@ startGuarded opts apiSpec api = do
     Left err -> pure (Left err)
 
 dumpRoutes :: Trie HandlerEntry -> Effect Unit
-dumpRoutes routerTrie = log $ Trie.dumpEntries (_.route <$> routerTrie)
+dumpRoutes = log <<< showRoutes
+
+showRoutes :: Trie HandlerEntry -> String
+showRoutes routerTrie = Trie.dumpEntries (_.route <$> routerTrie)
 
 mkConfig :: Options -> Config
 mkConfig { logLevel } = { logger: mkLogger logLevel }
@@ -152,29 +157,54 @@ mkLogger logLevel = { log: log_, logDebug, logError }
     logError = const $ pure unit
 
 handleRequest :: Config -> Trie HandlerEntry -> HTTP.Request -> HTTP.Response -> Effect Unit
-handleRequest { logger } routerTrie req res = do
+handleRequest cfg@{ logger } routerTrie req res = do
   let url = Url.parse (HTTP.requestURL req)
   logger.logDebug (HTTP.requestMethod req <> " " <> show (url.path))
   case requestUrl req of
-    Right reqUrl -> runHandlers routerTrie reqUrl req res
+    Right reqUrl -> runHandlers cfg routerTrie reqUrl req res
     Left err -> do
       writeResponse res (internalError $ "Path could not be decoded: " <> show err)
 
-runHandlers :: Trie HandlerEntry -> RequestUrl -> HTTP.Request -> HTTP.Response -> Effect Unit
-runHandlers routerTrie reqUrl req res = do
+runHandlers :: Config -> Trie HandlerEntry -> RequestUrl
+               -> HTTP.Request -> HTTP.Response -> Effect Unit
+runHandlers { logger } routerTrie reqUrl req res = do
   let (matches :: List HandlerEntry) = Trie.lookup (reqUrl.method : reqUrl.path) routerTrie
+  let matchesStr = String.joinWith "\n" (Array.fromFoldable $ (showRouteUrl <<< _.route) <$> matches)
+  logger.logDebug $ showUrl reqUrl <> " -> " <> show (List.length matches) <> " matches:\n" <> matchesStr
   Aff.launchAff_ $ do
-    outcome <- handleNext (Forward "Dummy forward") matches
+    outcome <- handleNext Nothing matches
     case outcome of
-      (Forward _) -> liftEffect $ writeResponse res (Response.status Status.notFound (StringBody ""))
+      (Forward msg) -> do
+        liftEffect $ writeResponse res (Response.status Status.notFound (StringBody ""))
       _ -> pure unit
   where
-    handleNext :: Outcome -> List HandlerEntry -> Aff Outcome
-    handleNext Success _ = pure Success
-    handleNext Failure _ = pure Failure
-    handleNext (Forward msg) ({ handler } : rest) =
-      handler reqUrl req res >>= \o -> handleNext o rest
+    handleNext :: Maybe Outcome -> List HandlerEntry -> Aff Outcome
+    handleNext Nothing ({ handler } : rest) = do
+      outcome <- handler reqUrl req res
+      handleNext (Just outcome) rest
+    handleNext (Just Success) _ = pure Success
+    handleNext (Just Failure) _ = pure Failure
+    handleNext (Just (Forward msg)) ({ handler } : rest) = do
+      liftEffect $ logger.logDebug $ "-> Forwarding to next route. Previous failure: " <> msg
+      outcome <- handler reqUrl req res
+      handleNext (Just outcome) rest
+    handleNext (Just (Forward msg)) Nil = do
+      liftEffect $ logger.logDebug $ "-> No more routes to try. Last failure: " <> msg
+      pure (Forward "No match could handle")
     handleNext _ Nil = pure (Forward "No match could handle")
+
+showMatches :: List HandlerEntry -> String
+showMatches matches = "    " <> String.joinWith "\n    " (Array.fromFoldable $ showMatch <$> matches)
+  where
+    showMatch = showRouteUrl <<< _.route
+
+showUrl :: RequestUrl -> String
+showUrl { method, path, query } = method <> " " <> fullPath
+  where fullPath = String.joinWith "/" (Array.fromFoldable path)
+
+showRouteUrl :: List Segment -> String
+showRouteUrl (method : rest) = show method <> " /" <> String.joinWith "/" (Array.fromFoldable $ show <$> rest)
+showRouteUrl Nil = ""
   
 requestUrl :: HTTP.Request -> Either String RequestUrl
 requestUrl req = do
