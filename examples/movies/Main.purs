@@ -17,11 +17,11 @@ import Data.Tuple (Tuple(..))
 import Debug.Trace as Debug
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Node.HTTP as HTTP
 import Payload.Client.Client (class ClientApi, mkClient)
 import Payload.Client.Client as Client
 import Payload.Cookies (requestCookies)
 import Payload.Cookies as Cookies
-import Payload.Guards (GuardFn)
 import Payload.Handlers (File(..))
 import Payload.Spec (type (:), API(API), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
 import Payload.Test.Helpers (assertFail, assertRes, withServer)
@@ -203,12 +203,12 @@ handlers = {
   }
 }
 
-getApiKey :: GuardFn ApiKey
+getApiKey :: HTTP.Request -> Aff (Either String ApiKey)
 getApiKey req = do
   let cookies = requestCookies req
   pure $ note "No cookie" $ Map.lookup "apiKey" cookies
 
-getSessionId :: GuardFn SessionId
+getSessionId :: HTTP.Request -> Aff (Either String SessionId)
 getSessionId req = do
   let cookies = requestCookies req
   pure $ note "No cookie" $ Map.lookup "sessionId" cookies

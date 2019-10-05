@@ -10,7 +10,6 @@ import Data.Either (Either(..), isLeft)
 import Data.String.Utils as StringUtils
 import Effect.Aff (Aff)
 import Node.HTTP as HTTP
-import Payload.Guards (GuardFn)
 import Payload.Spec (type (:), API(API), GET, Guards(..), Nil)
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
@@ -48,13 +47,13 @@ userIndex _ = pure "User page"
 unauthenticatedIndex :: forall r. { | r} -> Aff String
 unauthenticatedIndex _ = pure "Unauthenticated page"
 
-getAdminUser :: GuardFn AdminUser
+getAdminUser :: HTTP.Request -> Aff (Either String AdminUser)
 getAdminUser req = do
   if StringUtils.endsWith "secret" (HTTP.requestURL req)
      then pure (Right (AdminUser { id: 1, name: "John Admin" }))
      else pure (Left "Fail not an admin")
 
-getUser :: GuardFn User
+getUser :: HTTP.Request -> Aff (Either String User)
 getUser req = do
   if StringUtils.endsWith "username" (HTTP.requestURL req)
      then pure (Right (User { id: 1, name: "John User" }))

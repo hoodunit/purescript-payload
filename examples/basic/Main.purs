@@ -19,6 +19,7 @@ import Payload.Examples.Basic.Api (AdminUser(..), Post, User, api)
 import Payload.Guards (GuardFn)
 import Payload.Guards as Guards
 import Payload.Handlers (File(..))
+import Payload.Response (Failure(Forward))
 import Payload.Server as Payload
 import Payload.Spec (GET, Route, POST)
 import Payload.Test.Helpers (withServer)
@@ -107,11 +108,11 @@ tests = do
       (client.getHello identity {})
       "Hello!"
 
-getAdminUser :: GuardFn AdminUser
+getAdminUser :: HTTP.Request -> Aff (Either Failure AdminUser)
 getAdminUser req = do
   if StringUtils.endsWith "secret" (HTTP.requestURL req)
      then pure (Right (AdminUser { id: 1, name: "John Admin" }))
-     else pure (Left "Fail not an admin")
+     else pure (Left (Forward "Not an admin"))
 
 runTests :: Aff Unit
 runTests = do

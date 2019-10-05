@@ -13,7 +13,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Console (errorShow, log)
 import Node.HTTP as HTTP
-import Payload.Handleable (class Handleable, HandlerFailure(..), HandlerM, MethodHandler, handle)
+import Payload.Handleable (class Handleable, MethodHandler, handle)
 import Payload.Internal.GuardParsing (GuardTypes(GuardTypes))
 import Payload.Internal.GuardParsing as GuardParsing
 import Payload.Internal.Trie (Trie)
@@ -22,7 +22,7 @@ import Payload.Internal.Url as PayloadUrl
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments, Segment(..))
 import Payload.Internal.UrlParsing as UrlParsing
 import Payload.Request (RequestUrl)
-import Payload.Response (RawResponse(..), ServerError(..))
+import Payload.Response (RawResponse(..))
 import Payload.Response as Resp
 import Payload.Route (DefaultRequest)
 import Payload.Spec (kind GuardList, API(..), GNil, Guards(Guards), Route(Route), Routes(..))
@@ -42,7 +42,7 @@ type HandlerEntry =
   { handler :: RequestUrl -> HTTP.Request -> HTTP.Response -> Aff Outcome
   , route :: List Segment }
 
-type Handler = RequestUrl -> HTTP.Request -> HTTP.Response -> Aff Outcome
+type RawHandler = RequestUrl -> HTTP.Request -> HTTP.Response -> Aff Outcome
 
 data Outcome = Success | Failure | Forward String
 
@@ -138,31 +138,31 @@ instance routableListCons ::
       routePath :: List Segment
       routePath = UrlParsing.asSegments (SProxy :: SProxy fullPath)
 
-      handler :: Handler
+      handler :: RawHandler
       handler url req res =
         methodHandler url req res
         # executeHandler res
 
-      headHandler :: Handler
+      headHandler :: RawHandler
       headHandler url req res =
         methodHandler url req res
         <#> Resp.setEmptyBody
         # executeHandler res
 
-      executeHandler :: HTTP.Response -> HandlerM RawResponse -> Aff Outcome
+      executeHandler :: HTTP.Response -> Resp.Result RawResponse -> Aff Outcome
       executeHandler res mHandler = do
         result <- Aff.attempt $ runExceptT mHandler
         case result of
           Right (Right rawResponse) -> do
             liftEffect $ Resp.sendResponse res (Right rawResponse)
             pure Success
-          Right (Left (HandlerError error)) -> do
+          Right (Left (Resp.ServerError error)) -> do
             liftEffect $ Resp.sendResponse res (Left error)
             pure Failure
-          Right (Left (MatchFail error)) -> pure (Forward error)
+          Right (Left (Resp.Forward error)) -> pure (Forward error)
           Left error -> do
             liftEffect $ errorShow error
-            liftEffect $ Resp.sendResponse res (Left (InternalError "Internal error"))
+            liftEffect $ Resp.sendResponse res (Left (Resp.internalError "Internal error"))
             pure Failure
       
       methodHandler :: MethodHandler
@@ -236,7 +236,7 @@ instance routableListConsRoutes ::
                             guards
                             trie
 
-insertRoute :: List Segment -> Handler -> RoutingTrie -> Either String RoutingTrie
+insertRoute :: List Segment -> RawHandler -> RoutingTrie -> Either String RoutingTrie
 insertRoute route handler trie = lmap wrapError $ Trie.insert {route, handler} route trie
   where
     handlerEntry = { route, handler }

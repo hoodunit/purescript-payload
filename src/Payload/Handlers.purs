@@ -22,7 +22,7 @@ import Payload.Headers (Headers(..))
 import Payload.Headers as Headers
 import Payload.Internal.MimeTypes as MimeTypes
 import Payload.Path as Path
-import Payload.Response (class EncodeResponse, Response(..), ResponseBody(..), ServerError(..), Handler)
+import Payload.Response (class EncodeResponse, Response(..), ResponseBody(..))
 import Payload.Response as Response
 import Payload.Status as Status
 import Simple.JSON (class ReadForeign)
@@ -58,7 +58,7 @@ fileSize (Stats.Stats statsObj) = Int.round statsObj.size
 file :: forall r. String -> { | r } -> Aff File
 file path _ = pure (File path)
 
-directory :: forall f. Foldable f => String -> f String -> Aff (Either ServerError File)
+directory :: forall f. Foldable f => String -> f String -> Aff (Either Response.Failure File)
 directory root path = do
   rootPath <- pure (Path.resolve [root])
   requestedPath <- pure (Path.resolve $ [root] <> Array.fromFoldable path)
@@ -66,5 +66,5 @@ directory root path = do
      then pure $ Right $ File requestedPath
      else pure $ Left notFoundError
 
-notFoundError :: ServerError
+notFoundError :: Response.Failure
 notFoundError = Response.serverError Status.notFound "File not found"

@@ -29,15 +29,12 @@ import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals, to)
 import Unsafe.Coerce (unsafeCoerce)
 
-type Handler a = ExceptT ServerError Aff a
-data ServerError = InternalError String | ErrorResponse RawResponse
+type Result a = ExceptT Failure Aff a
+data Failure = Forward String | ServerError RawResponse
 
-instance showServerError :: Show ServerError where
-  show (InternalError s) = show s
-  show (ErrorResponse r) = show r
-
-serverError :: HttpStatus -> String -> ServerError
-serverError s msg = ErrorResponse (status s (StringBody msg))
+instance showFailure :: Show Failure where
+  show (Forward s) = "Forward '" <> s <> "'"
+  show (ServerError e) = "ServerError " <> show e
 
 foreign import endResponse_ :: HTTP.Response -> Unit -> (Unit -> Effect Unit) -> Effect Unit
 
@@ -85,31 +82,30 @@ instance showResponseBody :: Show ResponseBody where
 -- which that type can be produced (e.g. a full response with different
 -- headers or a different status code).
 class ToResponse a b where
-  toResponse :: a -> Handler (Response b)
+  toResponse :: a -> Result (Response b)
 
 instance toResponseResponse :: ToResponse (Response a) a where
   toResponse res = pure res
 else instance toResponseEitherStringVal :: ToResponse (Either String a) a where
-  toResponse (Left res) = throwError (InternalError res)
+  toResponse (Left res) = throwError (internalError_ res)
   toResponse (Right res) = pure (ok res)
 else instance toResponseEitherStringResp :: ToResponse (Either String (Response a)) a where
-  toResponse (Left res) = throwError (InternalError res)
+  toResponse (Left res) = throwError (internalError_ res)
   toResponse (Right res) = pure res
-else instance toResponseEitherServerErrorVal ::
-  ToResponse (Either ServerError a) a where
+else instance toResponseEitherFailurerVal :: ToResponse (Either Failure a) a where
   toResponse (Left err) = throwError err
   toResponse (Right res) = pure (ok res)
-else instance toResponseEitherServerErrorResponse ::
-  ToResponse (Either ServerError (Response a)) a where
+else instance toResponseEitherFailureResponse ::
+  ToResponse (Either Failure (Response a)) a where
   toResponse (Left err) = throwError err
   toResponse (Right res) = pure res
 else instance toResponseEitherResponseResponse ::
   ToResponse (Either (Response ResponseBody) (Response a)) a where
-  toResponse (Left res) = throwError (ErrorResponse res)
+  toResponse (Left res) = throwError (ServerError res)
   toResponse (Right res) = pure res
 else instance toResponseEitherResponseVal ::
   ToResponse (Either (Response ResponseBody) a) a where
-  toResponse (Left res) = throwError (ErrorResponse res)
+  toResponse (Left res) = throwError (ServerError res)
   toResponse (Right res) = pure (ok res)
 else instance toResponseIdentity :: ToResponse a a where
   toResponse res = pure (ok res)
@@ -118,7 +114,7 @@ else instance toResponseIdentity :: ToResponse a a where
 -- can appear in the response field of an API spec and ultimately
 -- can be encoded as one of the raw response types
 class EncodeResponse r where
-  encodeResponse :: Response r -> Handler RawResponse
+  encodeResponse :: Response r -> Result RawResponse
 instance encodeResponseResponseBody :: EncodeResponse ResponseBody where
   encodeResponse = pure
 else instance encodeResponseRecord ::
@@ -171,12 +167,11 @@ else instance encodeResponseUnit :: EncodeResponse Unit where
 sendInternalError :: forall err. Show err => HTTP.Response -> err -> Aff Unit
 sendInternalError res err = liftEffect $ writeResponse res (internalError (show err))
 
-sendResponse :: HTTP.Response -> Either ServerError RawResponse -> Effect Unit
+sendResponse :: HTTP.Response -> Either RawResponse RawResponse -> Effect Unit
 sendResponse res serverResult = Aff.runAff_ onComplete do
   liftEffect $ case serverResult of
     Right serverRes -> writeResponse res serverRes
-    Left (ErrorResponse err) -> writeResponse res err
-    Left (InternalError err) -> writeResponse res (internalError err)
+    Left err -> writeResponse res err
   where
     onComplete (Left errors) = writeResponse res (internalError (show errors))
     onComplete (Right _) = pure unit
@@ -215,6 +210,12 @@ writeStreamBody :: HTTP.Response -> UnsafeStream -> Effect Unit
 writeStreamBody res stream = do
   _ <- Stream.pipe (to (unsafeCoerce stream)) (HTTP.responseAsStream res)
   pure unit
+
+serverError :: HttpStatus -> String -> Failure
+serverError s msg = ServerError (status s (StringBody msg))
+
+internalError_ :: String -> Failure
+internalError_ msg = ServerError $ status Status.internalServerError (StringBody msg)
 
 internalError :: String -> RawResponse
 internalError msg = status Status.internalServerError (StringBody msg)

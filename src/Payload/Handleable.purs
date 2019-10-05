@@ -23,6 +23,7 @@ import Payload.Internal.Query as PayloadQuery
 import Payload.Internal.Url as PayloadUrl
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments)
 import Payload.Request (RequestUrl)
+import Payload.Response (Failure(..), RawResponse, Result)
 import Payload.Response as Resp
 import Payload.Spec (Guards(..), Route, kind GuardList)
 import Prim.Row as Row
@@ -30,11 +31,8 @@ import Prim.Symbol as Symbol
 import Record as Record
 import Type.Equality (class TypeEquals, from)
 import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
 
-type MethodHandler = RequestUrl -> HTTP.Request -> HTTP.Response -> HandlerM Resp.RawResponse
-data HandlerFailure = MatchFail String | HandlerError Resp.ServerError
-type HandlerM a = ExceptT HandlerFailure Aff a
+type MethodHandler = RequestUrl -> HTTP.Request -> HTTP.Response -> Result RawResponse
 
 class Handleable
   route
@@ -54,7 +52,7 @@ class Handleable
             -> RequestUrl
             -> HTTP.Request
             -> HTTP.Response
-            -> HandlerM Resp.RawResponse
+            -> Result Resp.RawResponse
 
 instance handleablePostRoute ::
        ( TypeEquals (Record route)
@@ -90,17 +88,17 @@ instance handleablePostRoute ::
                   guardsSpec
                   (Record allGuards) where
   handle _ _ _ _ route handler allGuards { method, path, query } req res = do
-    params <- withExceptT MatchFail $ except $ decodePath path
-    decodedQuery <- withExceptT MatchFail $ except $ decodeQuery query
+    params <- withExceptT Forward $ except $ decodePath path
+    decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
-    body <- withExceptT MatchFail $ except $ (fromData bodyStr :: Either String body)
-    guards <- withExceptT MatchFail $ ExceptT $ runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
+    body <- withExceptT Forward $ except $ (fromData bodyStr :: Either String body)
+    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload' :: Record payload') = Record.union fullParams { body }
     let (payload :: Record payload) = Record.union payload' guards
     handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- withExceptT HandlerError $ Resp.toResponse handlerResp
-    (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
+    (specResp :: Resp.Response res) <- Resp.toResponse handlerResp
+    (rawResp :: Resp.RawResponse) <- Resp.encodeResponse specResp
     pure rawResp
 
     where
@@ -142,14 +140,14 @@ instance handleableRoute ::
                   guardsSpec
                   (Record allGuards) where
   handle _ _ _ _ route handler allGuards { method, path, query } req res = do
-    params <- withExceptT MatchFail $ except $ decodePath path
-    decodedQuery <- withExceptT MatchFail $ except $ decodeQuery query
-    guards <- withExceptT MatchFail $ ExceptT $ runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
+    params <- withExceptT Forward $ except $ decodePath path
+    decodedQuery <- withExceptT Forward $ except $ decodeQuery query
+    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload :: Record payload) = from (Record.union fullParams guards)
-    handlerResp <- withExceptT HandlerError $ lift $ handler payload
-    (specResp :: Resp.Response res) <- withExceptT HandlerError $ Resp.toResponse handlerResp
-    (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
+    handlerResp <- lift $ handler payload
+    (specResp :: Resp.Response res) <- Resp.toResponse handlerResp
+    (rawResp :: Resp.RawResponse) <- Resp.encodeResponse specResp
     pure rawResp
 
     where
@@ -191,14 +189,14 @@ instance handleableHeadRoute ::
                   guardsSpec
                   (Record allGuards) where
   handle _ _ _ _ route handler allGuards { method, path, query } req res = do
-    params <- withExceptT MatchFail $ except $ decodePath path
-    decodedQuery <- withExceptT MatchFail $ except $ decodeQuery query
-    guards <- withExceptT MatchFail $ ExceptT $ runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
+    params <- withExceptT Forward $ except $ decodePath path
+    decodedQuery <- withExceptT Forward $ except $ decodeQuery query
+    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload :: Record payload) = from (Record.union fullParams guards)
     handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- withExceptT HandlerError $ Resp.toResponse handlerResp
-    (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
+    (specResp :: Resp.Response res) <- Resp.toResponse handlerResp
+    (rawResp :: Resp.RawResponse) <- Resp.encodeResponse specResp
     pure (Resp.setEmptyBody rawResp)
 
     where
@@ -242,17 +240,17 @@ instance handleablePutRoute ::
                   guardsSpec
                   (Record allGuards) where
   handle _ _ _ _ route handler allGuards { method, path, query } req res = do
-    params <- withExceptT MatchFail $ except $ decodePath path
-    decodedQuery <- withExceptT MatchFail $ except $ decodeQuery query
+    params <- withExceptT Forward $ except $ decodePath path
+    decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
-    body <- withExceptT MatchFail $ except $ (fromData bodyStr :: Either String body)
-    guards <- withExceptT MatchFail $ ExceptT $ runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
+    body <- withExceptT Forward $ except $ (fromData bodyStr :: Either String body)
+    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload' :: Record payload') = Record.union fullParams { body }
     let (payload :: Record payload) = Record.union payload' guards
     handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- withExceptT HandlerError $ Resp.toResponse handlerResp
-    (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
+    (specResp :: Resp.Response res) <- Resp.toResponse handlerResp
+    (rawResp :: Resp.RawResponse) <- Resp.encodeResponse specResp
     pure rawResp
 
     where
@@ -293,14 +291,14 @@ instance handleableDeleteRoute ::
                   guardsSpec
                   (Record allGuards) where
   handle _ _ _ _ route handler allGuards { method, path, query } req res = do
-    params <- withExceptT MatchFail $ except $ decodePath path
-    decodedQuery <- withExceptT MatchFail $ except $ decodeQuery query
-    guards <- withExceptT MatchFail $ ExceptT $ runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
+    params <- withExceptT Forward $ except $ decodePath path
+    decodedQuery <- withExceptT Forward $ except $ decodeQuery query
+    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload :: Record payload) = Record.union fullParams guards
     handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- withExceptT HandlerError $ Resp.toResponse handlerResp
-    (rawResp :: Resp.RawResponse) <- withExceptT HandlerError $ Resp.encodeResponse specResp
+    (specResp :: Resp.Response res) <- Resp.toResponse handlerResp
+    (rawResp :: Resp.RawResponse) <- Resp.encodeResponse specResp
     pure rawResp
 
     where

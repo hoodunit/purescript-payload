@@ -15,7 +15,7 @@ import Effect.Aff (Aff)
 import Payload.Handlers (File(..), directory, file)
 import Payload.Handlers as Handlers
 import Payload.Internal.GuardParsing (GuardTypes(..))
-import Payload.Response (ServerError)
+import Payload.Response (Failure)
 import Payload.Spec (API(API), GET, Route)
 import Payload.Test.Helpers (respMatches, withServer)
 import Payload.Test.Helpers as Helpers
@@ -39,7 +39,7 @@ api = API
 indexPage :: forall r. { | r} -> Aff File
 indexPage = file "examples/files/index.html"
 
-public :: forall r. { path :: List String | r } -> Aff (Either ServerError File)
+public :: forall r. { path :: List String | r } -> Aff (Either Failure File)
 public { path } = directory "examples/files/public" path 
 
 handlers = { indexPage, public }
