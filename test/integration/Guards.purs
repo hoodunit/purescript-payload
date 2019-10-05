@@ -2,17 +2,15 @@ module Payload.Test.Integration.Guards where
 
 import Prelude
 
-import Affjax as AX
-import Affjax.ResponseFormat as ResponseFormat
-import Affjax.StatusCode (StatusCode(..))
-import Data.Bifunctor (lmap)
-import Data.Either (Either(..), isLeft)
+import Data.Either (Either(..))
 import Data.String.Utils as StringUtils
 import Effect.Aff (Aff)
 import Node.HTTP as HTTP
+import Payload.Response as Resp
 import Payload.Spec (type (:), API(API), GET, Guards(..), Nil)
 import Payload.Test.Helpers (withServer)
-import Test.Unit (TestSuite, Test, failure, suite, test)
+import Payload.Test.Helpers as Helpers
+import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 import Test.Unit.Main (runTestWith)
 import Test.Unit.Output.Fancy as Fancy
@@ -47,53 +45,37 @@ userIndex _ = pure "User page"
 unauthenticatedIndex :: forall r. { | r} -> Aff String
 unauthenticatedIndex _ = pure "Unauthenticated page"
 
-getAdminUser :: HTTP.Request -> Aff (Either String AdminUser)
+getAdminUser :: HTTP.Request -> Aff (Either Resp.Failure AdminUser)
 getAdminUser req = do
   if StringUtils.endsWith "secret" (HTTP.requestURL req)
      then pure (Right (AdminUser { id: 1, name: "John Admin" }))
-     else pure (Left "Fail not an admin")
+     else pure (Left (Resp.Forward "Not an admin"))
 
-getUser :: HTTP.Request -> Aff (Either String User)
+getUser :: HTTP.Request -> Aff (Either Resp.Failure User)
 getUser req = do
   if StringUtils.endsWith "username" (HTTP.requestURL req)
      then pure (Right (User { id: 1, name: "John User" }))
-     else pure (Left "Fail not a user")
-
-request :: String -> Aff (Either String String)
-request path = do
-  res <- AX.get ResponseFormat.string ("http://localhost:3000/" <> path)
-  let showingError = lmap ResponseFormat.printResponseFormatError
-  if res.status == StatusCode 200
-    then do
-      pure $ showingError res.body
-    else
-      pure (Left $ "Received status code " <> show res.status <> "\n Body:\n" <> show (showingError res.body))
-
-assertResp :: forall a err. Show err => Eq a => Show a => Aff (Either err a) -> a -> Test
-assertResp req expected = do
-  res <- req
-  case res of
-    Right val -> Assert.equal expected val
-    Left errors -> failure $ "Request failed: " <> show errors
+     else pure (Left (Resp.Forward "Not a user"))
   
 tests :: TestSuite
 tests = do
   suite "Guards" do
+    let { get } = Helpers.request "http://localhost:3000"
     test "GET /admin succeeds if secret is provided" $ do
-      res <- request "/admin?secret"
-      Assert.equal (Right "Admin page") res
-    test "GET /admin fails if no secret is given" $ do
-      res <- request "/admin"
-      Assert.assert "Expected failure" (isLeft res)
+      res <- get "/admin?secret"
+      Assert.equal "Admin page" res.body
+    test "GET /admin fails with 404 if no secret is given" $ do
+      res <- get "/admin"
+      Assert.equal 404 res.status
     test "GET /user succeeds if username is provided" $ do
-      res <- request "/user?username"
-      Assert.equal (Right "User page") res
-    test "GET /user fails if no username is provided" $ do
-      res <- request "/user"
-      Assert.assert "Expected failure" (isLeft res)
+      res <- get "/user?username"
+      Assert.equal "User page" res.body
+    test "GET /user fails with 404 if no username is provided" $ do
+      res <- get "/user"
+      Assert.equal 404 res.status
     test "GET / succeeds" $ do
-      res <- request "/"
-      Assert.equal (Right "Unauthenticated page") res
+      res <- get "/"
+      Assert.equal "Unauthenticated page" res.body
 
 runTests :: Aff Unit
 runTests = do
