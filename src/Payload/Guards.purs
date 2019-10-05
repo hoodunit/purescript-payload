@@ -6,9 +6,13 @@ import Control.Monad.Except (ExceptT(..), lift, runExceptT, throwError)
 import Data.Either (Either(..))
 import Data.Map (Map)
 import Data.Symbol (class IsSymbol, SProxy(..))
+import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
+import Foreign.Object as Object
 import Node.HTTP as HTTP
 import Payload.Cookies as Cookies
+import Payload.Headers (Headers)
+import Payload.Headers as Headers
 import Payload.Internal.GuardParsing (GuardTypes(..))
 import Payload.Response as Resp
 import Payload.Spec (GCons, GNil, Guards(..), kind GuardList)
@@ -64,8 +68,14 @@ else instance toGuardValEitherServerErrorVal :: ToGuardVal (Either Resp.Failure 
 else instance toGuardValIdentity :: ToGuardVal a a where
   toGuardVal = pure
 
-request :: HTTP.Request -> Aff HTTP.Request
-request req = pure req
+headers :: HTTP.Request -> Aff Headers
+headers req = pure (Headers.fromFoldable headersArr)
+  where
+    headersArr :: Array (Tuple String String)
+    headersArr = Object.toUnfoldable $ HTTP.requestHeaders req
+
+rawRequest :: HTTP.Request -> Aff HTTP.Request
+rawRequest req = pure req
 
 cookies :: HTTP.Request -> Aff (Map String String)
 cookies req = pure (Cookies.requestCookies req)

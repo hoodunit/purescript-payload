@@ -135,5 +135,5 @@ runTests = do
         getPageMetadata,
         getHello
   }
-  let guards = { adminUser: getAdminUser, request: Guards.request }
+  let guards = { adminUser: getAdminUser, request: Guards.rawRequest }
   withServer api { handlers, guards } (runTestWith Fancy.runTest tests)
