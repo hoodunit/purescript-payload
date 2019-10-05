@@ -96,10 +96,7 @@ instance handleablePostRoute ::
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload' :: Record payload') = Record.union fullParams { body }
     let (payload :: Record payload) = Record.union payload' guards
-    handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- Resp.toResponse handlerResp
-    (rawResp :: Resp.RawResponse) <- Resp.encodeResponse specResp
-    pure rawResp
+    mkResponse (Proxy :: _ res) (handler payload)
 
     where
       decodePath :: List String -> Either String (Record fullUrlParams)
@@ -145,10 +142,7 @@ instance handleableRoute ::
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload :: Record payload) = from (Record.union fullParams guards)
-    handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- Resp.toResponse handlerResp
-    (rawResp :: Resp.RawResponse) <- Resp.encodeResponse specResp
-    pure rawResp
+    mkResponse (Proxy :: _ res) (handler payload)
 
     where
       decodePath :: List String -> Either String (Record fullUrlParams)
@@ -194,10 +188,7 @@ instance handleableHeadRoute ::
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload :: Record payload) = from (Record.union fullParams guards)
-    handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- Resp.toResponse handlerResp
-    (rawResp :: Resp.RawResponse) <- Resp.encodeResponse specResp
-    pure (Resp.setEmptyBody rawResp)
+    Resp.setEmptyBody <$> mkResponse (Proxy :: _ res) (handler payload)
 
     where
       decodePath :: List String -> Either String (Record fullUrlParams)
@@ -248,10 +239,7 @@ instance handleablePutRoute ::
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload' :: Record payload') = Record.union fullParams { body }
     let (payload :: Record payload) = Record.union payload' guards
-    handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- Resp.toResponse handlerResp
-    (rawResp :: Resp.RawResponse) <- Resp.encodeResponse specResp
-    pure rawResp
+    mkResponse (Proxy :: _ res) (handler payload)
 
     where
       decodePath :: List String -> Either String (Record fullUrlParams)
@@ -296,10 +284,7 @@ instance handleableDeleteRoute ::
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload :: Record payload) = Record.union fullParams guards
-    handlerResp <- lift $ handler payload
-    (specResp :: Resp.Response res) <- Resp.toResponse handlerResp
-    (rawResp :: Resp.RawResponse) <- Resp.encodeResponse specResp
-    pure rawResp
+    mkResponse (Proxy :: _ res) (handler payload)
 
     where
       decodePath :: List String -> Either String (Record fullUrlParams)
@@ -307,6 +292,16 @@ instance handleableDeleteRoute ::
 
       decodeQuery :: String -> Either String (Record query)
       decodeQuery = PayloadQuery.decodeQuery (SProxy :: _ fullPath) (Proxy :: _ (Record query))
+
+mkResponse :: forall handlerRes res
+  . Resp.ToResponse handlerRes res
+  => Resp.EncodeResponse res
+  => Proxy res -> Aff handlerRes -> Result Resp.RawResponse
+mkResponse _ aff = do
+  (handlerResp :: handlerRes) <- lift $ aff
+  (specResp :: Resp.Response res) <- Resp.toResponse handlerResp
+  (rawResp :: Resp.RawResponse) <- Resp.encodeResponse specResp
+  pure rawResp
 
 readBody :: HTTP.Request -> Aff String
 readBody req = Aff.makeAff (readBody_ req)
