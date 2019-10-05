@@ -5,6 +5,7 @@ import Prelude
 import Affjax as AX
 import Affjax.RequestBody as AX
 import Affjax.RequestBody as RequestBody
+import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.ResponseHeader (ResponseHeader(..))
 import Affjax.StatusCode (StatusCode(..))
@@ -17,6 +18,8 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Console (log)
+import Payload.Headers (Headers)
+import Payload.Headers as Headers
 import Payload.Routable (class Routable)
 import Payload.Server as Payload
 import Payload.Spec (API(API))
@@ -73,6 +76,15 @@ request host =
 
 get :: String -> String -> Aff ApiResponse
 get host path = decodeBody <$> AX.get ResponseFormat.string (host <> "/" <> path)
+
+get_ :: String -> String -> Headers -> Aff ApiResponse
+get_ host path headers = decodeBody <$> AX.request req
+  where
+    req = AX.defaultRequest
+            { method = Left GET
+            , url = host <> "/" <> path
+            , responseFormat = ResponseFormat.string
+            , headers = (\(Tuple name val) -> RequestHeader name val) <$> Headers.toUnfoldable headers }
 
 post :: String -> String -> String -> Aff ApiResponse
 post host path reqBody = decodeBody <$> AX.post ResponseFormat.string (host <> path) body

@@ -3,12 +3,16 @@ module Payload.Test.Integration.Guards where
 import Prelude
 
 import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
 import Data.String.Utils as StringUtils
+import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Node.HTTP as HTTP
+import Payload.Guards as Guards
+import Payload.Headers as Headers
 import Payload.Response as Resp
 import Payload.Spec (type (:), API(API), GET, Guards(..), Nil)
-import Payload.Test.Helpers (withServer)
+import Payload.Test.Helpers (get_, respMatches, withServer)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
@@ -47,9 +51,10 @@ unauthenticatedIndex _ = pure "Unauthenticated page"
 
 getAdminUser :: HTTP.Request -> Aff (Either Resp.Failure AdminUser)
 getAdminUser req = do
-  if StringUtils.endsWith "secret" (HTTP.requestURL req)
-     then pure (Right (AdminUser { id: 1, name: "John Admin" }))
-     else pure (Left (Resp.Forward "Not an admin"))
+  headers <- Guards.headers req
+  case Headers.lookup "Authorization" headers of
+    (Just "Token secret") -> pure (Right (AdminUser { id: 1, name: "John Admin" }))
+    _ -> pure (Left (Resp.Forward "Not an admin"))
 
 getUser :: HTTP.Request -> Aff (Either Resp.Failure User)
 getUser req = do
@@ -62,20 +67,20 @@ tests = do
   suite "Guards" do
     let { get } = Helpers.request "http://localhost:3000"
     test "GET /admin succeeds if secret is provided" $ do
-      res <- get "/admin?secret"
-      Assert.equal "Admin page" res.body
+      res <- get_ "http://localhost:3000" "/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
+      respMatches { status: 200, body: "Admin page" } res
     test "GET /admin fails with 404 if no secret is given" $ do
       res <- get "/admin"
       Assert.equal 404 res.status
     test "GET /user succeeds if username is provided" $ do
       res <- get "/user?username"
-      Assert.equal "User page" res.body
+      respMatches { status: 200, body: "User page" } res
     test "GET /user fails with 404 if no username is provided" $ do
       res <- get "/user"
       Assert.equal 404 res.status
     test "GET / succeeds" $ do
       res <- get "/"
-      Assert.equal "Unauthenticated page" res.body
+      respMatches { status: 200, body: "Unauthenticated page" } res
 
 runTests :: Aff Unit
 runTests = do
