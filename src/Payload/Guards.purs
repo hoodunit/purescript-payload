@@ -64,8 +64,8 @@ else instance toGuardValEitherServerErrorVal :: ToGuardVal (Either Resp.Failure 
 else instance toGuardValIdentity :: ToGuardVal a a where
   toGuardVal = pure
 
-request :: HTTP.Request -> Aff (Either String HTTP.Request)
-request req = pure (Right req)
+request :: HTTP.Request -> Aff HTTP.Request
+request req = pure req
 
-cookies :: HTTP.Request -> Aff (Either String (Map String String))
-cookies req = pure (Right $ Cookies.requestCookies req)
+cookies :: HTTP.Request -> Aff (Map String String)
+cookies req = pure (Cookies.requestCookies req)
