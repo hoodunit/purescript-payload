@@ -12,7 +12,7 @@ import Payload.Guards as Guards
 import Payload.Headers as Headers
 import Payload.Response as Resp
 import Payload.Spec (type (:), API(API), GET, Guards(..), Nil)
-import Payload.Test.Helpers (get_, respMatches, withServer)
+import Payload.Test.Helpers (get_, respMatches, withRoutes, withServer)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
@@ -27,7 +27,7 @@ newtype AdminUser = AdminUser
   { id :: Int
   , name :: String }
 
-api :: API
+spec :: API
   { guards :: { user :: User, adminUser :: AdminUser }
   , routes ::
     { adminIndex :: GET "/admin"
@@ -38,7 +38,7 @@ api :: API
         , response :: String }
     , unauthenticatedIndex :: GET "/"
         { response :: String }}}
-api = API
+spec = API
 
 adminIndex :: forall r. { | r} -> Aff String
 adminIndex _ = pure "Admin page"
@@ -64,26 +64,28 @@ getUser req = do
   
 tests :: TestSuite
 tests = do
+  let guards = { adminUser: getAdminUser, user: getUser }
+  let handlers = { adminIndex, userIndex, unauthenticatedIndex }
+  let api = { guards, handlers }
   suite "Guards" do
     let { get } = Helpers.request "http://localhost:3000"
     test "GET /admin succeeds if secret is provided" $ do
-      res <- get_ "http://localhost:3000" "/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
-      respMatches { status: 200, body: "Admin page" } res
+      withServer spec api do
+        res <- get_ "http://localhost:3000" "/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
+        respMatches { status: 200, body: "Admin page" } res
     test "GET /admin fails with 404 if no secret is given" $ do
-      res <- get "/admin"
-      Assert.equal 404 res.status
+      withServer spec api do
+        res <- get "/admin"
+        Assert.equal 404 res.status
     test "GET /user succeeds if username is provided" $ do
-      res <- get "/user?username"
-      respMatches { status: 200, body: "User page" } res
+      withServer spec api do
+        res <- get "/user?username"
+        respMatches { status: 200, body: "User page" } res
     test "GET /user fails with 404 if no username is provided" $ do
-      res <- get "/user"
-      Assert.equal 404 res.status
+      withServer spec api do
+        res <- get "/user"
+        Assert.equal 404 res.status
     test "GET / succeeds" $ do
-      res <- get "/"
-      respMatches { status: 200, body: "Unauthenticated page" } res
-
-runTests :: Aff Unit
-runTests = do
-  let guards = { adminUser: getAdminUser, user: getUser }
-  let handlers = { adminIndex, userIndex, unauthenticatedIndex }
-  withServer api { guards, handlers } (runTestWith Fancy.runTest tests)
+      withServer spec api do
+        res <- get "/"
+        respMatches { status: 200, body: "Unauthenticated page" } res

@@ -39,11 +39,11 @@ tests = do
   suite "Integration" do
     MethodsTest.tests
     QueryParamsTest.tests
+    GuardsTest.tests
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do
   runTestWith Fancy.runTest tests
-  GuardsTest.runTests
   FilesExample.runTests
   BasicExample.runTests
   MoviesExample.runTests
