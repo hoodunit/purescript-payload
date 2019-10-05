@@ -164,9 +164,6 @@ else instance encodeResponseUnit :: EncodeResponse Unit where
                    , headers: r.headers
                    , body: EmptyBody }
 
-sendInternalError :: forall err. Show err => HTTP.Response -> err -> Aff Unit
-sendInternalError res err = liftEffect $ writeResponse res (internalError (show err))
-
 sendResponse :: HTTP.Response -> Either RawResponse RawResponse -> Effect Unit
 sendResponse res serverResult = Aff.runAff_ onComplete do
   liftEffect $ case serverResult of
