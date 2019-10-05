@@ -19,28 +19,31 @@ import Payload.Test.Unit.Internal.Url as UrlTest
 import Payload.Test.Unit.Internal.UrlParsing as UrlParsingTest
 import Payload.Test.Unit.Params as ParamsTest
 import Payload.Test.Unit.Response as ResponseTest
-import Test.Unit (TestSuite)
+import Test.Unit (TestSuite, suite)
 import Test.Unit.Main (runTestWith)
 import Test.Unit.Output.Fancy as Fancy
-
+  
 tests :: TestSuite
 tests = do
-  UrlParsingTest.tests
-  UrlTest.tests
-  QueryTest.tests
-  QueryParsingTest.tests
-  ParamsTest.tests
-  TrieTest.tests
-  GuardParsingTest.tests
-  CookiesTest.tests
-  ResponseTest.tests
-  MethodsTest.tests
+  suite "Unit" do
+    UrlParsingTest.tests
+    UrlTest.tests
+    QueryTest.tests
+    QueryParsingTest.tests
+    ParamsTest.tests
+    TrieTest.tests
+    GuardParsingTest.tests
+    CookiesTest.tests
+    ResponseTest.tests
+
+  suite "Integration" do
+    MethodsTest.tests
+    QueryParamsTest.tests
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do
   runTestWith Fancy.runTest tests
   GuardsTest.runTests
-  QueryParamsTest.runTests
   FilesExample.runTests
   BasicExample.runTests
   MoviesExample.runTests
