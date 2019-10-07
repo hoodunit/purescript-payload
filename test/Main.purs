@@ -6,6 +6,7 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Payload.Examples.Basic.Main as BasicExample
 import Payload.Examples.Files.Main as FilesExample
+import Payload.Examples.Hello.Test as HelloExample
 import Payload.Examples.Movies.Main as MoviesExample
 import Payload.Test.Integration.Guards as GuardsTest
 import Payload.Test.Integration.Methods as MethodsTest
@@ -41,9 +42,12 @@ tests = do
     QueryParamsTest.tests
     GuardsTest.tests
 
+  suite "Examples" do
+    HelloExample.tests
+
 main :: Effect Unit
 main = Aff.launchAff_ $ do
   runTestWith Fancy.runTest tests
-  FilesExample.runTests
   BasicExample.runTests
+  FilesExample.runTests
   MoviesExample.runTests

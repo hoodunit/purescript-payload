@@ -4,6 +4,7 @@ module Payload.Server
        , Server
        , close
        , defaultOpts
+       , launch
        , start
        , start_
        , startGuarded
@@ -87,6 +88,14 @@ type Logger =
   }
 
 foreign import unsafeDecodeURIComponent :: String -> String
+
+launch
+  :: forall routesSpec handlers
+   . Routable routesSpec {} handlers {}
+  => API routesSpec
+  -> handlers
+  -> Effect Unit
+launch routeSpec handlers = Aff.launchAff_ (start_ routeSpec handlers)
 
 start
   :: forall routesSpec handlers

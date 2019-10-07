@@ -36,11 +36,18 @@ withServer
   -> Aff Unit
 withServer apiSpec api_ aff = do
   let opts = Payload.defaultOpts { logLevel = Payload.LogError, port = 3000 }
-  Aff.bracket (Payload.startGuarded opts apiSpec api_) completed runAff
+  loggingErrors (Payload.startGuarded opts apiSpec api_) aff
+
+loggingErrors ::
+  Aff (Either String Payload.Server)
+  -> Aff Unit
+  -> Aff Unit
+loggingErrors runServer doWhileRunning = do
+  Aff.bracket runServer completed runAff
   pure unit
   where
     runAff (Left _) = pure unit
-    runAff (Right _) = aff
+    runAff (Right _) = doWhileRunning
     completed (Left err) = liftEffect $ log ("Could not start server: " <> err)
     completed (Right server) = Payload.close server
 
