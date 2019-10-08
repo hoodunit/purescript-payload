@@ -2,57 +2,15 @@ module Payload.Examples.Movies.Main where
 
 import Prelude
 
-import Affjax.RequestHeader (RequestHeader(..))
 import Data.Either (Either, note)
-import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), maybe)
-import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Node.HTTP as HTTP
-import Payload.Client.Client (mkClient)
-import Payload.Client.Client as Client
 import Payload.Cookies (requestCookies)
-import Payload.Cookies as Cookies
 import Payload.Spec (type (:), API(API), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
-import Payload.Test.Helpers (assertFail, assertRes, withServer)
-import Test.Unit (suite, test)
-import Test.Unit.Main (runTestWith)
-import Test.Unit.Output.Fancy as Fancy
-import Type.Proxy (Proxy(..))
 
 -- Example API based on The Movie Database API at
 -- https://developers.themoviedb.org
-
-type Movie =
-  { id :: Int
-  , title :: String }
-
-type Date = String
-
-type RequestTokenResponse =
-  { success :: Boolean
-  , expiresAt :: Date
-  , requestToken :: String }
-
-type SessionIdResponse =
-  { success :: Boolean
-  , sessionId :: Date
-  , requestToken :: String }
-
-type StatusResponse =
-  { success :: Boolean }
-
-type StatusCodeResponse =
-  { statusCode :: Int
-  , statusMessage :: String }
-
-type RatingValue =
-  { value :: Number }
-
-type ApiKey = String
-type SessionId = String
-data Path (s :: Symbol) = Path
 
 moviesApiSpec :: API {
   guards :: {
@@ -112,35 +70,35 @@ moviesApiSpec :: API {
 }
 moviesApiSpec = API
 
-newToken :: forall r. { | r} -> Aff RequestTokenResponse
-newToken _ = pure { success: true, expiresAt: "date", requestToken: "328dsdweoi" }
+type Movie =
+  { id :: Int
+  , title :: String }
 
-createSession :: forall r. { | r} -> Aff SessionIdResponse
-createSession _ = pure { success: true, sessionId: "date", requestToken: "23988w9" }
+type Date = String
 
-deleteSession :: forall r. { | r} -> Aff StatusResponse
-deleteSession _ = pure { success: true }
+type RequestTokenResponse =
+  { success :: Boolean
+  , expiresAt :: Date
+  , requestToken :: String }
 
-latestMovie :: forall r. { | r} -> Aff Movie
-latestMovie _ = pure $ { id: 723, title: "The Godfather" }
+type SessionIdResponse =
+  { success :: Boolean
+  , sessionId :: Date
+  , requestToken :: String }
 
-popularMovies :: forall r. { | r} -> Aff { results :: Array Movie }
-popularMovies _ = pure { results: [
-  { id: 723, title: "The Godfather" },
-  { id: 722, title: "Citizen Kane" }] }
+type StatusResponse =
+  { success :: Boolean }
 
-getMovie :: forall r. { movieId :: Int | r} -> Aff Movie
-getMovie { movieId } = pure { id: movieId, title: "Fetched movie" }
+type StatusCodeResponse =
+  { statusCode :: Int
+  , statusMessage :: String }
 
-createRating :: forall r.
-                { movieId :: Int, apiKey :: ApiKey, sessionId :: SessionId | r}
-                -> Aff StatusCodeResponse
-createRating _ = pure { statusCode: 1, statusMessage: "Created" }
+type RatingValue =
+  { value :: Number }
 
-deleteRating :: forall r.
-                { movieId :: Int, apiKey :: ApiKey, sessionId :: SessionId | r}
-                -> Aff StatusCodeResponse
-deleteRating _ = pure { statusCode: 1, statusMessage: "Deleted" }
+type ApiKey = String
+type SessionId = String
+data Path (s :: Symbol) = Path
 
 moviesApi = {
   handlers: {
@@ -172,6 +130,36 @@ moviesApi = {
     sessionId: getSessionId
   }
 }
+
+newToken :: forall r. { | r} -> Aff RequestTokenResponse
+newToken _ = pure { success: true, expiresAt: "date", requestToken: "328dsdweoi" }
+
+createSession :: forall r. { | r} -> Aff SessionIdResponse
+createSession _ = pure { success: true, sessionId: "date", requestToken: "23988w9" }
+
+deleteSession :: forall r. { | r} -> Aff StatusResponse
+deleteSession _ = pure { success: true }
+
+latestMovie :: forall r. { | r} -> Aff Movie
+latestMovie _ = pure $ { id: 723, title: "The Godfather" }
+
+popularMovies :: forall r. { | r} -> Aff { results :: Array Movie }
+popularMovies _ = pure { results: [
+  { id: 723, title: "The Godfather" },
+  { id: 722, title: "Citizen Kane" }] }
+
+getMovie :: forall r. { movieId :: Int | r} -> Aff Movie
+getMovie { movieId } = pure { id: movieId, title: "Fetched movie" }
+
+createRating :: forall r.
+                { movieId :: Int, apiKey :: ApiKey, sessionId :: SessionId | r}
+                -> Aff StatusCodeResponse
+createRating _ = pure { statusCode: 1, statusMessage: "Created" }
+
+deleteRating :: forall r.
+                { movieId :: Int, apiKey :: ApiKey, sessionId :: SessionId | r}
+                -> Aff StatusCodeResponse
+deleteRating _ = pure { statusCode: 1, statusMessage: "Deleted" }
 
 getApiKey :: HTTP.Request -> Aff (Either String ApiKey)
 getApiKey req = do
