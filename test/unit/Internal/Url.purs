@@ -3,12 +3,9 @@ module Payload.Test.Unit.Internal.Url where
 import Prelude
 
 import Data.Either (Either(..), isLeft)
-import Data.List (List(..), (:))
-import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
-import Data.Tuple (Tuple(..))
-import Effect.Class (liftEffect)
+import Data.Symbol (SProxy(..))
 import Payload.Internal.Url as Url
-import Payload.Server (urlToSegments)
+import Payload.Internal.UrlString (urlToSegments)
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 import Type.Proxy (Proxy(..))

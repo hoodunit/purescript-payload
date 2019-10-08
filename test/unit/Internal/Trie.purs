@@ -7,10 +7,10 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(..))
-import Payload.Server (pathToSegments)
 import Payload.Internal.Trie (Trie(..))
 import Payload.Internal.Trie as Trie
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments, Segment(Lit, Key, Multi), asSegments)
+import Payload.Internal.UrlString (pathToSegments)
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 

@@ -1,7 +1,3 @@
-exports.unsafeDecodeURIComponent = function(str){
-  return decodeURIComponent(str)
-}
-
 exports.onError = function(server){
   return function(cb){
     return function(){

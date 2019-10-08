@@ -9,9 +9,6 @@ module Payload.Server
        , start_
        , startGuarded
        , startGuarded_
-
-       , pathToSegments
-       , urlToSegments
        ) where
 
 import Prelude
@@ -37,6 +34,7 @@ import Node.URL as Url
 import Payload.Internal.Trie (Trie)
 import Payload.Internal.Trie as Trie
 import Payload.Internal.UrlParsing (Segment)
+import Payload.Internal.UrlString (urlToSegments)
 import Payload.Request (RequestUrl)
 import Payload.Response (ResponseBody(..), internalError, writeResponse)
 import Payload.Response as Response
@@ -86,8 +84,6 @@ type Logger =
   , logDebug :: String -> Effect Unit
   , logError :: String -> Effect Unit
   }
-
-foreign import unsafeDecodeURIComponent :: String -> String
 
 launch
   :: forall routesSpec handlers
@@ -232,15 +228,6 @@ urlPath url = url.pathname
 
 urlQuery :: URL -> Maybe String
 urlQuery url = url.query # toMaybe
-
-urlToSegments :: String -> List String
-urlToSegments = pathToSegments >>> (map unsafeDecodeURIComponent)
-
-pathToSegments :: String -> List String
-pathToSegments = dropEmpty <<< List.fromFoldable <<< String.split (wrap "/")
-  where
-    dropEmpty ("" : xs) = dropEmpty xs
-    dropEmpty xs = xs
 
 foreign import onError :: HTTP.Server -> (Error -> Effect Unit) -> Effect Unit
 
