@@ -2,7 +2,7 @@
 
 Payload is an HTTP server library for PureScript inspired by [Rust's Rocket](https://rocket.rs/) and [Haskell's Servant](https://haskell-servant.readthedocs.io/en/stable/). Here is a complete Payload application:
 
-```
+```purescript
 import Prelude
 import Effect.Aff (Aff)
 import Payload.Server as Payload
@@ -38,7 +38,7 @@ More examples can be found in the [examples directory](./examples).
 
 In Payload applications you write an API *spec* telling what endpoints your API supports and then pass your server handlers as functions corresponding to the spec. A simple spec might look like this:
 
-```
+```purescript
 type User =
   { id :: Int
   , name :: String }
@@ -56,7 +56,7 @@ spec = API
 
 When the Payload server is run, you provide handlers corresponding to each endpoint defined in the API spec. For the above example, you might run it like so:
 
-```
+```purescript
 api = { getUser: getUser }
 
 getUser :: { id :: Int } -> Aff User
