@@ -18,7 +18,6 @@ import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Newtype (wrap)
 import Data.Nullable (toMaybe)
 import Data.String as String
 import Data.Symbol (SProxy(..))
@@ -31,11 +30,11 @@ import Effect.Exception (Error)
 import Node.HTTP as HTTP
 import Node.URL (URL)
 import Node.URL as Url
+import Payload.Internal.Request (RequestUrl)
 import Payload.Internal.Trie (Trie)
 import Payload.Internal.Trie as Trie
 import Payload.Internal.UrlParsing (Segment)
 import Payload.Internal.UrlString (urlToSegments)
-import Payload.Request (RequestUrl)
 import Payload.Response (ResponseBody(..), internalError, writeResponse)
 import Payload.Response as Response
 import Payload.Routable (class Routable, HandlerEntry, Outcome(..), mkRouter)

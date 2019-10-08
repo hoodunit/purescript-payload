@@ -1,4 +1,9 @@
-module Payload.Cookies where
+module Payload.Cookies
+       ( cookieHeader
+       , parseCookieHeader
+       , requestCookies
+       , setCookieHeader
+       ) where
 
 import Prelude
 
@@ -6,13 +11,10 @@ import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import Data.String.Regex (Regex)
-import Data.String.Regex.Flags as RegexFlags
 import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Node.HTTP as HTTP
-import Unsafe.Coerce (unsafeCoerce)
 
 foreign import parseWrapper :: String -> Object String
 foreign import serializeImpl :: String -> String -> String

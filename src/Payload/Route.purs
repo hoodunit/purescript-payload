@@ -1,8 +1,10 @@
-module Payload.Route where
+module Payload.Route
+       ( DefaultRequest
+       ) where
 
 import Prelude
 
-import Payload.Spec (GNil, Guards(..))
+import Payload.Spec (GNil, Guards)
 
 type DefaultRequest =
   ( params :: {}

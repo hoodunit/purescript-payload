@@ -1,4 +1,4 @@
-module Payload.Request where
+module Payload.Internal.Request where
 
 import Data.List (List)
 

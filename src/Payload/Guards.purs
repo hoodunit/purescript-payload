@@ -2,11 +2,11 @@ module Payload.Guards where
 
 import Prelude
 
-import Control.Monad.Except (ExceptT(..), lift, runExceptT, throwError)
+import Control.Monad.Except (lift, throwError)
 import Data.Either (Either(..))
 import Data.Map (Map)
 import Data.Symbol (class IsSymbol, SProxy(..))
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple)
 import Effect.Aff (Aff)
 import Foreign.Object as Object
 import Node.HTTP as HTTP

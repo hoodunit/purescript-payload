@@ -1,12 +1,11 @@
 module Payload.Headers
-  (
-    Headers,
-    empty,
-    fromFoldable,
-    lookup,
-    set,
-    setIfNotDefined,
-    toUnfoldable
+  ( Headers
+  , empty
+  , fromFoldable
+  , lookup
+  , set
+  , setIfNotDefined
+  , toUnfoldable
   ) where
 
 import Prelude
@@ -18,7 +17,7 @@ import Data.Maybe (Maybe)
 import Data.Newtype (over)
 import Data.Tuple (Tuple(..))
 import Data.Unfoldable (class Unfoldable)
-import Payload.Utils as Utils
+import Payload.Internal.Utils as Utils
 
 newtype Headers = Headers (Map String String)
 

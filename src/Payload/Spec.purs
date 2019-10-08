@@ -1,4 +1,19 @@
-module Payload.Spec where
+module Payload.Spec
+       ( API(API)
+       , Routes(Routes)
+       , Route(Route)
+       , Guards(Guards)
+       , GET
+       , HEAD
+       , POST
+       , PUT
+       , DELETE
+       , kind GuardList
+       , GNil
+       , GCons
+       , type (:)
+       , Nil
+       ) where
 
 import Prelude
 

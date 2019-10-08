@@ -1,31 +1,38 @@
-module Payload.Routable where
+module Payload.Routable
+       ( class Routable
+       , mkRouter
+       , class RoutableList
+       , mkRouterList
+       , DefaultParentRoute
+       , HandlerEntry
+       , Outcome(Success, Failure, Forward)
+       ) where
 
 import Prelude
 
 import Control.Monad.Except (runExceptT)
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
-import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Console (errorShow, log)
+import Effect.Console (errorShow)
 import Node.HTTP as HTTP
 import Payload.Handleable (class Handleable, MethodHandler, handle)
 import Payload.Internal.GuardParsing (GuardTypes(GuardTypes))
 import Payload.Internal.GuardParsing as GuardParsing
+import Payload.Internal.Request (RequestUrl)
 import Payload.Internal.Trie (Trie)
 import Payload.Internal.Trie as Trie
 import Payload.Internal.Url as PayloadUrl
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments, Segment(..))
 import Payload.Internal.UrlParsing as UrlParsing
-import Payload.Request (RequestUrl)
-import Payload.Response (RawResponse(..))
+import Payload.Response (RawResponse)
 import Payload.Response as Resp
 import Payload.Route (DefaultRequest)
-import Payload.Spec (kind GuardList, API(..), GNil, Guards(Guards), Route(Route), Routes(..))
+import Payload.Spec (kind GuardList, API, GNil, Guards(Guards), Route(Route), Routes(..))
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList

@@ -1,5 +1,3 @@
-module Payload.Utils where
-
-import Prelude
+module Payload.Internal.Utils where
 
 foreign import toLowerCase :: String -> String

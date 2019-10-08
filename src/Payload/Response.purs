@@ -1,12 +1,30 @@
-module Payload.Response where
+module Payload.Response
+       ( class EncodeResponse
+       , encodeResponse
+       , class ToResponse
+       , toResponse
+       , Json(Json)
+       , Empty(Empty)
+       , RawResponse
+       , Response(Response)
+       , ResponseBody(StringBody, StreamBody, EmptyBody)
+       , Result
+       , Failure(Forward, ServerError)
+       , UnsafeStream
+
+       , internalError
+       , internalError_
+       , sendResponse
+       , serverError
+       , setEmptyBody
+       , status
+       , writeResponse
+       ) where
 
 import Prelude
 
-import Control.Monad.Except (ExceptT(..), throwError)
+import Control.Monad.Except (ExceptT, throwError)
 import Data.Either (Either(..))
-import Data.FunctorWithIndex (mapWithIndex)
-import Data.Map (Map)
-import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Traversable (sequence_)
@@ -24,7 +42,6 @@ import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.Status (HttpStatus)
 import Payload.Status as Status
-import Payload.Utils as Utils
 import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals, to)
 import Unsafe.Coerce (unsafeCoerce)
@@ -36,14 +53,7 @@ instance showFailure :: Show Failure where
   show (Forward s) = "Forward '" <> s <> "'"
   show (ServerError e) = "ServerError " <> show e
 
-foreign import endResponse_ :: HTTP.Response -> Unit -> (Unit -> Effect Unit) -> Effect Unit
-
 data UnsafeStream
-
-endResponse :: HTTP.Response -> Aff Unit
-endResponse res = Aff.makeAff \cb -> do
-  endResponse_ res unit (\_ -> cb (Right unit))
-  pure Aff.nonCanceler
 
 newtype Json a = Json a
 data Empty = Empty
@@ -191,6 +201,13 @@ writeBodyAndHeaders res headers (StreamBody stream) = do
 writeBodyAndHeaders res headers EmptyBody = do
   writeHeaders res headers
   Aff.launchAff_ $ endResponse res
+
+foreign import endResponse_ :: HTTP.Response -> Unit -> (Unit -> Effect Unit) -> Effect Unit
+
+endResponse :: HTTP.Response -> Aff Unit
+endResponse res = Aff.makeAff \cb -> do
+  endResponse_ res unit (\_ -> cb (Right unit))
+  pure Aff.nonCanceler
 
 writeHeaders :: HTTP.Response -> Headers -> Effect Unit
 writeHeaders res headers = do

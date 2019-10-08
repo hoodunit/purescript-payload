@@ -1,4 +1,12 @@
-module Payload.Params where
+module Payload.Params
+       ( DecodeError
+       , class FromParam
+       , class FromSegments
+       , class ToParam
+       , fromParam
+       , fromSegments
+       , toParam
+       ) where
 
 import Prelude
 

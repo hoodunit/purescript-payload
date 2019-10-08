@@ -1,5 +1,5 @@
-module Payload.Path where
-
-import Prelude
+module Payload.Path
+       ( resolve
+       ) where
 
 foreign import resolve :: Array String -> String

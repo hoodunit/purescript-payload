@@ -1,10 +1,14 @@
-module Payload.QueryParams where
+module Payload.QueryParams
+       ( class FromQueryParam
+       , fromQueryParam
+       , class ToQueryParam
+       , toQueryParam
+       ) where
 
 import Prelude
 
 import Data.Either (Either(..))
 import Data.Int as Int
-import Data.List (List)
 import Data.Maybe (maybe)
 
 type DecodeError = String
@@ -21,10 +25,10 @@ instance fromQueryParamString :: FromQueryParam String where
   fromQueryParam s = Right s
 
 class ToQueryParam a where
-  toParam :: a -> String
+  toQueryParam :: a -> String
 
 instance toQueryParamInt :: ToQueryParam Int where
-  toParam = show
+  toQueryParam = show
 
 instance toQueryParamString :: ToQueryParam String where
-  toParam s = s
+  toQueryParam s = s

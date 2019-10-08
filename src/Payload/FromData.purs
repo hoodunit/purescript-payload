@@ -1,4 +1,7 @@
-module Payload.FromData where
+module Payload.FromData
+       ( class FromData
+       , fromData
+       ) where
 
 import Prelude
 

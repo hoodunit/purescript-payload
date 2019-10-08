@@ -1,4 +1,8 @@
-module Payload.Handleable where
+module Payload.Handleable
+       ( class Handleable
+       , MethodHandler
+       , handle
+       ) where
 
 import Prelude
 
@@ -20,9 +24,9 @@ import Payload.Guards (class RunGuards, runGuards)
 import Payload.Internal.GuardParsing (GuardTypes(..))
 import Payload.Internal.GuardParsing as GuardParsing
 import Payload.Internal.Query as PayloadQuery
+import Payload.Internal.Request (RequestUrl)
 import Payload.Internal.Url as PayloadUrl
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments)
-import Payload.Request (RequestUrl)
 import Payload.Response (Failure(..), RawResponse, Result)
 import Payload.Response as Resp
 import Payload.Spec (Guards(..), Route, kind GuardList)

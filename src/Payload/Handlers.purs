@@ -1,24 +1,25 @@
-module Payload.Handlers where
+module Payload.Handlers
+       ( File(File)
+       , directory
+       , file
+       ) where
 
 import Prelude
 
-import Control.Monad.Except (ExceptT(..), lift, throwError)
+import Control.Monad.Except (lift, throwError)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable)
 import Data.Int as Int
-import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
-import Debug.Trace as Debug
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Foreign (readString)
 import Node.FS.Aff as FsAff
 import Node.FS.Stats as Stats
 import Node.FS.Stream (createReadStream)
-import Payload.Headers (Headers(..))
 import Payload.Headers as Headers
 import Payload.Internal.MimeTypes as MimeTypes
 import Payload.Path as Path
