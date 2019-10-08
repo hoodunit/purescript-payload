@@ -17,7 +17,7 @@ newtype AdminUser = AdminUser
   { id :: Int
   , name :: String }
 
-api :: API {
+spec :: API {
   guards :: {
      adminUser :: AdminUser,
      request :: HTTP.Request
@@ -73,4 +73,4 @@ api :: API {
     }
   }
 }
-api = API
+spec = API

@@ -4,7 +4,7 @@ import Prelude
 
 import Effect (Effect)
 import Effect.Aff as Aff
-import Payload.Examples.Basic.Main as BasicExample
+import Payload.Examples.Basic.Test as BasicExample
 import Payload.Examples.Files.Main as FilesExample
 import Payload.Examples.Hello.Test as HelloExample
 import Payload.Examples.Movies.Main as MoviesExample
