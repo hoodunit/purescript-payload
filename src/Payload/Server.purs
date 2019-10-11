@@ -236,7 +236,7 @@ listen { logger } server@(Server httpServer) opts = Aff.makeAff $ \cb -> do
   HTTP.listen httpServer opts (logger.log startedMsg *> cb (Right (Right unit)))
   pure $ Aff.Canceler (\error -> liftEffect (logger.logError (errorMsg error)) *> close server)
   where
-    startedMsg = "Listening on port " <> show opts.port
+    startedMsg = "Server is running on http://" <> opts.hostname <> ":" <> show opts.port
     errorMsg e = "Closing server due to error: " <> show e
 
 close :: Server -> Aff Unit
