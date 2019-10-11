@@ -30,7 +30,7 @@ getMessages { id, limit } = pure
 main = Payload.launch spec api
 ```
 
-You tell what endpoints you have and what data they take in and return by writing an API spec. You write handlers as functions returning data. Payload decodes request parameters into typed values and hands them to your function. It takes your typed responses and encodes them for the network. It checks at compile-time that your handlers match the spec.
+You tell what endpoints you have and what data they take in and return by writing a type-level API spec. You write handlers as functions returning data. Based on your API spec, Payload will decode request parameters into typed values and hand them to your functions. It takes your typed responses and encodes them based on the types in the spec for the network. It checks at compile-time that your handlers match the spec.
 
 More examples can be found in the [examples directory](./examples).
 
