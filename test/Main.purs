@@ -44,10 +44,10 @@ tests = do
 
   suite "Examples" do
     HelloExample.tests
+    BasicExample.tests
+    FilesExample.tests
+    MoviesExample.tests
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do
   runTestWith Fancy.runTest tests
-  BasicExample.runTests
-  FilesExample.runTests
-  MoviesExample.runTests

@@ -11,8 +11,6 @@ import Payload.Test.Helpers (respMatches, withServer)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
-import Test.Unit.Main (runTestWith)
-import Test.Unit.Output.Fancy as Fancy
 
 assertResp :: forall a err. Show err => Eq a => Show a => Aff (Either err a) -> a -> Test
 assertResp req expected = do
@@ -24,39 +22,37 @@ assertResp req expected = do
 tests :: TestSuite
 tests = do
   let get = Helpers.get "http://localhost:3000"
+  let withApi = withServer spec api
   suite "Example: file serving" do
     suite "single file" do
-      test "serves single file" $ do
+      test "serves single file" $ withApi do
         res <- get "/"
         respMatches { status: 200, body: "<html lang=\"en\"></html>\n" } res
-      test "sets content-type" $ do
+      test "sets content-type" $ withApi do
         res <- get "/"
         Assert.equal (Just "text/html") (Map.lookup "content-type" res.headers)
     suite "directory" do
-      test "serves file" $ do
+      test "serves file" $ withApi do
         res <- get "/test.json"
         respMatches { status: 200, body: "{ \"foo\": \"bar\" }\n"} res
-      test "serves nested file" $ do
+      test "serves nested file" $ withApi do
         res <- get "/css/styles.css"
         respMatches { status: 200, body: ".app {}\n"} res
-      test "returns 404 for non-existent file" $ do
+      test "returns 404 for non-existent file" $ withApi do
         res <- get "/nonexistent.json"
         Assert.equal 404 res.status
-      test "returns 404 for trailing slash" $ do
+      test "returns 404 for trailing slash" $ withApi do
         res <- get "/nonexistent.json/"
         Assert.equal 404 res.status
-      test "returns 404 for directory" $ do
+      test "returns 404 for directory" $ withApi do
         res <- get "/css"
         Assert.equal 404 res.status
-      test "does not return file outside of directory" $ do
+      test "does not return file outside of directory" $ withApi do
         res <- get "../private.json"
         Assert.equal 404 res.status
-      test "handles URL-encoded paths" $ do
+      test "handles URL-encoded paths" $ withApi do
         res <- get "/another%20test.json"
         respMatches { status: 200, body: "{ \"foo\": \"bar\" }\n"} res
-      test "serves empty file" $ do
+      test "serves empty file" $ withApi do
         res <- get "/empty"
         respMatches { status: 200, body: ""} res
-
-runTests :: Aff Unit
-runTests = withServer spec api (runTestWith Fancy.runTest tests)
