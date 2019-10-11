@@ -2,9 +2,9 @@ module Payload.Examples.Basic.Main where
 
 import Prelude
 
-import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List)
+import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.String.Utils as StringUtils
 import Effect.Aff (Aff)
@@ -12,7 +12,10 @@ import Node.HTTP as HTTP
 import Payload.Examples.Basic.Api (AdminUser(..), Post, User)
 import Payload.Guards as Guards
 import Payload.Handlers (File(..))
+import Payload.Handlers as Handlers
+import Payload.Headers as Headers
 import Payload.Response (Failure(Forward))
+import Payload.Response as Response
 
 getUsers :: forall r. { adminUser :: AdminUser | r } -> Aff (Array User)
 getUsers { adminUser: AdminUser adminUser } = pure [adminUser, { id: 1, name: "John Doe" }]
@@ -35,9 +38,8 @@ getUserPost {postId} = pure { id: postId, text: "Some post" }
 indexPage :: forall r. { | r} -> Aff File
 indexPage _ = pure (File "test/index.html")
 
--- Exposes to directory traversal attack
-files :: forall r. { path :: List String | r} -> Aff File
-files { path } = pure (File $ "test/" <> String.joinWith "/" (Array.fromFoldable path))
+files :: forall r. { path :: List String | r} -> Aff (Either Failure File)
+files { path } = Handlers.directory "test" path
 
 getPage :: forall r. { id :: String | r} -> Aff String
 getPage { id } = pure $ "Page " <> id
@@ -48,11 +50,23 @@ getPageMetadata { id } = pure $ "Page metadata " <> id
 getHello :: forall r. { | r} -> Aff String
 getHello _ = pure "Hello!"
 
-getAdminUser :: HTTP.Request -> Aff (Either Failure AdminUser)
+getAdminUser :: HTTP.Request -> Aff (Either Response.Failure AdminUser)
 getAdminUser req = do
-  if StringUtils.endsWith "secret" (HTTP.requestURL req)
-     then pure (Right (AdminUser { id: 1, name: "John Admin" }))
-     else pure (Left (Forward "Not an admin"))
+  authTokenRes <- parseAuthToken req
+  case authTokenRes of
+    Right token -> pure (Right (AdminUser { id: 1, name: "John Admin" }))
+    Left err -> pure (Left (Forward "Not an admin"))
+
+parseAuthToken :: HTTP.Request -> Aff (Either String String)
+parseAuthToken req = do
+  headers <- Guards.headers req
+  case Headers.lookup "authorization" headers of
+    Just header -> do
+      let tokenSuffix = String.stripPrefix (String.Pattern "Token ") header
+      case tokenSuffix of
+        Just token -> pure (Right token)
+        Nothing -> pure (Left "Couldn't get token")
+    Nothing -> pure (Left "No auth header found")
 
 api = {
   handlers: {

@@ -5,18 +5,6 @@ import Node.HTTP as HTTP
 import Payload.Handlers (File)
 import Payload.Spec (type (:), Spec(Spec), GET, Guards, Nil, POST, Routes)
 
-type User =
-  { id :: Int
-  , name :: String }
-
-type Post =
-  { id :: String
-  , text :: String }
-
-newtype AdminUser = AdminUser
-  { id :: Int
-  , name :: String }
-
 spec :: Spec {
   guards :: {
      adminUser :: AdminUser,
@@ -74,3 +62,15 @@ spec :: Spec {
   }
 }
 spec = Spec
+
+type User =
+  { id :: Int
+  , name :: String }
+
+type Post =
+  { id :: String
+  , text :: String }
+
+newtype AdminUser = AdminUser
+  { id :: Int
+  , name :: String }
