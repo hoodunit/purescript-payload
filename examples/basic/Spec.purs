@@ -1,4 +1,4 @@
-module Payload.Examples.Basic.Api where
+module Payload.Examples.Basic.Spec where
 
 import Data.List (List)
 import Node.HTTP as HTTP

@@ -8,7 +8,7 @@ import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Payload.Client.Client (mkClient)
 import Payload.Client.Client as Client
-import Payload.Examples.Basic.Api (spec)
+import Payload.Examples.Basic.Spec (spec)
 
 main :: Effect Unit
 main = launchAff_ do

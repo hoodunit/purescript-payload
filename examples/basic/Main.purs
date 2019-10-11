@@ -9,7 +9,7 @@ import Data.String as String
 import Data.String.Utils as StringUtils
 import Effect.Aff (Aff)
 import Node.HTTP as HTTP
-import Payload.Examples.Basic.Api (AdminUser(..), Post, User)
+import Payload.Examples.Basic.Spec (AdminUser(..), Post, User)
 import Payload.Guards as Guards
 import Payload.Handlers (File(..))
 import Payload.Handlers as Handlers

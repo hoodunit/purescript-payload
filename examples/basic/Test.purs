@@ -7,7 +7,7 @@ import Data.Either (Either(..))
 import Effect.Aff (Aff)
 import Payload.Client.Client (mkClient)
 import Payload.Client.Client as Client
-import Payload.Examples.Basic.Api (spec)
+import Payload.Examples.Basic.Spec (spec)
 import Payload.Examples.Basic.Main (api)
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
