@@ -66,7 +66,7 @@ instance handleablePostRoute ::
            , guards :: Guards guardNames
            | r }
        , IsSymbol path
-       , Resp.ToResponse handlerRes res
+       , Resp.ToSpecResponse handlerRes res
        , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
        , FromData body
@@ -117,7 +117,7 @@ instance handleableRoute ::
            , guards :: Guards guardNames
            | r }
        , IsSymbol path
-       , Resp.ToResponse handlerRes res
+       , Resp.ToSpecResponse handlerRes res
        , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
 
@@ -164,7 +164,7 @@ instance handleableHeadRoute ::
            | r }
        , IsSymbol path
        , Symbol.Append basePath path fullPath
-       , Resp.ToResponse handlerRes res
+       , Resp.ToSpecResponse handlerRes res
        , Resp.EncodeResponse res
 
        , Row.Union baseParams params fullUrlParams
@@ -209,7 +209,7 @@ instance handleablePutRoute ::
            , guards :: Guards guardNames
            | r }
        , IsSymbol path
-       , Resp.ToResponse handlerRes res
+       , Resp.ToSpecResponse handlerRes res
        , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
        , FromData body
@@ -259,7 +259,7 @@ instance handleableDeleteRoute ::
            , guards :: Guards guardNames
            | r }
        , IsSymbol path
-       , Resp.ToResponse handlerRes res
+       , Resp.ToSpecResponse handlerRes res
        , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
 
@@ -298,12 +298,12 @@ instance handleableDeleteRoute ::
       decodeQuery = PayloadQuery.decodeQuery (SProxy :: _ fullPath) (Proxy :: _ (Record query))
 
 mkResponse :: forall handlerRes res
-  . Resp.ToResponse handlerRes res
+  . Resp.ToSpecResponse handlerRes res
   => Resp.EncodeResponse res
   => Proxy res -> Aff handlerRes -> Result Resp.RawResponse
 mkResponse _ aff = do
   (handlerResp :: handlerRes) <- lift $ aff
-  (specResp :: Resp.Response res) <- Resp.toResponse handlerResp
+  (specResp :: Resp.Response res) <- Resp.toSpecResponse handlerResp
   (rawResp :: Resp.RawResponse) <- Resp.encodeResponse specResp
   pure rawResp
 

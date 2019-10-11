@@ -1,8 +1,8 @@
 module Payload.Response
        ( class EncodeResponse
        , encodeResponse
-       , class ToResponse
-       , toResponse
+       , class ToSpecResponse
+       , toSpecResponse
        , Json(Json)
        , Empty(Empty)
        , RawResponse
@@ -86,39 +86,40 @@ instance showResponseBody :: Show ResponseBody where
   show EmptyBody = "EmptyBody"
   show (StreamBody _) = "StreamBody"
 
--- This type class is for converting between compatible types.
+-- This type class is for converting types which are compatible with
+-- the spec into the spec type.
 -- If the spec says one type is returned from an endpoint, a handler
 -- can either return that type directly or return another type from
 -- which that type can be produced (e.g. a full response with different
 -- headers or a different status code).
-class ToResponse a b where
-  toResponse :: a -> Result (Response b)
+class ToSpecResponse a b where
+  toSpecResponse :: a -> Result (Response b)
 
-instance toResponseResponse :: ToResponse (Response a) a where
-  toResponse res = pure res
-else instance toResponseEitherStringVal :: ToResponse (Either String a) a where
-  toResponse (Left res) = throwError (internalError_ res)
-  toResponse (Right res) = pure (ok res)
-else instance toResponseEitherStringResp :: ToResponse (Either String (Response a)) a where
-  toResponse (Left res) = throwError (internalError_ res)
-  toResponse (Right res) = pure res
-else instance toResponseEitherFailurerVal :: ToResponse (Either Failure a) a where
-  toResponse (Left err) = throwError err
-  toResponse (Right res) = pure (ok res)
-else instance toResponseEitherFailureResponse ::
-  ToResponse (Either Failure (Response a)) a where
-  toResponse (Left err) = throwError err
-  toResponse (Right res) = pure res
-else instance toResponseEitherResponseResponse ::
-  ToResponse (Either (Response ResponseBody) (Response a)) a where
-  toResponse (Left res) = throwError (ServerError res)
-  toResponse (Right res) = pure res
-else instance toResponseEitherResponseVal ::
-  ToResponse (Either (Response ResponseBody) a) a where
-  toResponse (Left res) = throwError (ServerError res)
-  toResponse (Right res) = pure (ok res)
-else instance toResponseIdentity :: ToResponse a a where
-  toResponse res = pure (ok res)
+instance toSpecResponseResponse :: ToSpecResponse (Response a) a where
+  toSpecResponse res = pure res
+else instance toSpecResponseEitherStringVal :: ToSpecResponse (Either String a) a where
+  toSpecResponse (Left res) = throwError (internalError_ res)
+  toSpecResponse (Right res) = pure (ok res)
+else instance toSpecResponseEitherStringResp :: ToSpecResponse (Either String (Response a)) a where
+  toSpecResponse (Left res) = throwError (internalError_ res)
+  toSpecResponse (Right res) = pure res
+else instance toSpecResponseEitherFailurerVal :: ToSpecResponse (Either Failure a) a where
+  toSpecResponse (Left err) = throwError err
+  toSpecResponse (Right res) = pure (ok res)
+else instance toSpecResponseEitherFailureResponse ::
+  ToSpecResponse (Either Failure (Response a)) a where
+  toSpecResponse (Left err) = throwError err
+  toSpecResponse (Right res) = pure res
+else instance toSpecResponseEitherResponseResponse ::
+  ToSpecResponse (Either (Response ResponseBody) (Response a)) a where
+  toSpecResponse (Left res) = throwError (ServerError res)
+  toSpecResponse (Right res) = pure res
+else instance toSpecResponseEitherResponseVal ::
+  ToSpecResponse (Either (Response ResponseBody) a) a where
+  toSpecResponse (Left res) = throwError (ServerError res)
+  toSpecResponse (Right res) = pure (ok res)
+else instance toSpecResponseIdentity :: ToSpecResponse a a where
+  toSpecResponse res = pure (ok res)
 
 -- Types with in an instance for EncodeResponse are those that
 -- can appear in the response field of an API spec and ultimately
