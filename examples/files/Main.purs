@@ -6,9 +6,9 @@ import Effect.Aff (Aff)
 import Payload.Handlers (File)
 import Payload.Handlers as Handlers
 import Payload.Response (Failure)
-import Payload.Spec (API(..), GET)
+import Payload.Spec (Spec(Spec), GET)
 
-spec :: API
+spec :: Spec
   { guards :: {}
   , routes ::
     { indexPage :: GET "/"
@@ -18,7 +18,7 @@ spec :: API
         , response :: File }
     }
   }
-spec = API
+spec = Spec
 
 indexPage :: forall r. { | r} -> Aff File
 indexPage = Handlers.file "examples/files/index.html"

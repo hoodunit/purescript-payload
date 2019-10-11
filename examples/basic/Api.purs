@@ -3,7 +3,7 @@ module Payload.Examples.Basic.Api where
 import Data.List (List)
 import Node.HTTP as HTTP
 import Payload.Handlers (File)
-import Payload.Spec (type (:), API(API), GET, Guards, Nil, POST, Routes)
+import Payload.Spec (type (:), Spec(Spec), GET, Guards, Nil, POST, Routes)
 
 type User =
   { id :: Int
@@ -17,7 +17,7 @@ newtype AdminUser = AdminUser
   { id :: Int
   , name :: String }
 
-spec :: API {
+spec :: Spec {
   guards :: {
      adminUser :: AdminUser,
      request :: HTTP.Request
@@ -73,4 +73,4 @@ spec :: API {
     }
   }
 }
-spec = API
+spec = Spec

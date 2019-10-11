@@ -7,12 +7,12 @@ import Data.Map as Map
 import Effect.Aff (Aff)
 import Node.HTTP as HTTP
 import Payload.Cookies (requestCookies)
-import Payload.Spec (type (:), API(API), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
+import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
 
 -- Example API based on The Movie Database API at
 -- https://developers.themoviedb.org
 
-moviesApiSpec :: API {
+moviesApiSpec :: Spec {
   guards :: {
      apiKey :: ApiKey,
      sessionId :: SessionId
@@ -68,7 +68,7 @@ moviesApiSpec :: API {
     }
   }
 }
-moviesApiSpec = API
+moviesApiSpec = Spec
 
 type Movie =
   { id :: Int

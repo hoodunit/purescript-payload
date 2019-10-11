@@ -1,5 +1,5 @@
 module Payload.Spec
-       ( API(API)
+       ( Spec(Spec)
        , Routes(Routes)
        , Route(Route)
        , Guards(Guards)
@@ -15,9 +15,7 @@ module Payload.Spec
        , Nil
        ) where
 
-import Prelude
-
-data API apiSpec = API
+data Spec apiSpec = Spec
 data Routes (path :: Symbol) routesSpec = Routes
 data Route (m :: Symbol) (p :: Symbol) spec = Route
 

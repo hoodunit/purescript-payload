@@ -3,20 +3,20 @@ module Payload.Examples.Hello.Main where
 import Prelude
 import Effect.Aff (Aff)
 import Payload.Server as Payload
-import Payload.Spec (API(API), GET)
+import Payload.Spec (Spec(Spec), GET)
 
 type Message = 
   { id :: Int
   , text :: String }
 
-spec :: API {
+spec :: Spec {
   getMessages :: GET "/users/<id>/messages?limit=<limit>" {
     params :: { id :: Int },
     query :: { limit :: Int },
     response :: Array Message
   }
 }
-spec = API
+spec = Spec
 
 api = { getMessages }
 

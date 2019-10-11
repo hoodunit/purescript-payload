@@ -11,7 +11,7 @@ import Node.HTTP as HTTP
 import Payload.Guards as Guards
 import Payload.Headers as Headers
 import Payload.Response as Resp
-import Payload.Spec (type (:), API(API), GET, Guards(..), Nil)
+import Payload.Spec (type (:), Spec(Spec), GET, Guards(..), Nil)
 import Payload.Test.Helpers (get_, respMatches, withRoutes, withServer)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
@@ -27,7 +27,7 @@ newtype AdminUser = AdminUser
   { id :: Int
   , name :: String }
 
-spec :: API
+spec :: Spec
   { guards :: { user :: User, adminUser :: AdminUser }
   , routes ::
     { adminIndex :: GET "/admin"
@@ -38,7 +38,7 @@ spec :: API
         , response :: String }
     , unauthenticatedIndex :: GET "/"
         { response :: String }}}
-spec = API
+spec = Spec
 
 adminIndex :: forall r. { | r} -> Aff String
 adminIndex _ = pure "Admin page"

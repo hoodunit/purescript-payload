@@ -18,7 +18,7 @@ import Payload.Internal.Url as PayloadUrl
 import Payload.Response (ResponseBody(..))
 import Payload.Route (DefaultRequest)
 import Payload.Routable (DefaultParentRoute)
-import Payload.Spec (API, Route(Route), Routes)
+import Payload.Spec (Spec, Route(Route), Routes)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList
@@ -42,7 +42,7 @@ defaultOpts =
   }
 
 class ClientApi routesSpec client | routesSpec -> client where
-  mkClient :: forall r. Options -> API { routes :: routesSpec | r } -> client
+  mkClient :: forall r. Options -> Spec { routes :: routesSpec | r } -> client
 
 instance clientApiRecord ::
   ( RowToList routesSpec routesSpecList

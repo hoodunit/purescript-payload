@@ -32,7 +32,7 @@ import Payload.Internal.UrlParsing as UrlParsing
 import Payload.Response (RawResponse)
 import Payload.Response as Resp
 import Payload.Route (DefaultRequest)
-import Payload.Spec (kind GuardList, API, GNil, Guards(Guards), Route(Route), Routes(..))
+import Payload.Spec (kind GuardList, Spec, GNil, Guards(Guards), Route(Route), Routes(..))
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList
@@ -61,7 +61,7 @@ defaultParent =
 class Routable routesSpec guardsSpec handlers guards |
   routesSpec guardsSpec -> handlers,
   guardsSpec -> guards where
-  mkRouter :: API { routes :: routesSpec, guards :: guardsSpec }
+  mkRouter :: Spec { routes :: routesSpec, guards :: guardsSpec }
               -> { handlers :: handlers, guards :: guards }
               -> Either String RoutingTrie
 

@@ -38,7 +38,7 @@ import Payload.Internal.UrlString (urlToSegments)
 import Payload.Response (ResponseBody(..), internalError, writeResponse)
 import Payload.Response as Response
 import Payload.Routable (class Routable, HandlerEntry, Outcome(..), mkRouter)
-import Payload.Spec (API(API))
+import Payload.Spec (Spec(Spec))
 import Payload.Status as Status
 import Record as Record
 
@@ -87,7 +87,7 @@ type Logger =
 launch
   :: forall routesSpec handlers
    . Routable routesSpec {} handlers {}
-  => API routesSpec
+  => Spec routesSpec
   -> handlers
   -> Effect Unit
 launch routeSpec handlers = Aff.launchAff_ (start_ routeSpec handlers)
@@ -96,17 +96,17 @@ start
   :: forall routesSpec handlers
    . Routable routesSpec {} handlers {}
   => Options
-  -> API routesSpec
+  -> Spec routesSpec
   -> handlers
   -> Aff (Either String Server)
 start opts routeSpec handlers = startGuarded opts api { handlers, guards: {} }
   where
-    api = API :: API { routes :: routesSpec, guards :: {} }
+    api = Spec :: Spec { routes :: routesSpec, guards :: {} }
 
 start_
   :: forall routesSpec handlers
    . Routable routesSpec {} handlers {}
-  => API routesSpec
+  => Spec routesSpec
   -> handlers
   -> Aff (Either String Server)
 start_ = start defaultOpts
@@ -114,7 +114,7 @@ start_ = start defaultOpts
 startGuarded_
   :: forall routesSpec guardsSpec handlers guards
    . Routable routesSpec guardsSpec handlers guards
-  => API { routes :: routesSpec, guards :: guardsSpec }
+  => Spec { routes :: routesSpec, guards :: guardsSpec }
   -> { handlers :: handlers, guards :: guards }
   -> Aff (Either String Server)
 startGuarded_ = startGuarded defaultOpts
@@ -123,7 +123,7 @@ startGuarded
   :: forall routesSpec guardsSpec handlers guards
    . Routable routesSpec guardsSpec handlers guards
   => Options
-  -> API { guards :: guardsSpec, routes :: routesSpec }
+  -> Spec { guards :: guardsSpec, routes :: routesSpec }
   -> { handlers :: handlers, guards :: guards }
   -> Aff (Either String Server)
 startGuarded opts apiSpec api = do

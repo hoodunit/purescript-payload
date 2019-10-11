@@ -22,15 +22,14 @@ import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.Routable (class Routable)
 import Payload.Server as Payload
-import Payload.Spec (API(API))
+import Payload.Spec (Spec(Spec))
 import Test.Unit (Test, failure, success)
 import Test.Unit.Assert as Assert
-import Type.Proxy (Proxy(..))
 
 withServer
   :: forall routesSpec guardsSpec handlers guards
    . Routable routesSpec guardsSpec handlers guards
-  => API { routes :: routesSpec, guards :: guardsSpec }
+  => Spec { routes :: routesSpec, guards :: guardsSpec }
   -> { handlers :: handlers, guards :: guards }
   -> Aff Unit
   -> Aff Unit
@@ -53,12 +52,12 @@ loggingErrors runServer doWhileRunning = do
 
 withRoutes :: forall routesSpec handlers
   . Routable routesSpec {} handlers {}
-  => Proxy routesSpec
+  => Spec routesSpec
   -> handlers
   -> Aff Unit
   -> Aff Unit
 withRoutes _ handlers = 
-  withServer (API :: API { guards :: {}, routes :: routesSpec })
+  withServer (Spec :: Spec { guards :: {}, routes :: routesSpec })
              { guards: {}, handlers }
 
 type ApiResponse =

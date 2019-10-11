@@ -15,12 +15,11 @@ import Payload.Client.Client as Client
 import Payload.Cookies (requestCookies)
 import Payload.Cookies as Cookies
 import Payload.Examples.Movies.Main (moviesApi, moviesApiSpec)
-import Payload.Spec (type (:), API(API), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
+import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
 import Payload.Test.Helpers (assertFail, assertRes, withServer)
 import Test.Unit (suite, test)
 import Test.Unit.Main (runTestWith)
 import Test.Unit.Output.Fancy as Fancy
-import Type.Proxy (Proxy(..))
 
 withCookies :: Map String String -> Client.ModifyRequest
 withCookies cookies req = req { withCredentials = true, headers = req.headers <> [ cookieHeader ] }
