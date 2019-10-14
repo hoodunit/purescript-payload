@@ -2,7 +2,7 @@ module Payload.Guards where
 
 import Prelude
 
-import Control.Monad.Except (lift, throwError)
+import Control.Monad.Except (ExceptT(..), lift, runExceptT, throwError)
 import Data.Either (Either(..))
 import Data.Map (Map)
 import Data.Symbol (class IsSymbol, SProxy(..))
@@ -60,7 +60,7 @@ class ToGuardVal a b where
   toGuardVal :: a -> Resp.Result b
 
 instance toGuardValEitherStringVal :: ToGuardVal (Either String a) a where
-  toGuardVal (Left res) = throwError (Resp.internalError_ res)
+  toGuardVal (Left res) = throwError (Resp.Error $ Resp.internalError (Resp.StringBody res))
   toGuardVal (Right res) = pure res
 else instance toGuardValEitherServerErrorVal :: ToGuardVal (Either Resp.Failure a) a where
   toGuardVal (Left err) = throwError err

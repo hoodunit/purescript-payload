@@ -11,6 +11,7 @@ import Payload.Examples.Movies.Test as MoviesExample
 import Payload.Test.Integration.Guards as GuardsTest
 import Payload.Test.Integration.Methods as MethodsTest
 import Payload.Test.Integration.QueryParams as QueryParamsTest
+import Payload.Test.Integration.Status as StatusTest
 import Payload.Test.Unit.Cookies as CookiesTest
 import Payload.Test.Unit.Internal.GuardParsing as GuardParsingTest
 import Payload.Test.Unit.Internal.Query as QueryTest
@@ -41,6 +42,7 @@ tests = do
     MethodsTest.tests
     QueryParamsTest.tests
     GuardsTest.tests
+    StatusTest.tests
 
   suite "Examples" do
     HelloExample.tests

@@ -19,12 +19,6 @@ import Payload.Status as Status
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 
-ok_ :: forall a. a -> Response a
-ok_ = Response.status Status.ok
-
-accepted_ :: forall a. a -> Response a
-accepted_ = Response.status Status.accepted
-
 _header :: String -> RawResponse -> Either String String
 _header key res =
     note ("No header with key '" <> key <> "'") $ Headers.lookup key (unwrap res).headers
@@ -39,7 +33,7 @@ _body :: RawResponse -> Either String ResponseBody
 _body res = Right $ (unwrap res).body
 
 encodeOk :: forall a. EncodeResponse a => a -> Aff (Either String RawResponse)
-encodeOk = (map $ lmap show) <<< runExceptT <<< encodeResponse <<< ok_
+encodeOk = (map $ lmap show) <<< runExceptT <<< encodeResponse <<< Response.ok
 
 encode :: forall a. EncodeResponse a => Response a -> Aff (Either String RawResponse)
 encode = (map $ lmap show) <<< runExceptT <<< encodeResponse

@@ -68,4 +68,4 @@ directory root path = do
      else pure $ Left notFoundError
 
 notFoundError :: Response.Failure
-notFoundError = Response.serverError Status.notFound "File not found"
+notFoundError = Response.Error (Response.notFound (StringBody "File not found"))

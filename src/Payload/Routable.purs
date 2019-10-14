@@ -163,13 +163,13 @@ instance routableListCons ::
           Right (Right rawResponse) -> do
             liftEffect $ Resp.sendResponse res (Right rawResponse)
             pure Success
-          Right (Left (Resp.ServerError error)) -> do
+          Right (Left (Resp.Error error)) -> do
             liftEffect $ Resp.sendResponse res (Left error)
             pure Failure
           Right (Left (Resp.Forward error)) -> pure (Forward error)
           Left error -> do
             liftEffect $ errorShow error
-            liftEffect $ Resp.sendResponse res (Left (Resp.internalError "Internal error"))
+            liftEffect $ Resp.sendResponse res (Left (Resp.internalError (Resp.StringBody "Internal error")))
             pure Failure
       
       methodHandler :: MethodHandler

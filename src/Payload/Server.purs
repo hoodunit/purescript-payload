@@ -167,7 +167,7 @@ handleRequest cfg@{ logger } routerTrie req res = do
   case requestUrl req of
     Right reqUrl -> runHandlers cfg routerTrie reqUrl req res
     Left err -> do
-      writeResponse res (internalError $ "Path could not be decoded: " <> show err)
+      writeResponse res (internalError $ StringBody $ "Path could not be decoded: " <> show err)
 
 runHandlers :: Config -> Trie HandlerEntry -> RequestUrl
                -> HTTP.Request -> HTTP.Response -> Effect Unit
@@ -179,7 +179,7 @@ runHandlers { logger } routerTrie reqUrl req res = do
     outcome <- handleNext Nothing matches
     case outcome of
       (Forward msg) -> do
-        liftEffect $ writeResponse res (Response.status Status.notFound (StringBody ""))
+        liftEffect $ writeResponse res (Response.notFound (StringBody ""))
       _ -> pure unit
   where
     handleNext :: Maybe Outcome -> List HandlerEntry -> Aff Outcome

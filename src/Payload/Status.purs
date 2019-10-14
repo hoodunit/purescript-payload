@@ -152,8 +152,8 @@ requestHeaderFieldsTooLarge = { code: 431, reason: "Request Header Fields Too La
 unavailableForLegalReasons :: HttpStatus
 unavailableForLegalReasons = { code: 451, reason: "Unavailable For Legal Reasons" }
 
-internalServerError :: HttpStatus
-internalServerError = { code: 500, reason: "Internal Server Error" }
+internalError :: HttpStatus
+internalError = { code: 500, reason: "Internal Server Error" }
 
 notImplemented :: HttpStatus
 notImplemented = { code: 501, reason: "Not Implemented" }

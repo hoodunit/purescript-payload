@@ -26,7 +26,7 @@ tests = do
         respMatches { status: 500, body: "Error" } res
     test "to return an arbitrary error response, return Either ServerError" $ do
       let spec = Spec :: _ { foo :: GET "/foo" { response :: String } }
-      let handlers = { foo: \_ -> pure (Left (Response.serverError Status.badRequest "Error!") :: Either Failure String) }
+      let handlers = { foo: \_ -> pure (Left (Response.Error $ Response.badRequest (StringBody "Error!")) :: Either Failure String) }
       withRoutes spec handlers do
         res <- get "/foo"
         Assert.equal { status: 400, body: "Error!", headers: Map.empty } res

@@ -1,25 +1,33 @@
 module Payload.Response
-       ( class EncodeResponse
-       , encodeResponse
-       , class ToSpecResponse
-       , toSpecResponse
-       , Json(Json)
-       , Empty(Empty)
-       , RawResponse
-       , Response(Response)
-       , ResponseBody(StringBody, StreamBody, EmptyBody)
-       , Result
-       , Failure(Forward, ServerError)
-       , UnsafeStream
+       -- ( class EncodeResponse
+       -- , encodeResponse
+       -- , class ToSpecResponse
+       -- , toSpecResponse
+       -- , Json(Json)
+       -- , Empty(Empty)
+       -- , RawResponse
+       -- , Response(Response)
+       -- , ResponseBody(StringBody, StreamBody, EmptyBody)
+       -- , Result
+       -- , Failure(Forward, ServerError)
+       -- , UnsafeStream
 
-       , internalError
-       , internalError_
-       , sendResponse
-       , serverError
-       , setEmptyBody
-       , status
-       , writeResponse
-       ) where
+       -- , internalError
+       -- , internalError_
+       -- , sendResponse
+       -- , serverError
+       -- , setEmptyBody
+       -- , writeResponse
+
+       -- , status
+       -- , setStatus
+       -- , updateStatus
+       -- , setBody
+       -- , updateBody
+       -- , setHeaders
+       -- , updateHeaders
+       -- ) where
+       where
 
 import Prelude
 
@@ -47,11 +55,11 @@ import Type.Equality (class TypeEquals, to)
 import Unsafe.Coerce (unsafeCoerce)
 
 type Result a = ExceptT Failure Aff a
-data Failure = Forward String | ServerError RawResponse
+data Failure = Forward String | Error RawResponse
 
 instance showFailure :: Show Failure where
   show (Forward s) = "Forward '" <> s <> "'"
-  show (ServerError e) = "ServerError " <> show e
+  show (Error e) = "Error " <> show e
 
 data UnsafeStream
 
@@ -95,29 +103,33 @@ instance showResponseBody :: Show ResponseBody where
 class ToSpecResponse a b where
   toSpecResponse :: a -> Result (Response b)
 
-instance toSpecResponseResponse :: ToSpecResponse (Response a) a where
+instance toSpecResponseResponse
+  :: ToSpecResponse (Response a) a where
   toSpecResponse res = pure res
-else instance toSpecResponseEitherStringVal :: ToSpecResponse (Either String a) a where
-  toSpecResponse (Left res) = throwError (internalError_ res)
+else instance toSpecResponseEitherStringVal
+  :: ToSpecResponse (Either String a) a where
+  toSpecResponse (Left res) = throwError (Error $ internalError $ StringBody res)
   toSpecResponse (Right res) = pure (ok res)
-else instance toSpecResponseEitherStringResp :: ToSpecResponse (Either String (Response a)) a where
-  toSpecResponse (Left res) = throwError (internalError_ res)
+else instance toSpecResponseEitherStringResp
+  :: ToSpecResponse (Either String (Response a)) a where
+  toSpecResponse (Left res) = throwError (Error $ internalError $ StringBody res)
   toSpecResponse (Right res) = pure res
-else instance toSpecResponseEitherFailurerVal :: ToSpecResponse (Either Failure a) a where
+else instance toSpecResponseEitherFailurerVal
+  :: ToSpecResponse (Either Failure a) a where
   toSpecResponse (Left err) = throwError err
   toSpecResponse (Right res) = pure (ok res)
 else instance toSpecResponseEitherFailureResponse ::
   ToSpecResponse (Either Failure (Response a)) a where
   toSpecResponse (Left err) = throwError err
   toSpecResponse (Right res) = pure res
-else instance toSpecResponseEitherResponseResponse ::
-  ToSpecResponse (Either (Response ResponseBody) (Response a)) a where
-  toSpecResponse (Left res) = throwError (ServerError res)
-  toSpecResponse (Right res) = pure res
-else instance toSpecResponseEitherResponseVal ::
-  ToSpecResponse (Either (Response ResponseBody) a) a where
-  toSpecResponse (Left res) = throwError (ServerError res)
-  toSpecResponse (Right res) = pure (ok res)
+-- else instance toSpecResponseEitherResponseResponse ::
+--   EncodeResponse err => ToSpecResponse (Either (Response err) (Response a)) a where
+--   toSpecResponse (Left res) = throwError (Error $ encodeResponse res)
+--   toSpecResponse (Right res) = pure res
+-- else instance toSpecResponseEitherResponseVal ::
+--   EncodeResponse err => ToSpecResponse (Either (Response err) a) a where
+--   toSpecResponse (Left res) = throwError (Error $ encodeResponse res)
+--   toSpecResponse (Right res) = pure (ok res)
 else instance toSpecResponseIdentity :: ToSpecResponse a a where
   toSpecResponse res = pure (ok res)
 
@@ -181,7 +193,7 @@ sendResponse res serverResult = Aff.runAff_ onComplete do
     Right serverRes -> writeResponse res serverRes
     Left err -> writeResponse res err
   where
-    onComplete (Left errors) = writeResponse res (internalError (show errors))
+    onComplete (Left errors) = writeResponse res (internalError $ StringBody $ show errors)
     onComplete (Right _) = pure unit
 
 writeResponse :: HTTP.Response -> RawResponse -> Effect Unit
@@ -226,17 +238,204 @@ writeStreamBody res stream = do
   _ <- Stream.pipe (to (unsafeCoerce stream)) (HTTP.responseAsStream res)
   pure unit
 
-serverError :: HttpStatus -> String -> Failure
-serverError s msg = ServerError (status s (StringBody msg))
-
-internalError_ :: String -> Failure
-internalError_ msg = ServerError $ status Status.internalServerError (StringBody msg)
-
-internalError :: String -> RawResponse
-internalError msg = status Status.internalServerError (StringBody msg)
-
 status :: forall a. HttpStatus -> a -> Response a
 status s body = Response { status: s, headers: Headers.empty, body }
 
+setStatus :: forall a. HttpStatus -> Response a -> Response a
+setStatus s = over Response (_ { status = s })
+
+updateStatus :: forall a. (HttpStatus -> HttpStatus) -> Response a -> Response a
+updateStatus f (Response res) = Response (res { status = f res.status })
+
+setBody :: forall a b. b -> Response a -> Response b
+setBody body = over Response (_ { body = body })
+
+updateBody :: forall a b. (a -> b) -> Response a -> Response b
+updateBody f (Response res) = Response (res { body = f res.body })
+
+setHeaders :: forall a. Headers -> Response a -> Response a
+setHeaders headers = over Response (_ { headers = headers })
+
+updateHeaders :: forall a. (Headers -> Headers) -> Response a -> Response a
+updateHeaders f (Response res) = Response (res { headers = f res.headers })
+
+
+continue :: forall a. a -> Response a
+continue = status Status.continue
+
+switchingProtocols :: forall a. a -> Response a
+switchingProtocols = status Status.switchingProtocols
+
+processing :: forall a. a -> Response a
+processing = status Status.processing
+
 ok :: forall a. a -> Response a
-ok body = Response { status: Status.ok, headers: Headers.empty, body }
+ok = status Status.ok
+
+created :: forall a. a -> Response a
+created = status Status.created
+
+accepted :: forall a. a -> Response a
+accepted = status Status.accepted
+
+nonAuthoritativeInformation :: forall a. a -> Response a
+nonAuthoritativeInformation = status Status.nonAuthoritativeInformation
+
+noContent :: forall a. a -> Response a
+noContent = status Status.noContent
+
+resetContent :: forall a. a -> Response a
+resetContent = status Status.resetContent
+
+partialContent :: forall a. a -> Response a
+partialContent = status Status.partialContent
+
+multiStatus :: forall a. a -> Response a
+multiStatus = status Status.multiStatus
+
+alreadyReported :: forall a. a -> Response a
+alreadyReported = status Status.alreadyReported
+
+imUsed :: forall a. a -> Response a
+imUsed = status Status.imUsed
+
+multipleChoices :: forall a. a -> Response a
+multipleChoices = status Status.multipleChoices
+
+movedPermanently :: forall a. a -> Response a
+movedPermanently = status Status.movedPermanently
+
+found :: forall a. a -> Response a
+found = status Status.found
+
+seeOther :: forall a. a -> Response a
+seeOther = status Status.seeOther
+
+notModified :: forall a. a -> Response a
+notModified = status Status.notModified
+
+useProxy :: forall a. a -> Response a
+useProxy = status Status.useProxy
+
+temporaryRedirect :: forall a. a -> Response a
+temporaryRedirect = status Status.temporaryRedirect
+
+permanentRedirect :: forall a. a -> Response a
+permanentRedirect = status Status.permanentRedirect
+
+badRequest :: forall a. a -> Response a
+badRequest = status Status.badRequest
+
+unauthorized :: forall a. a -> Response a
+unauthorized = status Status.unauthorized
+
+paymentRequired :: forall a. a -> Response a
+paymentRequired = status Status.paymentRequired
+
+forbidden :: forall a. a -> Response a
+forbidden = status Status.forbidden
+
+notFound :: forall a. a -> Response a
+notFound = status Status.notFound
+
+methodNotAllowed :: forall a. a -> Response a
+methodNotAllowed = status Status.methodNotAllowed
+
+notAcceptable :: forall a. a -> Response a
+notAcceptable = status Status.notAcceptable
+
+proxyAuthenticationRequired :: forall a. a -> Response a
+proxyAuthenticationRequired = status Status.proxyAuthenticationRequired
+
+requestTimeout :: forall a. a -> Response a
+requestTimeout = status Status.requestTimeout
+
+conflict :: forall a. a -> Response a
+conflict = status Status.conflict
+
+gone :: forall a. a -> Response a
+gone = status Status.gone
+
+lengthRequired :: forall a. a -> Response a
+lengthRequired = status Status.lengthRequired
+
+preconditionFailed :: forall a. a -> Response a
+preconditionFailed = status Status.preconditionFailed
+
+payloadTooLarge :: forall a. a -> Response a
+payloadTooLarge = status Status.payloadTooLarge
+
+uriTooLong :: forall a. a -> Response a
+uriTooLong = status Status.uriTooLong
+
+unsupportedMediaType :: forall a. a -> Response a
+unsupportedMediaType = status Status.unsupportedMediaType
+
+rangeNotSatisfiable :: forall a. a -> Response a
+rangeNotSatisfiable = status Status.rangeNotSatisfiable
+
+expectationFailed :: forall a. a -> Response a
+expectationFailed = status Status.expectationFailed
+
+imATeapot :: forall a. a -> Response a
+imATeapot = status Status.imATeapot
+
+misdirectedRequest :: forall a. a -> Response a
+misdirectedRequest = status Status.misdirectedRequest
+
+unprocessableEntity :: forall a. a -> Response a
+unprocessableEntity = status Status.unprocessableEntity
+
+locked :: forall a. a -> Response a
+locked = status Status.locked
+
+failedDependency :: forall a. a -> Response a
+failedDependency = status Status.failedDependency
+
+upgradeRequired :: forall a. a -> Response a
+upgradeRequired = status Status.upgradeRequired
+
+preconditionRequired :: forall a. a -> Response a
+preconditionRequired = status Status.preconditionRequired
+
+tooManyRequests :: forall a. a -> Response a
+tooManyRequests = status Status.tooManyRequests
+
+requestHeaderFieldsTooLarge :: forall a. a -> Response a
+requestHeaderFieldsTooLarge = status Status.requestHeaderFieldsTooLarge
+
+unavailableForLegalReasons :: forall a. a -> Response a
+unavailableForLegalReasons = status Status.unavailableForLegalReasons
+
+internalError :: forall a. a -> Response a
+internalError = status Status.internalError
+
+notImplemented :: forall a. a -> Response a
+notImplemented = status Status.notImplemented
+
+badGateway :: forall a. a -> Response a
+badGateway = status Status.badGateway
+
+serviceUnavailable :: forall a. a -> Response a
+serviceUnavailable = status Status.serviceUnavailable
+
+gatewayTimeout :: forall a. a -> Response a
+gatewayTimeout = status Status.gatewayTimeout
+
+httpVersionNotSupported :: forall a. a -> Response a
+httpVersionNotSupported = status Status.httpVersionNotSupported
+
+variantAlsoNegotiates :: forall a. a -> Response a
+variantAlsoNegotiates = status Status.variantAlsoNegotiates
+
+insufficientStorage :: forall a. a -> Response a
+insufficientStorage = status Status.insufficientStorage
+
+loopDetected :: forall a. a -> Response a
+loopDetected = status Status.loopDetected
+
+notExtended :: forall a. a -> Response a
+notExtended = status Status.notExtended
+
+networkAuthenticationRequired :: forall a. a -> Response a
+networkAuthenticationRequired = status Status.networkAuthenticationRequired
