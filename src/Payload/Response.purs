@@ -35,6 +35,7 @@ import Control.Monad.Except (ExceptT, throwError)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
+import Data.Symbol (SProxy(..))
 import Data.Traversable (sequence_)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -54,6 +55,7 @@ import Payload.Status as Status
 import Prim.TypeError (class Fail, Quote, Text)
 import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals, to)
+import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 type Result a = ExceptT Failure Aff a
@@ -102,66 +104,66 @@ instance showResponseBody :: Show ResponseBody where
 -- | can either return that type directly or return another type from
 -- | which that type can be produced (e.g. a full response with different
 -- | headers or a different status code).
-class ToSpecResponse a b where
-  toSpecResponse :: a -> Result (Response b)
+class ToSpecResponse (route :: Symbol) a b where
+  toSpecResponse :: SProxy route -> a -> Result (Response b)
 
 instance toSpecResponseEitherStringVal
   :: EncodeResponse a
-  => ToSpecResponse (Either String a) a where
-  toSpecResponse (Left res) = throwError (Error $ internalError $ StringBody res)
-  toSpecResponse (Right res) = pure (ok res)
+  => ToSpecResponse route (Either String a) a where
+  toSpecResponse _ (Left res) = throwError (Error $ internalError $ StringBody res)
+  toSpecResponse _ (Right res) = pure (ok res)
 else instance toSpecResponseEitherStringResp
   :: EncodeResponse a
-  => ToSpecResponse (Either String (Response a)) a where
-  toSpecResponse (Left res) = throwError (Error $ internalError $ StringBody res)
-  toSpecResponse (Right res) = pure res
+  => ToSpecResponse route (Either String (Response a)) a where
+  toSpecResponse _ (Left res) = throwError (Error $ internalError $ StringBody res)
+  toSpecResponse _ (Right res) = pure res
 else instance toSpecResponseEitherFailurerVal
   :: EncodeResponse a
-  => ToSpecResponse (Either Failure a) a where
-  toSpecResponse (Left err) = throwError err
-  toSpecResponse (Right res) = pure (ok res)
+  => ToSpecResponse route (Either Failure a) a where
+  toSpecResponse _ (Left err) = throwError err
+  toSpecResponse _ (Right res) = pure (ok res)
 else instance toSpecResponseEitherFailureResponse
   :: EncodeResponse a
-  => ToSpecResponse (Either Failure (Response a)) a where
-  toSpecResponse (Left err) = throwError err
-  toSpecResponse (Right res) = pure res
+  => ToSpecResponse route (Either Failure (Response a)) a where
+  toSpecResponse _ (Left err) = throwError err
+  toSpecResponse _ (Right res) = pure res
 else instance toSpecResponseEitherResponseVal
   :: EncodeResponse err
-  => ToSpecResponse (Either (Response err) a) a where
-  toSpecResponse (Left res) = do
+  => ToSpecResponse route (Either (Response err) a) a where
+  toSpecResponse _ (Left res) = do
     raw <- encodeResponse res
     throwError (Error raw) 
-  toSpecResponse (Right res) = pure (ok res)
+  toSpecResponse _ (Right res) = pure (ok res)
 else instance toSpecResponseEitherResponseResponse
   :: EncodeResponse err
-  => ToSpecResponse (Either (Response err) (Response a)) a where
-  toSpecResponse (Left res) = do
+  => ToSpecResponse route (Either (Response err) (Response a)) a where
+  toSpecResponse _ (Left res) = do
     raw <- encodeResponse res
     throwError (Error raw) 
-  toSpecResponse (Right res) = pure res
+  toSpecResponse _ (Right res) = pure res
 else instance toSpecResponseResponse
   :: EncodeResponse a
-  => ToSpecResponse (Response a) a where
-  toSpecResponse res = pure res
+  => ToSpecResponse route (Response a) a where
+  toSpecResponse _ res = pure res
 else instance toSpecResponseIdentity
   :: EncodeResponse a
-  => ToSpecResponse a a where
-  toSpecResponse res = pure (ok res)
+  => ToSpecResponse route a a where
+  toSpecResponse _ res = pure (ok res)
 else instance toSpecResponseFail ::
-  ( Fail (Text "Could not match spec response type with handler response type."
+  ( Fail (Text "Could not match or convert handler response type to spec response type."
           |> Text ""
-          |> Text "Spec requires:   " <> Quote b
-          |> Text "Handler returns: " <> Quote a
-          |> Text ""
-          |> Text "No conversion from handler response to spec response was found."
+          |> Text "           Route: " <> Text docRoute
+          |> Text "Handler response: " <> Quote a
+          |> Text "   Spec response: " <> Quote b
           |> Text ""
           |> Text "Specifically, no type class instance was found for"
           |> Text ""
-          |> Text "ToSpecResponse " <> Quote a
+          |> Text "ToSpecResponse docRoute"
+          |> Text "               " <> Quote a
           |> Text "               " <> Quote b
           |> Text ""
          )
-  ) => ToSpecResponse a b where
+  ) => ToSpecResponse docRoute a b where
   toSpecResponse res = unsafeCoerce res
 
 -- Types with in an instance for EncodeResponse are those that
