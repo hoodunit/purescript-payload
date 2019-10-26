@@ -43,7 +43,7 @@ tests = do
     suite "HEAD" do
       test "HEAD succeeds" $ do
         let spec = Spec :: _ { foo :: HEAD "/foo" {} }
-        let handlers = { foo: \_ -> pure unit }
+        let handlers = { foo: \_ -> pure Response.Empty }
         withRoutes spec handlers do
           res <- head "/foo"
           respMatches { status: 200, body: "" } res
@@ -55,7 +55,7 @@ tests = do
           respMatches { status: 200, body: "" } res
       test "user-specified HEAD route overrides default GET HEAD route" $ do
         let spec = Spec :: _ { fooGet :: GET "/foo" { response :: String }, fooHead :: HEAD "/foo" {} }
-        let handlers = { fooGet: \_ -> pure "get", fooHead: \_ -> pure (Response.status Status.accepted unit) }
+        let handlers = { fooGet: \_ -> pure "get", fooHead: \_ -> pure (Response.status Status.accepted Response.Empty) }
         withRoutes spec handlers do
           res <- head "/foo"
           respMatches { status: 202, body: "" } res

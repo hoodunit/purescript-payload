@@ -94,43 +94,56 @@ instance showResponseBody :: Show ResponseBody where
   show EmptyBody = "EmptyBody"
   show (StreamBody _) = "StreamBody"
 
--- This type class is for converting types which are compatible with
--- the spec into the spec type.
--- If the spec says one type is returned from an endpoint, a handler
--- can either return that type directly or return another type from
--- which that type can be produced (e.g. a full response with different
--- headers or a different status code).
+-- | This type class is for converting types which are compatible with
+-- | the spec into the spec type.
+-- | If the spec says one type is returned from an endpoint, a handler
+-- | can either return that type directly or return another type from
+-- | which that type can be produced (e.g. a full response with different
+-- | headers or a different status code).
 class ToSpecResponse a b where
   toSpecResponse :: a -> Result (Response b)
 
-instance toSpecResponseResponse
-  :: ToSpecResponse (Response a) a where
-  toSpecResponse res = pure res
-else instance toSpecResponseEitherStringVal
-  :: ToSpecResponse (Either String a) a where
+instance toSpecResponseEitherStringVal
+  :: EncodeResponse a
+  => ToSpecResponse (Either String a) a where
   toSpecResponse (Left res) = throwError (Error $ internalError $ StringBody res)
   toSpecResponse (Right res) = pure (ok res)
 else instance toSpecResponseEitherStringResp
-  :: ToSpecResponse (Either String (Response a)) a where
+  :: EncodeResponse a
+  => ToSpecResponse (Either String (Response a)) a where
   toSpecResponse (Left res) = throwError (Error $ internalError $ StringBody res)
   toSpecResponse (Right res) = pure res
 else instance toSpecResponseEitherFailurerVal
-  :: ToSpecResponse (Either Failure a) a where
+  :: EncodeResponse a
+  => ToSpecResponse (Either Failure a) a where
   toSpecResponse (Left err) = throwError err
   toSpecResponse (Right res) = pure (ok res)
-else instance toSpecResponseEitherFailureResponse ::
-  ToSpecResponse (Either Failure (Response a)) a where
+else instance toSpecResponseEitherFailureResponse
+  :: EncodeResponse a
+  => ToSpecResponse (Either Failure (Response a)) a where
   toSpecResponse (Left err) = throwError err
   toSpecResponse (Right res) = pure res
--- else instance toSpecResponseEitherResponseResponse ::
---   EncodeResponse err => ToSpecResponse (Either (Response err) (Response a)) a where
---   toSpecResponse (Left res) = throwError (Error $ encodeResponse res)
---   toSpecResponse (Right res) = pure res
--- else instance toSpecResponseEitherResponseVal ::
---   EncodeResponse err => ToSpecResponse (Either (Response err) a) a where
---   toSpecResponse (Left res) = throwError (Error $ encodeResponse res)
---   toSpecResponse (Right res) = pure (ok res)
-else instance toSpecResponseIdentity :: ToSpecResponse a a where
+else instance toSpecResponseEitherResponseVal
+  :: EncodeResponse err
+  => ToSpecResponse (Either (Response err) a) a where
+  toSpecResponse (Left res) = do
+    raw <- encodeResponse res
+    throwError (Error raw) 
+  toSpecResponse (Right res) = pure (ok res)
+else instance toSpecResponseEitherResponseResponse
+  :: EncodeResponse err
+  => ToSpecResponse (Either (Response err) (Response a)) a where
+  toSpecResponse (Left res) = do
+    raw <- encodeResponse res
+    throwError (Error raw) 
+  toSpecResponse (Right res) = pure res
+else instance toSpecResponseResponse
+  :: EncodeResponse a
+  => ToSpecResponse (Response a) a where
+  toSpecResponse res = pure res
+else instance toSpecResponseIdentity
+  :: EncodeResponse a
+  => ToSpecResponse a a where
   toSpecResponse res = pure (ok res)
 
 -- Types with in an instance for EncodeResponse are those that
@@ -177,11 +190,6 @@ else instance encodeResponseMaybe :: EncodeResponse a => EncodeResponse (Maybe a
                    , headers: r.headers
                    , body }
 else instance encodeResponseEmpty :: EncodeResponse Empty where
-  encodeResponse (Response r) = pure $ Response
-                   { status: r.status
-                   , headers: r.headers
-                   , body: EmptyBody }
-else instance encodeResponseUnit :: EncodeResponse Unit where
   encodeResponse (Response r) = pure $ Response
                    { status: r.status
                    , headers: r.headers

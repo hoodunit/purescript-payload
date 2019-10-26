@@ -4,6 +4,7 @@ module Payload.Route
 
 import Prelude
 
+import Payload.Response as Response
 import Payload.Spec (GNil, Guards)
 
 type DefaultRequest =
@@ -11,4 +12,4 @@ type DefaultRequest =
   , query :: {}
   , body :: String
   , guards :: Guards GNil
-  , response :: Unit )
+  , response :: Response.Empty )
