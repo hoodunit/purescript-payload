@@ -168,7 +168,6 @@ main = do
   let guards = { adminUser: getAdminUser, user: getUser }
   let handlers = { adminIndex, userIndex, unauthenticatedIndex }
   Payload.launch spec { handlers, guards }
-  
 ```
 
 API specs can also be hierarchical and guards can be applied to all endpoints below them in the hierarchy. For an example of this see the [Movies API Example](./examples/movies/Main.purs)
