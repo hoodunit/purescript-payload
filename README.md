@@ -41,7 +41,7 @@ The library is in flux and will likely have API breaking changes.
 ## Table of Contents
 
 * [Getting Started](#getting-started)
-* [Guide](#overview)
+* [Guide](#guide)
   * [Overview](#overview)
   * [Requests](#requests)
   * [Responses](#responses)
