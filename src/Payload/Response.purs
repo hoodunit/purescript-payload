@@ -12,9 +12,6 @@ module Payload.Response
        , Failure(Forward, Error)
        , UnsafeStream
 
-       , sendResponse
-       , writeResponse
-
        , status
        , setStatus
        , updateStatus
@@ -92,15 +89,7 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Symbol (SProxy)
-import Data.Traversable (sequence_)
-import Data.Tuple (Tuple(..))
-import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Aff as Aff
-import Effect.Class (liftEffect)
-import Node.Encoding (Encoding(..))
-import Node.Encoding as Encoding
-import Node.HTTP as HTTP
 import Node.Stream as Stream
 import Payload.ContentType as ContentType
 import Payload.Headers (Headers)
@@ -110,7 +99,7 @@ import Payload.Status (HttpStatus)
 import Payload.Status as Status
 import Prim.TypeError (class Fail, Quote, Text)
 import Simple.JSON as SimpleJson
-import Type.Equality (class TypeEquals, to)
+import Type.Equality (class TypeEquals)
 import Unsafe.Coerce (unsafeCoerce)
 
 type Result a = ExceptT Failure Aff a
@@ -119,8 +108,6 @@ data Failure = Forward String | Error RawResponse
 instance showFailure :: Show Failure where
   show (Forward s) = "Forward '" <> s <> "'"
   show (Error e) = "Error " <> show e
-
-data UnsafeStream
 
 newtype Json a = Json a
 data Empty = Empty
@@ -139,6 +126,8 @@ instance showResponse :: Show a => Show (Response a) where
 type RawResponse = Response ResponseBody
 
 data ResponseBody = StringBody String | StreamBody UnsafeStream | EmptyBody
+
+data UnsafeStream
 
 instance eqResponseBody :: Eq ResponseBody where
   eq (StringBody s1) (StringBody s2) = s1 == s2
@@ -272,57 +261,6 @@ else instance encodeResponseEmpty :: EncodeResponse Empty where
                    { status: r.status
                    , headers: r.headers
                    , body: EmptyBody }
-
-sendResponse :: HTTP.Response -> Either RawResponse RawResponse -> Effect Unit
-sendResponse res serverResult = Aff.runAff_ onComplete do
-  liftEffect $ case serverResult of
-    Right serverRes -> writeResponse res serverRes
-    Left err -> writeResponse res err
-  where
-    onComplete (Left errors) = writeResponse res (internalError $ StringBody $ show errors)
-    onComplete (Right _) = pure unit
-
-writeResponse :: HTTP.Response -> RawResponse -> Effect Unit
-writeResponse res (Response serverRes) = do
-  HTTP.setStatusCode res serverRes.status.code
-  HTTP.setStatusMessage res serverRes.status.reason
-  writeBodyAndHeaders res serverRes.headers serverRes.body
-
-writeBodyAndHeaders :: HTTP.Response -> Headers -> ResponseBody -> Effect Unit
-writeBodyAndHeaders res headers (StringBody str) = do
-  let contentLength = show $ Encoding.byteLength str UTF8
-  let newHeaders = Headers.setIfNotDefined "content-length" contentLength headers
-  writeHeaders res newHeaders
-  writeStringBody res str
-writeBodyAndHeaders res headers (StreamBody stream) = do
-  writeHeaders res headers
-  writeStreamBody res stream
-writeBodyAndHeaders res headers EmptyBody = do
-  writeHeaders res headers
-  Aff.launchAff_ $ endResponse res
-
-foreign import endResponse_ :: HTTP.Response -> Unit -> (Unit -> Effect Unit) -> Effect Unit
-
-endResponse :: HTTP.Response -> Aff Unit
-endResponse res = Aff.makeAff \cb -> do
-  endResponse_ res unit (\_ -> cb (Right unit))
-  pure Aff.nonCanceler
-
-writeHeaders :: HTTP.Response -> Headers -> Effect Unit
-writeHeaders res headers = do
-  let (sets :: Array (Effect Unit)) = map (\(Tuple k v) -> HTTP.setHeader res k v) (Headers.toUnfoldable headers)
-  sequence_ sets
-
-writeStringBody :: HTTP.Response -> String -> Effect Unit
-writeStringBody res str = do
-  let out = HTTP.responseAsStream res
-  _ <- Stream.writeString out UTF8 str (pure unit)
-  Stream.end out (pure unit)
-
-writeStreamBody :: HTTP.Response -> UnsafeStream -> Effect Unit
-writeStreamBody res stream = do
-  _ <- Stream.pipe (to (unsafeCoerce stream)) (HTTP.responseAsStream res)
-  pure unit
 
 status :: forall a. HttpStatus -> a -> Response a
 status s body = Response { status: s, headers: Headers.empty, body }

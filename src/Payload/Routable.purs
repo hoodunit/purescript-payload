@@ -24,6 +24,7 @@ import Payload.Handleable (class Handleable, MethodHandler, handle)
 import Payload.Internal.GuardParsing (GuardTypes(GuardTypes))
 import Payload.Internal.GuardParsing as GuardParsing
 import Payload.Internal.Request (RequestUrl)
+import Payload.Internal.ServerResponse (sendResponse)
 import Payload.Internal.Trie (Trie)
 import Payload.Internal.Trie as Trie
 import Payload.Internal.Url as PayloadUrl
@@ -161,15 +162,15 @@ instance routableListCons ::
         result <- Aff.attempt $ runExceptT mHandler
         case result of
           Right (Right rawResponse) -> do
-            liftEffect $ Resp.sendResponse res (Right rawResponse)
+            liftEffect $ sendResponse res (Right rawResponse)
             pure Success
           Right (Left (Resp.Error error)) -> do
-            liftEffect $ Resp.sendResponse res (Left error)
+            liftEffect $ sendResponse res (Left error)
             pure Failure
           Right (Left (Resp.Forward error)) -> pure (Forward error)
           Left error -> do
             liftEffect $ errorShow error
-            liftEffect $ Resp.sendResponse res (Left (Resp.internalError (Resp.StringBody "Internal error")))
+            liftEffect $ sendResponse res (Left (Resp.internalError (Resp.StringBody "Internal error")))
             pure Failure
       
       methodHandler :: MethodHandler

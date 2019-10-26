@@ -31,11 +31,12 @@ import Node.HTTP as HTTP
 import Node.URL (URL)
 import Node.URL as Url
 import Payload.Internal.Request (RequestUrl)
+import Payload.Internal.ServerResponse (writeResponse)
 import Payload.Internal.Trie (Trie)
 import Payload.Internal.Trie as Trie
 import Payload.Internal.UrlParsing (Segment)
 import Payload.Internal.UrlString (urlToSegments)
-import Payload.Response (ResponseBody(..), internalError, writeResponse)
+import Payload.Response (ResponseBody(..), internalError)
 import Payload.Response as Response
 import Payload.Routable (class Routable, HandlerEntry, Outcome(..), mkRouter)
 import Payload.Spec (Spec(Spec))
