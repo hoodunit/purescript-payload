@@ -129,7 +129,7 @@ To return an error, handlers can return `Either error val`, where `error` can be
 
 ## Guards
 
-Payload has a concept of request guards borrowed from the [Rust Rocket library](https://rocket.rs/v0.4/guide/requests/#request-guards). A request guard is a function that is called before the handler is called that returns an arbitrary value that the handler function receives. It can also error or forward, in which case the handler is never called.
+Payload borrows a concept of request guards from the [Rust Rocket library](https://rocket.rs/v0.4/guide/requests/#request-guards). A request guard is a function that is called before the handler is called that returns an arbitrary value that the handler function receives. It can also error or forward, in which case the handler is never called.
 
 For example, this spec defines two guards. The `/admin` endpoint will only be called if an `AdminUser` can be produced by the guard from the request. Similarly the `/user` endpoint will only be called if a `User` can be obtained from the request. This provides a compile-time guarantee that handlers will only be called with authenticated requests.
 
