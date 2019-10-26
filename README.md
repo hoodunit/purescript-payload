@@ -3,23 +3,18 @@
 Payload is an HTTP server library for PureScript inspired by [Rust's Rocket](https://rocket.rs/) and [Haskell's Servant](https://haskell-servant.readthedocs.io/en/stable/). Here is a complete Payload application:
 
 ```purescript
-import Prelude
-import Effect.Aff (Aff)
-import Payload.Server as Payload
-import Payload.Spec (API(API), GET)
-
 type Message = 
   { id :: Int
   , text :: String }
 
-spec :: API {
+spec :: Spec {
   getMessages :: GET "/users/<id>/messages?limit=<limit>" {
     params :: { id :: Int },
     query :: { limit :: Int },
     response :: Array Message
   }
 }
-spec = API
+spec = Spec
 
 api = { getMessages }
 
@@ -43,13 +38,13 @@ type User =
   { id :: Int
   , name :: String }
 
-spec :: API {
+spec :: Spec {
   getUser :: GET "/users/<id>" {
     params :: { id :: Int },
     response :: User
   }
 }
-spec = API
+spec = Spec
 ```
 
 `GET "/users/<id>"` is a type-level string that says we have a `GET` endpoint with a URL parameter named `id`. The type of `id` is defined below it as an `Int`. The endpoint returns a `User`, with type as defined above.
