@@ -107,17 +107,7 @@ instance showResponseBody :: Show ResponseBody where
 class ToSpecResponse (route :: Symbol) a b where
   toSpecResponse :: SProxy route -> a -> Result (Response b)
 
-instance toSpecResponseEitherStringVal
-  :: EncodeResponse a
-  => ToSpecResponse route (Either String a) a where
-  toSpecResponse _ (Left res) = throwError (Error $ internalError $ StringBody res)
-  toSpecResponse _ (Right res) = pure (ok res)
-else instance toSpecResponseEitherStringResp
-  :: EncodeResponse a
-  => ToSpecResponse route (Either String (Response a)) a where
-  toSpecResponse _ (Left res) = throwError (Error $ internalError $ StringBody res)
-  toSpecResponse _ (Right res) = pure res
-else instance toSpecResponseEitherFailurerVal
+instance toSpecResponseEitherFailurerVal
   :: EncodeResponse a
   => ToSpecResponse route (Either Failure a) a where
   toSpecResponse _ (Left err) = throwError err
@@ -139,6 +129,22 @@ else instance toSpecResponseEitherResponseResponse
   => ToSpecResponse route (Either (Response err) (Response a)) a where
   toSpecResponse _ (Left res) = do
     raw <- encodeResponse res
+    throwError (Error raw) 
+  toSpecResponse _ (Right res) = pure res
+else instance toSpecResponseEitherValVal ::
+  ( EncodeResponse a
+  , EncodeResponse err
+  ) => ToSpecResponse route (Either err a) a where
+  toSpecResponse _ (Left res) = do
+    raw <- encodeResponse (internalError res)
+    throwError (Error raw) 
+  toSpecResponse _ (Right res) = pure (ok res)
+else instance toSpecResponseEitherValResponse ::
+  ( EncodeResponse a
+  , EncodeResponse err
+  ) => ToSpecResponse route (Either err (Response a)) a where
+  toSpecResponse _ (Left res) = do
+    raw <- encodeResponse (internalError res)
     throwError (Error raw) 
   toSpecResponse _ (Right res) = pure res
 else instance toSpecResponseResponse
