@@ -19,16 +19,10 @@ import Test.Unit.Assert as Assert
 import Test.Unit.Main (runTestWith)
 import Test.Unit.Output.Fancy as Fancy
 
-newtype User = User
-  { id :: Int
-  , name :: String }
-
-newtype AdminUser = AdminUser
-  { id :: Int
-  , name :: String }
-
 spec :: Spec
-  { guards :: { user :: User, adminUser :: AdminUser }
+  { guards ::
+    { user :: User
+    , adminUser :: AdminUser }
   , routes ::
     { adminIndex :: GET "/admin"
         { guards :: Guards ("adminUser" : Nil)
@@ -39,6 +33,14 @@ spec :: Spec
     , unauthenticatedIndex :: GET "/"
         { response :: String }}}
 spec = Spec
+
+newtype User = User
+  { id :: Int
+  , name :: String }
+
+newtype AdminUser = AdminUser
+  { id :: Int
+  , name :: String }
 
 adminIndex :: forall r. { | r} -> Aff String
 adminIndex _ = pure "Admin page"
