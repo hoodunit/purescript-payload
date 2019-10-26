@@ -1,10 +1,23 @@
 {
   "name": "purescript-payload",
+  "homepage": "https://github.com/hoodunit/purescript-payload",
+  "authors": [
+    "Nicholas Kariniemi <nicholas.kariniemi@gmail.com>"
+  ],
+  "description": "HTTP server library for PureScript",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/hoodunit/purescript-payload.git"
+  },
+  "license": "Apache-2.0",
   "ignore": [
     "**/.*",
     "node_modules",
     "bower_components",
-    "output"
+    "output",
+    "package.json",
+    "examples",
+    "test"
   ],
   "dependencies": {
     "purescript-aff": "5.1.1",
