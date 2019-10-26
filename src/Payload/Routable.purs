@@ -153,7 +153,7 @@ instance routableListCons ::
       headHandler :: RawHandler
       headHandler url req res =
         methodHandler url req res
-        <#> Resp.setEmptyBody
+        <#> Resp.setBody Resp.EmptyBody
         # executeHandler res
 
       executeHandler :: HTTP.Response -> Resp.Result RawResponse -> Aff Outcome

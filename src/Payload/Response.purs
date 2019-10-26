@@ -1,33 +1,89 @@
 module Payload.Response
-       -- ( class EncodeResponse
-       -- , encodeResponse
-       -- , class ToSpecResponse
-       -- , toSpecResponse
-       -- , Json(Json)
-       -- , Empty(Empty)
-       -- , RawResponse
-       -- , Response(Response)
-       -- , ResponseBody(StringBody, StreamBody, EmptyBody)
-       -- , Result
-       -- , Failure(Forward, ServerError)
-       -- , UnsafeStream
+       ( class EncodeResponse
+       , encodeResponse
+       , class ToSpecResponse
+       , toSpecResponse
+       , Json(Json)
+       , Empty(Empty)
+       , RawResponse
+       , Response(Response)
+       , ResponseBody(StringBody, StreamBody, EmptyBody)
+       , Result
+       , Failure(Forward, Error)
+       , UnsafeStream
 
-       -- , internalError
-       -- , internalError_
-       -- , sendResponse
-       -- , serverError
-       -- , setEmptyBody
-       -- , writeResponse
+       , sendResponse
+       , writeResponse
 
-       -- , status
-       -- , setStatus
-       -- , updateStatus
-       -- , setBody
-       -- , updateBody
-       -- , setHeaders
-       -- , updateHeaders
-       -- ) where
-       where
+       , status
+       , setStatus
+       , updateStatus
+       , setBody
+       , updateBody
+       , setHeaders
+       , updateHeaders
+
+       , continue
+       , switchingProtocols
+       , processing
+       , ok
+       , created
+       , accepted
+       , nonAuthoritativeInformation
+       , noContent
+       , resetContent
+       , partialContent
+       , multiStatus
+       , alreadyReported
+       , imUsed
+       , multipleChoices
+       , movedPermanently
+       , found
+       , seeOther
+       , notModified
+       , useProxy
+       , temporaryRedirect
+       , permanentRedirect
+       , badRequest
+       , unauthorized
+       , paymentRequired
+       , forbidden
+       , notFound
+       , methodNotAllowed
+       , notAcceptable
+       , proxyAuthenticationRequired
+       , requestTimeout
+       , conflict
+       , gone
+       , lengthRequired
+       , preconditionFailed
+       , payloadTooLarge
+       , uriTooLong
+       , unsupportedMediaType
+       , rangeNotSatisfiable
+       , expectationFailed
+       , imATeapot
+       , misdirectedRequest
+       , unprocessableEntity
+       , locked
+       , failedDependency
+       , upgradeRequired
+       , preconditionRequired
+       , tooManyRequests
+       , requestHeaderFieldsTooLarge
+       , unavailableForLegalReasons
+       , internalError
+       , notImplemented
+       , badGateway
+       , serviceUnavailable
+       , gatewayTimeout
+       , httpVersionNotSupported
+       , variantAlsoNegotiates
+       , insufficientStorage
+       , loopDetected
+       , notExtended
+       , networkAuthenticationRequired
+       ) where
 
 import Prelude
 
@@ -35,7 +91,7 @@ import Control.Monad.Except (ExceptT, throwError)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
-import Data.Symbol (SProxy(..))
+import Data.Symbol (SProxy)
 import Data.Traversable (sequence_)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -55,7 +111,6 @@ import Payload.Status as Status
 import Prim.TypeError (class Fail, Quote, Text)
 import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals, to)
-import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 type Result a = ExceptT Failure Aff a
@@ -82,9 +137,6 @@ instance showResponse :: Show a => Show (Response a) where
   show (Response r) = show r
 
 type RawResponse = Response ResponseBody
-
-setEmptyBody :: forall r. Response r -> Response ResponseBody
-setEmptyBody = over Response (_ { body = EmptyBody })
 
 data ResponseBody = StringBody String | StreamBody UnsafeStream | EmptyBody
 
