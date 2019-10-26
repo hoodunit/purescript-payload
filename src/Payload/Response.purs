@@ -48,8 +48,10 @@ import Node.Stream as Stream
 import Payload.ContentType as ContentType
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
+import Payload.Internal.TypeErrors (type (<>), type (|>))
 import Payload.Status (HttpStatus)
 import Payload.Status as Status
+import Prim.TypeError (class Fail, Quote, Text)
 import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals, to)
 import Unsafe.Coerce (unsafeCoerce)
@@ -145,6 +147,22 @@ else instance toSpecResponseIdentity
   :: EncodeResponse a
   => ToSpecResponse a a where
   toSpecResponse res = pure (ok res)
+else instance toSpecResponseFail ::
+  ( Fail (Text "Could not match spec response type with handler response type."
+          |> Text ""
+          |> Text "Spec requires:   " <> Quote b
+          |> Text "Handler returns: " <> Quote a
+          |> Text ""
+          |> Text "No conversion from handler response to spec response was found."
+          |> Text ""
+          |> Text "Specifically, no type class instance was found for"
+          |> Text ""
+          |> Text "ToSpecResponse " <> Quote a
+          |> Text "               " <> Quote b
+          |> Text ""
+         )
+  ) => ToSpecResponse a b where
+  toSpecResponse res = unsafeCoerce res
 
 -- Types with in an instance for EncodeResponse are those that
 -- can appear in the response field of an API spec and ultimately

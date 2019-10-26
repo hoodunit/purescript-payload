@@ -6,12 +6,10 @@ import Data.List (List(..), (:))
 import Data.List as List
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Debug.Trace as Debug
+import Payload.Internal.TypeErrors (class PrintArrow, type (<>), type (|>))
 import Payload.Spec (GCons, GNil, Guards(..), kind GuardList)
 import Prim.Symbol as Symbol
 import Prim.TypeError (class Fail, Above, Beside, Text, kind Doc)
-
-infixr 2 type Beside as <>
-infixr 1 type Above as |>
 
 data GuardTypes types = GuardTypes
 
@@ -99,20 +97,6 @@ instance parseError ::
   , Symbol.Append start rem path
   , PrintArrow path start "" arrow
   ) => ParseError path rem msg doc
-
-class PrintArrow
-  (path :: Symbol)
-  (start :: Symbol)
-  (acc :: Symbol)
-  (arrow :: Symbol)
-  | path start acc -> arrow
-
-instance printArrow :: PrintArrow path "" acc acc
-else instance accumArrow ::
-  ( Symbol.Cons head tail start
-  , Symbol.Cons "-" acc newAcc
-  , PrintArrow path tail newAcc arrow
-  ) => PrintArrow path start acc arrow
 
 toList :: forall guardsStr guards
   .  ParseGuardList guardsStr guards

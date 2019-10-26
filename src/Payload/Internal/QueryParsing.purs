@@ -4,12 +4,10 @@ import Prelude
 
 import Data.List (List(..), (:))
 import Data.List as List
+import Payload.Internal.TypeErrors (class PrintArrow, type (<>), type (|>))
 import Prim.Symbol as Symbol
-import Prim.TypeError (class Fail, Above, Beside, Text, kind Doc)
+import Prim.TypeError (class Fail, Text, kind Doc)
 import Type.Prelude (class IsSymbol, SProxy(..), reflectSymbol)
-
-infixr 2 type Beside as <>
-infixr 1 type Above as |>
 
 --------------------------------------------------------------------------------
 
@@ -258,17 +256,3 @@ instance parseError ::
   , Symbol.Append start rem path
   , PrintArrow path start "" arrow
   ) => ParseError path rem msg doc
-
-class PrintArrow
-  (path :: Symbol)
-  (start :: Symbol)
-  (acc :: Symbol)
-  (arrow :: Symbol)
-  | path start acc -> arrow
-
-instance printArrow :: PrintArrow path "" acc acc
-else instance accumArrow ::
-  ( Symbol.Cons head tail start
-  , Symbol.Cons "-" acc newAcc
-  , PrintArrow path tail newAcc arrow
-  ) => PrintArrow path start acc arrow
