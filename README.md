@@ -175,7 +175,7 @@ API specs can also be hierarchical and guards can be applied to all endpoints be
 
 # API Documentation
 
-API documentation can be found on Pursuit.
+[API documentation can be found on Pursuit.](https://pursuit.purescript.org/packages/purescript-payload)
 
 # Examples
 
