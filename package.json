@@ -7,7 +7,7 @@
     "build:client:basic": "pulp --watch browserify --main Payload.Examples.Basic.Client --to output/examples/basicClient.js -- --censor-lib --strict",
     "docs:local": "pulp docs -- --format html",
     "publish:version": "pulp version",
-    "publish:publish": "pulp publish",
+    "publish:push": "pulp publish",
     "test": "pulp --watch test --include examples --main Payload.Test.Main -- --censor-lib --strict --verbose-errors"
   },
   "devDependencies": {
