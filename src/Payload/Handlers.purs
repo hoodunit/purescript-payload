@@ -1,4 +1,4 @@
--- | Contains various built-in handlers
+-- | Contains various built-in handlers for e.g. returning static files.
 module Payload.Handlers
        ( File(File)
        , directory
