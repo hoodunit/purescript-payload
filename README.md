@@ -32,7 +32,7 @@ The basic idea: write one API spec. Write handlers as functions returning data. 
 * Encoding server responses
 * Client functions for calling the API
 
-It's like [OpenAPI/Swagger](https://swagger.io/) without the boilerplate and code generation. If your handlers don't match your spec, the code won't compile, so the server stays in sync with the spec.
+It's like [OpenAPI/Swagger](https://swagger.io/) without the boilerplate and code generation. Unlike OpenAPI, if your handlers don't match your spec the code won't compile, so servers and clients always stay in sync with the spec.
 
 [The above example](./examples/hello/Main.purs) and more can be found in the [examples directory](./examples).
 
