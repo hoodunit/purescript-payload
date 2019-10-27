@@ -28,15 +28,15 @@ main = Payload.launch spec api
 The basic idea: write one API spec. Write handlers as functions returning data. Get for free:
 
 * Server routing
-* Decoding URL parameters, query parameters, request bodies into typed values
+* Decoding URL parameters, query parameters, and request bodies into typed values
 * Encoding server responses
 * Client functions for calling the API
 
-It's like [OpenAPI/Swagger](https://swagger.io/), but without the boilerplate and monstrous code generation. If your handlers don't match your spec, the code won't compile, so the server stays in sync with the spec.
+It's like [OpenAPI/Swagger](https://swagger.io/) without the boilerplate and code generation. If your handlers don't match your spec, the code won't compile, so the server stays in sync with the spec.
 
 [The above example](./examples/hello/Main.purs) and more can be found in the [examples directory](./examples).
 
-The library is in flux and will likely have API breaking changes.
+This library is experimental, in flux, and will likely have breaking API changes.
 
 ## Table of Contents
 
@@ -44,6 +44,10 @@ The library is in flux and will likely have API breaking changes.
 * [Guide](#guide)
   * [Overview](#overview)
   * [Requests](#requests)
+    * [Methods](#methods)
+    * [URL parameters](#url-parameters)
+    * [Request body](#request-body)
+    * [Query strings](#query-strings)
   * [Responses](#responses)
   * [Guards](#guards)
 * [API Documentation](#api-documentation)
@@ -94,19 +98,130 @@ getUser { id, limit } = pure { id: 1, name: "whodunnit"}
 main = Payload.launch spec api
 ```
 
-The name of the endpoint in the spec, `getMessages`, must correspond to the name of the handler provided in the record of handlers. Notice that the handler is just a function, taking in a Record with an `id` field of type `Int`. URL parameters, query parameters, and bodies are automatically decoded into typed values. The returned `User` value is also automatically encoded to JSON.
+The code will helpfully fail to compile if an endpoint has been defined in the spec but there no corresponding handler has been provided when starting the server.
 
-Specs can also be hierarchical, as you can see in [this larger example](./examples/movies/Main.purs).
+A handler is just an asynchronous function taking in a Record of the request parameters defined in the spec: an `id` field of type `Int`. URL parameters, query parameters, and bodies defined in the spec are automatically decoded into typed values and merged into the handler payload record by name. The returned `User` value is also automatically encoded to JSON.
+
+Specs can also be hierarchical:
+
+```purescript
+moviesApiSpec :: Spec {
+  guards :: {
+     apiKey :: ApiKey,
+     sessionId :: SessionId
+  },
+  routes :: {
+    v1 :: Routes "/v1" {
+       guards :: Guards ("apiKey" : Nil),
+       auth :: Routes "/authentication" {
+         token :: Routes "/token" {
+           new :: GET "/new" {
+             response :: RequestTokenResponse
+           }
+         }
+       },
+       movies :: Routes "/movies" {
+         latest :: GET "/latest" {
+           response :: Movie
+         },
+         byId :: Routes "/<movieId>" {
+           params :: { movieId :: Int },
+           get :: GET "/" {
+             response :: Movie
+           },
+           rating :: Routes "/rating" {
+             guards :: Guards ("sessionId" : Nil),
+             create :: POST "/rating" {
+               body :: RatingValue,
+               response :: StatusCodeResponse
+             }
+           }
+         }
+      }
+    }
+  }
+}
+moviesApiSpec = Spec
+
+```
+
+Guards and URL specified at parent routes are combined and passed to child route handlers at compile time, so that at run time the handlers will receive those values as part of their incoming request payload. 
+
+See also [this example for hierarchical routes](./examples/movies/Main.purs) and the [Spec module](https://pursuit.purescript.org/packages/purescript-payload/0.1.0/docs/Payload.Spec) for supported spec keywords.
 
 ## Requests
 
 The route you define in the API spec tells what must be true about a request for the route's handler to be called. Based on your route spec, Payload will automatically validate:
 
 * Method and path
-* Typed URL parameters
-* Typed request body
-* Typed query strings
-* User-defined validations ("guards")
+* URL parameters
+* Request body
+* Query strings
+
+### Methods
+
+Supported methods: `GET`, `HEAD`, `POST`, `PUT`, `DELETE` (defined in [Payload.Spec](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Spec)).
+
+Payload also automatically handles `HEAD` requests where a `GET` request is specified by running the handler and stripping the body from the response. This can be overridden by specifying a `HEAD` endpoint separately.
+
+### URL parameters
+
+Payload supports decoding two types of URL parameters: named segments and multi-matches.
+
+Named segments are specified by giving a name in the URL string in the form `/foo/<myName>/bar` and a corresponding type in the `params` field of the endpoint spec. The handler will only be called if URL parameters can be decoded as the given type, or 404 will be returned. Decoded parameters are merged by name into the payload record provided to handlers. For example:
+
+```purescript
+-- Spec:
+getMessage :: GET "/users/<id>/messages/<messageId>" {
+  params :: { id :: Int, messageId :: String },
+  response :: Array Message
+}
+
+-- Handler:
+getMessage :: { id :: Int, messageId :: String } -> Aff (Array Message)
+getMessage { id, limit } = pure
+  [{ id: 1, text: "Hey there"}, { id: 2, text: "Limit " <> show limit }]
+```
+
+Single URL parameter decoding can be extended by implementing the [FromParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Params#t:FromParam) type class.
+
+Multi-matches must appear at the end of a URL and similarly given a type in the `params` field. The only supported type for multi-matches is `List String` unless the [FromSegments](https://pursuit.purescript.org/packages/purescript-payload/0.1.0/docs/Payload.Params#t:FromSegments) class is implemented. Example:
+
+```purescript
+-- Spec:
+files :: GET "/<..path>" {
+  params :: { path :: List String },
+  response :: File
+}
+
+-- Handler:
+files :: forall r. { path :: List String | r} -> Aff (Either Failure File)
+files { path } = Handlers.directory "test" path
+```
+
+### Request body
+
+When a request body is specified on an API route, the route will only be called if a request body can be decoded into the specified type via the [FromData](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.FromData) type class. If decoding fails, a 404 response is returned. Handlers will be called with a payload field named `body` containing the decoded body.
+
+Body decoding can be specified for custom types or overwritten by writing an instance of [FromData](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.FromData).
+
+Example endpoint with body:
+
+```purescript
+-- Spec:
+createUser :: POST "/users/new" {
+  body :: NewUser,
+  response :: User
+}
+
+-- Handler:
+createUser :: forall r. { body :: User | r } -> Aff User
+createUser {body: user} = pure user
+```
+
+### Query strings
+
+Payload supports three different types of query parameters: literals, keys, and multi-matches. See the [query integration test](./test/integration/Query.purs) for examples.
 
 ## Responses
 
@@ -129,9 +244,11 @@ To return an error, handlers can return `Either error val`, where `error` can be
 
 ## Guards
 
-Payload borrows a concept of request guards from the [Rust Rocket library](https://rocket.rs/v0.4/guide/requests/#request-guards). A request guard is a function that is called before the handler is called that returns an arbitrary value that the handler function receives. It can also error or forward, in which case the handler is never called.
+Payload borrows a concept called request guards from the [Rust Rocket library](https://rocket.rs/v0.4/guide/requests/#request-guards). A request guard is a function that is called before handlers are called that returns an arbitrary value that the handler function receives. It can also error or forward, in which case the handler is never called. A typical use case might be to decode and validate an authorization header or cookie.
 
-For example, this spec defines two guards. The `/admin` endpoint will only be called if an `AdminUser` can be produced by the guard from the request. Similarly the `/user` endpoint will only be called if a `User` can be obtained from the request. This provides a compile-time guarantee that handlers will only be called with authenticated requests.
+Guards can be added to an endpoint by listing the guards by name in the API spec as a type-level list, e.g. `guards :: Guards ("guard1" : "guard2" : Nil)`. The listed guards will be called in order before the handler function is called. The value returned by a guard is specified separately at the root of the spec, and the guard functions themselves are passed to the server as a record. A guard name specified din a route must match a guard name in the top-level guards spec, and all guards must be passed in to the server by name when it is started, or the code won't compile.
+
+For example, this API spec defines two guards:
 
 ```purescript
 spec :: Spec
@@ -150,6 +267,8 @@ spec :: Spec
 spec = Spec
 ```
 
+The `/admin` endpoint will only be called if an `AdminUser` can be produced by the guard from the request. Similarly the `/user` endpoint will only be called if a `User` can be obtained from the request. This provides a compile-time guarantee that handlers will only be called with authenticated requests.
+
 The request guard itself is defined as a function:
 
 ```purescript
@@ -161,7 +280,7 @@ getAdminUser req = do
     _ -> pure (Left (Resp.Forward "Not an admin"))
 ```
 
-and passed in to the server by starting the server with `startGuarded`:
+and guards are passed in to the server as a record when starting the server with `startGuarded`:
 
 ```purescript
 main = do
