@@ -2,24 +2,18 @@ module Payload.Internal.Query where
 
 import Prelude
 
-import Data.Array as Array
 import Data.Either (Either(..))
-import Data.List (List(..), (:))
-import Data.List as List
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.String as String
+import Data.Maybe (Maybe(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Payload.Internal.QueryParsing (kind QueryPart, Lit, Key, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
 import Payload.Internal.Querystring.Qs as Qs
-import Payload.Params (class FromParam, class FromSegments, class ToParam, fromParam, fromSegments, toParam)
 import Payload.QueryParams (class FromQueryParam, fromQueryParam)
 import Prim.Row as Row
 import Record as Record
 import Type.Equality (class TypeEquals, to)
 import Type.Prelude (class IsSymbol, SProxy(..), reflectSymbol)
-import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
+import Type.Proxy (Proxy)
 
 class DecodeQuery (queryUrlSpec :: Symbol) query | queryUrlSpec -> query where
   decodeQuery :: SProxy queryUrlSpec -> Proxy (Record query) -> String -> Either String (Record query)
@@ -69,4 +63,9 @@ instance matchQueryConsLit ::
   , MatchQuery rest query from to
   ) => MatchQuery (QueryCons (Lit lit) rest) query from to where
   matchQuery _ queryType query queryObj =
-    matchQuery (QueryListProxy :: _ rest) queryType query queryObj
+    case Object.lookup literal queryObj of
+      Nothing -> Left $ "Could not find query parameter literal with name '" <> literal <> "'"
+      Just "" -> matchQuery (QueryListProxy :: _ rest) queryType query queryObj
+      Just paramVal -> Left $ "Expected query parameter literal '" <> literal <> "' but received '" <> literal <> "=" <> paramVal
+    where
+      literal = reflectSymbol (SProxy :: SProxy lit)
