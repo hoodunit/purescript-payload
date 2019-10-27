@@ -1,8 +1,18 @@
-module Payload.Guards where
+module Payload.Guards
+       ( headers
+       , rawRequest
+       , cookies
+
+       , class ToGuardVal
+       , toGuardVal
+         
+       , class RunGuards
+       , runGuards
+       ) where
 
 import Prelude
 
-import Control.Monad.Except (ExceptT(..), lift, runExceptT, throwError)
+import Control.Monad.Except (lift, throwError)
 import Data.Either (Either(..))
 import Data.Map (Map)
 import Data.Symbol (class IsSymbol, SProxy(..))
@@ -21,7 +31,48 @@ import Prim.Row as Row
 import Record as Record
 import Type.Equality (to)
 
-data Guard (name :: Symbol) a = Guard
+-- | A guard function must return a value which can be converted
+-- | to the type given in the guard spec.
+-- | Guards can also fail and return a response directly, by returning
+-- | Either.
+class ToGuardVal a b where
+  toGuardVal :: a -> Resp.Result b
+
+instance toGuardValEitherFailureVal
+  :: ToGuardVal (Either Resp.Failure a) a where
+  toGuardVal (Left err) = throwError err
+  toGuardVal (Right res) = pure res
+else instance toGuardValEitherResponseVal ::
+  EncodeResponse err
+  => ToGuardVal (Either (Resp.Response err) a) a where
+  toGuardVal (Left res) = do
+    raw <- Resp.encodeResponse res
+    throwError (Resp.Error raw) 
+  toGuardVal (Right res) = pure res
+else instance toGuardValEitherValVal ::
+  EncodeResponse err
+  => ToGuardVal (Either err a) a where
+  toGuardVal (Left res) = do
+    raw <- Resp.encodeResponse (Resp.internalError res)
+    throwError (Resp.Error raw) 
+  toGuardVal (Right res) = pure res
+else instance toGuardValIdentity :: ToGuardVal a a where
+  toGuardVal = pure
+
+-- | Guard for retrieving request headers
+headers :: HTTP.Request -> Aff Headers
+headers req = pure (Headers.fromFoldable headersArr)
+  where
+    headersArr :: Array (Tuple String String)
+    headersArr = Object.toUnfoldable $ HTTP.requestHeaders req
+
+-- | Guard for retrieving raw underlying request
+rawRequest :: HTTP.Request -> Aff HTTP.Request
+rawRequest req = pure req
+
+-- | Guard for retrieving request cookies
+cookies :: HTTP.Request -> Aff (Map String String)
+cookies req = pure (Cookies.requestCookies req)
 
 type GuardFn a = HTTP.Request -> Aff a
 
@@ -56,43 +107,3 @@ instance runGuardsCons ::
     (guardResult :: guardVal) <- toGuardVal guardHandlerResult
     let newResults = Record.insert (SProxy :: SProxy name) guardResult results
     runGuards (Guards :: _ rest) (GuardTypes :: _ (Record guardsSpec)) allGuards newResults req
-
--- | A guard function must return a value which can be converted
--- | to the type given in the guard spec.
--- | Guards can also fail and return a response directly, by returning
--- | Either.
-class ToGuardVal a b where
-  toGuardVal :: a -> Resp.Result b
-
-instance toGuardValEitherFailureVal
-  :: ToGuardVal (Either Resp.Failure a) a where
-  toGuardVal (Left err) = throwError err
-  toGuardVal (Right res) = pure res
-else instance toGuardValEitherResponseVal ::
-  EncodeResponse err
-  => ToGuardVal (Either (Resp.Response err) a) a where
-  toGuardVal (Left res) = do
-    raw <- Resp.encodeResponse res
-    throwError (Resp.Error raw) 
-  toGuardVal (Right res) = pure res
-else instance toGuardValEitherValVal ::
-  EncodeResponse err
-  => ToGuardVal (Either err a) a where
-  toGuardVal (Left res) = do
-    raw <- Resp.encodeResponse (Resp.internalError res)
-    throwError (Resp.Error raw) 
-  toGuardVal (Right res) = pure res
-else instance toGuardValIdentity :: ToGuardVal a a where
-  toGuardVal = pure
-
-headers :: HTTP.Request -> Aff Headers
-headers req = pure (Headers.fromFoldable headersArr)
-  where
-    headersArr :: Array (Tuple String String)
-    headersArr = Object.toUnfoldable $ HTTP.requestHeaders req
-
-rawRequest :: HTTP.Request -> Aff HTTP.Request
-rawRequest req = pure req
-
-cookies :: HTTP.Request -> Aff (Map String String)
-cookies req = pure (Cookies.requestCookies req)
