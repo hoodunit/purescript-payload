@@ -40,22 +40,22 @@ This library is experimental, in flux, and will likely have breaking API changes
 
 ### Table of Contents
 
-* [Getting Started](#getting-started)
-* [Guide](#guide)
-  * [Overview](#overview)
-  * [Requests](#requests)
-    * [Methods](#methods)
-    * [URL parameters](#url-parameters)
-    * [Request body](#request-body)
-    * [Query strings](#query-strings)
-  * [Responses](#responses)
-    * [Modified status or headers](#modified-status-or-headers)
-    * [Errors](#errors)
-    * [Static files](#static-files)
-  * [Guards](#guards)
-* [API Documentation](#api-documentation)
-* [Examples](#examples)
-* [Building](#building)
+* [Getting Started](README.md#getting-started)
+* [Guide](README.md#guide)
+  * [Overview](README.md#overview)
+  * [Requests](README.md#requests)
+    * [Methods](README.md#methods)
+    * [URL parameters](README.md#url-parameters)
+    * [Request body](README.md#request-body)
+    * [Query strings](README.md#query-strings)
+  * [Responses](README.md#responses)
+    * [Modified status or headers](README.md#modified-status-or-headers)
+    * [Errors](README.md#errors)
+    * [Static files](README.md#static-files)
+  * [Guards](README.md#guards)
+* [API Documentation](README.md#api-documentation)
+* [Examples](README.md#examples)
+* [Building](README.md#building)
 
 ## Getting Started
 
