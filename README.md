@@ -38,7 +38,7 @@ It's like [OpenAPI/Swagger](https://swagger.io/) without the boilerplate and cod
 
 This library is experimental, in flux, and will likely have breaking API changes.
 
-## Table of Contents
+### Table of Contents
 
 * [Getting Started](#getting-started)
 * [Guide](#guide)
@@ -57,7 +57,7 @@ This library is experimental, in flux, and will likely have breaking API changes
 * [Examples](#examples)
 * [Building](#building)
 
-# Getting Started
+## Getting Started
 
 Install Payload:
 
@@ -67,9 +67,9 @@ bower install purescript-payload
 
 Then copy the above example, [peek at other examples](./examples), or read the docs below.
 
-# Guide
+## Guide
 
-## Overview
+### Overview
 
 Here is a simple spec:
 
@@ -152,7 +152,7 @@ Guards and URL specified at parent routes are combined and passed to child route
 
 See also [this example for hierarchical routes](./examples/movies/Main.purs) and the [Spec module](https://pursuit.purescript.org/packages/purescript-payload/0.1.0/docs/Payload.Spec) for supported spec keywords.
 
-## Requests
+### Requests
 
 The route you define in the API spec tells what must be true about a request for the route's handler to be called. Based on your route spec, Payload will automatically validate:
 
@@ -161,13 +161,13 @@ The route you define in the API spec tells what must be true about a request for
 * Request body
 * Query strings
 
-### Methods
+#### Methods
 
 Supported methods: `GET`, `HEAD`, `POST`, `PUT`, `DELETE` (defined in [Payload.Spec](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Spec)).
 
 Payload also automatically handles `HEAD` requests where a `GET` request is specified by running the handler and stripping the body from the response. This can be overridden by specifying a `HEAD` endpoint separately.
 
-### URL parameters
+#### URL parameters
 
 Payload supports decoding two types of URL parameters: named segments and multi-matches.
 
@@ -202,7 +202,7 @@ files :: forall r. { path :: List String | r} -> Aff (Either Failure File)
 files { path } = Handlers.directory "test" path
 ```
 
-### Request body
+#### Request body
 
 When a request body is specified on an API route, the route will only be called if a request body can be decoded into the specified type via the [FromData](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.FromData) type class. If decoding fails, a 404 response is returned. Handlers will be called with a payload field named `body` containing the decoded body.
 
@@ -222,11 +222,11 @@ createUser :: forall r. { body :: User | r } -> Aff User
 createUser {body: user} = pure user
 ```
 
-### Query strings
+#### Query strings
 
 Payload supports three different types of query parameters: literals, keys, and multi-matches. See the [query integration test](./test/integration/Query.purs) for examples.
 
-## Responses
+### Responses
 
 Server handlers can return any response that implements [ToSpecResponse](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:ToSpecResponse) and [EncodeResponse](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:EncodeResponse), including arbitrary JSON responses via the [purescript-simple-json library](https://github.com/justinwoo/purescript-simple-json). Returning any of the following types will return status 200 with appropriate headers added:
 
@@ -241,19 +241,19 @@ Payload validates at compile time that handler responses match the type you spec
 
 What other responses can be converted to spec responses?
 
-### Modified status or headers
+#### Modified status or headers
 
 To modify the status or headers, handlers can return a [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:Response), which is a wrapper around a record with `status` and `headers` fields. There are various helpers in the [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:Response) module for creating and modifying responses.
 
-### Errors
+#### Errors
 
 To return an error, handlers can return `Either error val`, where `error` can be any encodable value. By default any arbitrary encodable value can be returned as an error with status 500 Internal Server Error, or arbitrary responses can be returned with the `Response` type. Error responses are not represented in the API spec and do not need to match the spec.
 
-### Static files
+#### Static files
 
 Static files can be served using the [file](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers#v:file) or [directory](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers#v:directory) helpers in the [Handlers module](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers). The provided handlers will add appropriate MIME types to responses and protect against directory traversal attacks. There is also [an example module for serving static files](./examples/files/Main.purs).
 
-## Guards
+### Guards
 
 Payload borrows a concept called request guards from the [Rust Rocket library](https://rocket.rs/v0.4/guide/requests/#request-guards). A request guard is a function that is called before handlers are called that returns an arbitrary value that the handler function receives. It can also error or forward, in which case the handler is never called. A typical use case might be to decode and validate an authorization header or cookie.
 
@@ -300,17 +300,17 @@ main = do
   Payload.launch spec { handlers, guards }
 ```
 
-API specs can also be hierarchical and guards can be applied to all endpoints below them in the hierarchy. For an example of this see the [Movies API Example](./examples/movies/Main.purs)
+API specs can also be hierarchical and guards can be applied to all endpoints below them in the hierarchy. For an example of this see the [Movies API Example](./examples/movies/Main.purs).
 
-# API Documentation
+## API Documentation
 
 [API documentation can be found on Pursuit.](https://pursuit.purescript.org/packages/purescript-payload)
 
-# Examples
+## Examples
 
 [The hello world example](./examples/hello/Main.purs) and more can be found in the [examples directory](./examples). The examples are built and run as part of the project tests.
 
-# Building
+## Building
 
 * Install Node.js.
 * Install project dependencies:
