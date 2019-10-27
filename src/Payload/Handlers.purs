@@ -1,3 +1,4 @@
+-- | Contains various built-in handlers
 module Payload.Handlers
        ( File(File)
        , directory
@@ -29,6 +30,10 @@ import Payload.Status as Status
 import Simple.JSON (class ReadForeign)
 import Unsafe.Coerce (unsafeCoerce)
 
+-- | Spec type for returning a file with a specific path.
+-- | Attempts to return an appropriate MIME type, defaulting
+-- | to "text/plain".
+-- | Fails with 404 Not Found if file cannot be found.
 data File = File String
 
 instance encodeResponseFile :: EncodeResponse File where
@@ -56,9 +61,12 @@ instance readForeignFile :: ReadForeign File where
 fileSize :: Stats.Stats -> Int
 fileSize (Stats.Stats statsObj) = Int.round statsObj.size
 
+-- | Handler for returning a file at the given path.
 file :: forall r. String -> { | r } -> Aff File
 file path _ = pure (File path)
 
+-- | Handler for returning static files from a directory.
+-- | Protects against directory traversal attacks.
 directory :: forall f. Foldable f => String -> f String -> Aff (Either Response.Failure File)
 directory root path = do
   rootPath <- pure (Path.resolve [root])

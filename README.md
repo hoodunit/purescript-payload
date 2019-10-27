@@ -49,6 +49,9 @@ This library is experimental, in flux, and will likely have breaking API changes
     * [Request body](#request-body)
     * [Query strings](#query-strings)
   * [Responses](#responses)
+    * [Modified status or headers](#modified-status-or-headers)
+    * [Errors](#errors)
+    * [Static files](#static-files)
   * [Guards](#guards)
 * [API Documentation](#api-documentation)
 * [Examples](#examples)
@@ -225,7 +228,7 @@ Payload supports three different types of query parameters: literals, keys, and 
 
 ## Responses
 
-Server handlers can return any response that implements `ToSpecResponse` and `EncodeResponse`, including arbitrary JSON responses via the [purescript-simple-json library](https://github.com/justinwoo/purescript-simple-json). Returning any of the following types will return status 200 with appropriate headers added:
+Server handlers can return any response that implements [ToSpecResponse](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:ToSpecResponse) and [EncodeResponse](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:EncodeResponse), including arbitrary JSON responses via the [purescript-simple-json library](https://github.com/justinwoo/purescript-simple-json). Returning any of the following types will return status 200 with appropriate headers added:
 
 * `Empty` (empty body)
 * String
@@ -238,9 +241,17 @@ Payload validates at compile time that handler responses match the type you spec
 
 What other responses can be converted to spec responses?
 
-To modify the status or headers, handlers can return a `Response`, which is a wrapper around a record with `status` and `headers` fields. There are various helpers in the `Response` module for creating and modifying responses.
+### Modified status or headers
+
+To modify the status or headers, handlers can return a [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:Response), which is a wrapper around a record with `status` and `headers` fields. There are various helpers in the [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:Response) module for creating and modifying responses.
+
+### Errors
 
 To return an error, handlers can return `Either error val`, where `error` can be any encodable value. By default any arbitrary encodable value can be returned as an error with status 500 Internal Server Error, or arbitrary responses can be returned with the `Response` type. Error responses are not represented in the API spec and do not need to match the spec.
+
+### Static files
+
+Static files can be served using the [file](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers#v:file) or [directory](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers#v:directory) helpers in the [Handlers module](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers). The provided handlers will add appropriate MIME types to responses and protect against directory traversal attacks. There is also [an example module for serving static files](./examples/files/Main.purs).
 
 ## Guards
 
