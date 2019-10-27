@@ -1,16 +1,14 @@
+-- | This module contains various helpers for returning server
+-- | responses.
 module Payload.Response
-       ( class EncodeResponse
-       , encodeResponse
-       , class ToSpecResponse
-       , toSpecResponse
-       , Json(Json)
+       ( Response(Response)
        , Empty(Empty)
-       , RawResponse
-       , Response(Response)
-       , ResponseBody(StringBody, StreamBody, EmptyBody)
-       , Result
+       , Json(Json)
        , Failure(Forward, Error)
+       , RawResponse
+       , ResponseBody(StringBody, StreamBody, EmptyBody)
        , UnsafeStream
+       , Result
 
        , status
        , setStatus
@@ -19,6 +17,11 @@ module Payload.Response
        , updateBody
        , setHeaders
        , updateHeaders
+
+       , class ToSpecResponse
+       , toSpecResponse
+       , class EncodeResponse
+       , encodeResponse
 
        , continue
        , switchingProtocols
@@ -102,16 +105,9 @@ import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals)
 import Unsafe.Coerce (unsafeCoerce)
 
-type Result a = ExceptT Failure Aff a
-data Failure = Forward String | Error RawResponse
-
-instance showFailure :: Show Failure where
-  show (Forward s) = "Forward '" <> s <> "'"
-  show (Error e) = "Error " <> show e
-
-newtype Json a = Json a
-data Empty = Empty
-
+-- | The type of a server response, before encoding the body.
+-- | Responses with modified statuses or headers can be created
+-- | by returning this type (directly or via helper functions).
 newtype Response r = Response
   { status :: HttpStatus
   , headers :: Headers
@@ -123,10 +119,23 @@ instance eqResponse :: Eq a => Eq (Response a) where
 instance showResponse :: Show a => Show (Response a) where
   show (Response r) = show r
 
+-- | An empty response body
+data Empty = Empty
+
+-- | A JSON response body
+newtype Json a = Json a
+
+-- | All server error responses ultimately resolve into this type
+data Failure = Forward String | Error RawResponse
+instance showFailure :: Show Failure where
+  show (Forward s) = "Forward '" <> s <> "'"
+  show (Error e) = "Error " <> show e
+
+-- | All server responses ultimately resolve into this type. 
 type RawResponse = Response ResponseBody
 
+-- | The base types of body responses that can be returned.
 data ResponseBody = StringBody String | StreamBody UnsafeStream | EmptyBody
-
 data UnsafeStream
 
 instance eqResponseBody :: Eq ResponseBody where
@@ -138,6 +147,30 @@ instance showResponseBody :: Show ResponseBody where
   show (StringBody s) = s
   show EmptyBody = "EmptyBody"
   show (StreamBody _) = "StreamBody"
+
+-- | Internally handlers and guards all de-sugar into this type.
+type Result a = ExceptT Failure Aff a
+
+status :: forall a. HttpStatus -> a -> Response a
+status s body = Response { status: s, headers: Headers.empty, body }
+
+setStatus :: forall a. HttpStatus -> Response a -> Response a
+setStatus s = over Response (_ { status = s })
+
+updateStatus :: forall a. (HttpStatus -> HttpStatus) -> Response a -> Response a
+updateStatus f (Response res) = Response (res { status = f res.status })
+
+setBody :: forall a b. b -> Response a -> Response b
+setBody body = over Response (_ { body = body })
+
+updateBody :: forall a b. (a -> b) -> Response a -> Response b
+updateBody f (Response res) = Response (res { body = f res.body })
+
+setHeaders :: forall a. Headers -> Response a -> Response a
+setHeaders headers = over Response (_ { headers = headers })
+
+updateHeaders :: forall a. (Headers -> Headers) -> Response a -> Response a
+updateHeaders f (Response res) = Response (res { headers = f res.headers })
 
 -- | This type class is for converting types which are compatible with
 -- | the spec into the spec type.
@@ -213,9 +246,8 @@ else instance toSpecResponseFail ::
   ) => ToSpecResponse docRoute a b where
   toSpecResponse res = unsafeCoerce res
 
--- Types with in an instance for EncodeResponse are those that
--- can appear in the response field of an API spec and ultimately
--- can be encoded as one of the raw response types
+-- | Types that can be encoded as response bodies and appear directly
+-- | in API spec definitions.
 class EncodeResponse r where
   encodeResponse :: Response r -> Result RawResponse
 instance encodeResponseResponseBody :: EncodeResponse ResponseBody where
@@ -261,27 +293,6 @@ else instance encodeResponseEmpty :: EncodeResponse Empty where
                    { status: r.status
                    , headers: r.headers
                    , body: EmptyBody }
-
-status :: forall a. HttpStatus -> a -> Response a
-status s body = Response { status: s, headers: Headers.empty, body }
-
-setStatus :: forall a. HttpStatus -> Response a -> Response a
-setStatus s = over Response (_ { status = s })
-
-updateStatus :: forall a. (HttpStatus -> HttpStatus) -> Response a -> Response a
-updateStatus f (Response res) = Response (res { status = f res.status })
-
-setBody :: forall a b. b -> Response a -> Response b
-setBody body = over Response (_ { body = body })
-
-updateBody :: forall a b. (a -> b) -> Response a -> Response b
-updateBody f (Response res) = Response (res { body = f res.body })
-
-setHeaders :: forall a. Headers -> Response a -> Response a
-setHeaders headers = over Response (_ { headers = headers })
-
-updateHeaders :: forall a. (Headers -> Headers) -> Response a -> Response a
-updateHeaders f (Response res) = Response (res { headers = f res.headers })
 
 
 continue :: forall a. a -> Response a

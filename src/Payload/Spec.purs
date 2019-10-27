@@ -1,3 +1,5 @@
+-- | This module contains all of the types and kinds that can appear
+-- | in an API spec.
 module Payload.Spec
        ( Spec(Spec)
        , Route(Route)
