@@ -1,5 +1,11 @@
 # Payload
 
+<a href="https://pursuit.purescript.org/packages/purescript-payload">
+  <img src="https://pursuit.purescript.org/packages/purescript-payload/badge"
+       alt="purescript-payload on Pursuit">
+  </img>
+</a>
+
 Payload is an HTTP server library for PureScript inspired by [Rust's Rocket](https://rocket.rs/) and [Haskell's Servant](https://haskell-servant.readthedocs.io/en/stable/). Here is a complete Payload application:
 
 ```purescript
