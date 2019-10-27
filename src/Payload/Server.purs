@@ -1,14 +1,14 @@
 module Payload.Server
-       ( Options
-       , LogLevel(..)
-       , Server
-       , close
-       , defaultOpts
-       , launch
+       ( launch
        , start
        , start_
        , startGuarded
        , startGuarded_
+       , Options
+       , defaultOpts
+       , LogLevel(..)
+       , Server
+       , close
        ) where
 
 import Prelude
@@ -40,7 +40,6 @@ import Payload.Response (ResponseBody(..), internalError)
 import Payload.Response as Response
 import Payload.Routable (class Routable, HandlerEntry, Outcome(..), mkRouter)
 import Payload.Spec (Spec(Spec))
-import Payload.Status as Status
 import Record as Record
 
 type Options =
@@ -85,6 +84,7 @@ type Logger =
   , logError :: String -> Effect Unit
   }
 
+-- | Start server with default options, ignoring unexpected startup errors.
 launch
   :: forall routesSpec handlers
    . Routable routesSpec {} handlers {}
@@ -93,6 +93,16 @@ launch
   -> Effect Unit
 launch routeSpec handlers = Aff.launchAff_ (start_ routeSpec handlers)
 
+-- | Start server with default options and given route spec and handlers (no guards).
+start_
+  :: forall routesSpec handlers
+   . Routable routesSpec {} handlers {}
+  => Spec routesSpec
+  -> handlers
+  -> Aff (Either String Server)
+start_ = start defaultOpts
+
+-- | Start server with given routes and handlers (no guards).
 start
   :: forall routesSpec handlers
    . Routable routesSpec {} handlers {}
@@ -104,14 +114,7 @@ start opts routeSpec handlers = startGuarded opts api { handlers, guards: {} }
   where
     api = Spec :: Spec { routes :: routesSpec, guards :: {} }
 
-start_
-  :: forall routesSpec handlers
-   . Routable routesSpec {} handlers {}
-  => Spec routesSpec
-  -> handlers
-  -> Aff (Either String Server)
-start_ = start defaultOpts
-
+-- | Start server with default options and given spec, handlers, and guards.
 startGuarded_
   :: forall routesSpec guardsSpec handlers guards
    . Routable routesSpec guardsSpec handlers guards
@@ -120,6 +123,7 @@ startGuarded_
   -> Aff (Either String Server)
 startGuarded_ = startGuarded defaultOpts
 
+-- | Start server with given spec, handlers, and guards.
 startGuarded
   :: forall routesSpec guardsSpec handlers guards
    . Routable routesSpec guardsSpec handlers guards
@@ -240,6 +244,7 @@ listen { logger } server@(Server httpServer) opts = Aff.makeAff $ \cb -> do
     startedMsg = "Server is running on http://" <> opts.hostname <> ":" <> show opts.port
     errorMsg e = "Closing server due to error: " <> show e
 
+-- | Stops a server
 close :: Server -> Aff Unit
 close (Server server) = Aff.makeAff $ \cb -> do
   HTTP.close server (cb (Right unit))
