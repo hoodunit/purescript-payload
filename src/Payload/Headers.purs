@@ -1,3 +1,4 @@
+-- | Helpers for dealing with request headers
 module Payload.Headers
   ( Headers
   , empty
@@ -14,7 +15,6 @@ import Data.Foldable (class Foldable, foldl)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe)
-import Data.Newtype (over)
 import Data.Tuple (Tuple(..))
 import Data.Unfoldable (class Unfoldable)
 import Payload.Internal.Utils as Utils
@@ -27,8 +27,8 @@ instance showHeaders :: Show Headers where
 instance eqHeaders :: Eq Headers where
   eq (Headers a) (Headers b) = eq a b
 
--- This prefers values on the right in the case
--- of duplicate keys
+-- | This prefers values on the right in the case
+-- | of duplicate keys, i.e. old values are overwritten.
 instance semigroupHeaders :: Semigroup Headers where
   append (Headers a) (Headers b) = Headers (b <> a)
 
