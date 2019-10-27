@@ -24,6 +24,7 @@ import Payload.Handleable (class Handleable, MethodHandler, handle)
 import Payload.Internal.GuardParsing (GuardTypes(GuardTypes))
 import Payload.Internal.GuardParsing as GuardParsing
 import Payload.Internal.Request (RequestUrl)
+import Payload.Internal.Route (DefaultRequest)
 import Payload.Internal.ServerResponse (sendResponse)
 import Payload.Internal.Trie (Trie)
 import Payload.Internal.Trie as Trie
@@ -32,7 +33,6 @@ import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments, Segment(..
 import Payload.Internal.UrlParsing as UrlParsing
 import Payload.Response (RawResponse)
 import Payload.Response as Resp
-import Payload.Route (DefaultRequest)
 import Payload.Spec (kind GuardList, Spec, GNil, Guards(Guards), Route(Route), Routes(..))
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)

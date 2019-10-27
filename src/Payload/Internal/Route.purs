@@ -1,8 +1,6 @@
-module Payload.Route
+module Payload.Internal.Route
        ( DefaultRequest
        ) where
-
-import Prelude
 
 import Payload.Response as Response
 import Payload.Spec (GNil, Guards)

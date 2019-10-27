@@ -13,10 +13,10 @@ import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
 import Payload.Client.FromResponse (class ReadResponse, readResponse)
+import Payload.Internal.Route (DefaultRequest)
 import Payload.Internal.Url (class EncodeUrl)
 import Payload.Internal.Url as PayloadUrl
 import Payload.Response (ResponseBody(..))
-import Payload.Route (DefaultRequest)
 import Payload.Routable (DefaultParentRoute)
 import Payload.Spec (Spec, Route(Route), Routes)
 import Prim.Row as Row
