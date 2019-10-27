@@ -14,6 +14,7 @@ import Payload.Cookies as Cookies
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.Internal.GuardParsing (GuardTypes(..))
+import Payload.Response (class EncodeResponse)
 import Payload.Response as Resp
 import Payload.Spec (GCons, GNil, Guards(..), kind GuardList)
 import Prim.Row as Row
@@ -56,14 +57,30 @@ instance runGuardsCons ::
     let newResults = Record.insert (SProxy :: SProxy name) guardResult results
     runGuards (Guards :: _ rest) (GuardTypes :: _ (Record guardsSpec)) allGuards newResults req
 
+-- | A guard function must return a value which can be converted
+-- | to the type given in the guard spec.
+-- | Guards can also fail and return a response directly, by returning
+-- | Either.
 class ToGuardVal a b where
   toGuardVal :: a -> Resp.Result b
 
-instance toGuardValEitherStringVal :: ToGuardVal (Either String a) a where
-  toGuardVal (Left res) = throwError (Resp.Error $ Resp.internalError (Resp.StringBody res))
-  toGuardVal (Right res) = pure res
-else instance toGuardValEitherServerErrorVal :: ToGuardVal (Either Resp.Failure a) a where
+instance toGuardValEitherFailureVal
+  :: ToGuardVal (Either Resp.Failure a) a where
   toGuardVal (Left err) = throwError err
+  toGuardVal (Right res) = pure res
+else instance toGuardValEitherResponseVal ::
+  EncodeResponse err
+  => ToGuardVal (Either (Resp.Response err) a) a where
+  toGuardVal (Left res) = do
+    raw <- Resp.encodeResponse res
+    throwError (Resp.Error raw) 
+  toGuardVal (Right res) = pure res
+else instance toGuardValEitherValVal ::
+  EncodeResponse err
+  => ToGuardVal (Either err a) a where
+  toGuardVal (Left res) = do
+    raw <- Resp.encodeResponse (Resp.internalError res)
+    throwError (Resp.Error raw) 
   toGuardVal (Right res) = pure res
 else instance toGuardValIdentity :: ToGuardVal a a where
   toGuardVal = pure

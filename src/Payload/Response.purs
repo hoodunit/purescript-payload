@@ -148,7 +148,7 @@ instance showResponseBody :: Show ResponseBody where
 class ToSpecResponse (route :: Symbol) a b where
   toSpecResponse :: SProxy route -> a -> Result (Response b)
 
-instance toSpecResponseEitherFailurerVal
+instance toSpecResponseEitherFailureVal
   :: EncodeResponse a
   => ToSpecResponse route (Either Failure a) a where
   toSpecResponse _ (Left err) = throwError err
