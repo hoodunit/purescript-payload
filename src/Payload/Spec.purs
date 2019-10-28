@@ -21,7 +21,7 @@ module Payload.Spec
 data Spec apiSpec = Spec
 
 -- | Type-level representation of an endpoint route, meant to be used
--- | in combination with the method convenience types.
+-- | in combination with the method convenience types below.
 -- |
 -- | Examples:
 -- | ```purescript
@@ -31,7 +31,10 @@ data Spec apiSpec = Spec
 data Route (method :: Symbol) (path :: Symbol) spec = Route
 
 type GET = Route "GET"
+
+-- | HEAD responses will not contain a body.
 type HEAD = Route "HEAD"
+
 type POST = Route "POST"
 type PUT = Route "PUT"
 type DELETE = Route "DELETE"
