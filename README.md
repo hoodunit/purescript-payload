@@ -46,6 +46,7 @@ This library is experimental, in flux, and will likely have breaking API changes
 
 * [Getting Started](#getting-started)
 * [Examples](#examples)
+* [API Documentation](#api-documentation)
 * [Guide](#guide)
   * [Overview](#overview)
   * [Requests](#requests)
@@ -58,7 +59,6 @@ This library is experimental, in flux, and will likely have breaking API changes
     * [Errors](#errors)
     * [Static files](#static-files)
   * [Guards](#guards)
-* [API Documentation](#api-documentation)
 * [Building](#building)
 
 ## Getting Started
@@ -74,6 +74,10 @@ Then read on for examples and docs.
 ## Examples
 
 [The above hello world example](./examples/hello/Main.purs) and more can be found in the [examples directory](./examples). These examples are built and run as part of the project tests, so they are always working and up to date.
+
+## API Documentation
+
+[API documentation can be found on Pursuit.](https://pursuit.purescript.org/packages/purescript-payload)
 
 ## Guide
 
@@ -325,10 +329,6 @@ main = do
 ```
 
 Guards can also be applied on parent routes in a hierarchical API spec. For an example of this see the [Movies API Example](./examples/movies/Main.purs).
-
-## API Documentation
-
-[API documentation can be found on Pursuit.](https://pursuit.purescript.org/packages/purescript-payload)
 
 ## Building
 
