@@ -17,7 +17,7 @@ import Payload.Client.FromResponse (class FromResponse, fromResponse)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Internal.Route (DefaultRequest)
 import Payload.Response (ResponseBody(..))
-import Payload.Spec (Route(Route))
+import Payload.Spec (Route)
 import Prim.Row as Row
 import Prim.Symbol as Symbol
 import Record as Record
