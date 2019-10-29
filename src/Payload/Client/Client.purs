@@ -79,7 +79,7 @@ instance clientApiListCons ::
      remClient
      client
   , Row.Lacks routeName remClient
-  , ClientQueryable (Route method path routeSpec) basePath baseParams payload res
+  , Queryable (Route method path routeSpec) basePath baseParams payload res
   , ClientApiList remRoutes basePath baseParams (Record remClient)
   ) => ClientApiList
          (RowList.Cons routeName (Route method path routeSpec) remRoutes)
@@ -143,7 +143,7 @@ instance clientApiListConsRoutes ::
                     (SProxy :: _ childBasePath)
                     (Proxy :: _ (Record childParams))
 
-class ClientQueryable
+class Queryable
   route
   (basePath :: Symbol)
   (baseParams :: # Type)
@@ -158,7 +158,7 @@ class ClientQueryable
              -> payload
              -> Aff (Either String res)
 
-instance clientQueryableGetRoute ::
+instance queryableGetRoute ::
        ( Row.Union route DefaultRequest mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
        , TypeEquals (Record routeWithDefaults)
@@ -172,7 +172,7 @@ instance clientQueryableGetRoute ::
        , FromResponse res
        , SimpleJson.ReadForeign res
        )
-    => ClientQueryable (Route "GET" path (Record route)) basePath baseParams (Record fullParams) res where
+    => Queryable (Route "GET" path (Record route)) basePath baseParams (Record fullParams) res where
   request _ _ _ opts modifyReq payload = do
     let params = payload
     let url = encodeUrl opts (SProxy :: _ fullPath) params
@@ -183,7 +183,7 @@ instance clientQueryableGetRoute ::
     let req = modifyReq defaultReq
     res <- AX.request req
     pure (decodeResponse res)
-else instance clientQueryablePostRoute ::
+else instance queryablePostRoute ::
        ( Row.Union route DefaultRequest mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
        , TypeEquals (Record routeWithDefaults)
@@ -203,7 +203,7 @@ else instance clientQueryablePostRoute ::
        , SimpleJson.WriteForeign body
        , SimpleJson.ReadForeign res
        )
-    => ClientQueryable (Route "POST" path (Record route)) basePath baseParams (Record payload) res where
+    => Queryable (Route "POST" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts modifyReq payload = do
     let p = to payload
     let (params :: Record fullParams) = Record.delete (SProxy :: SProxy "body") p
