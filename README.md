@@ -32,10 +32,10 @@ getMessages :: { id :: Int, limit :: Int } -> Aff (Array Message)
 getMessages { id, limit } = pure
   [{ id: 1, text: "Hey there"}, { id: 2, text: "Limit " <> show limit }]
 
-api = { getMessages }
+handlers = { getMessages: getMessages }
 
 main :: Effect Unit
-main = Payload.launch spec api
+main = Payload.launch spec handlers
 ```
 
 Visiting `http://localhost:3000/users/1/messages?limit=2` returns `'[{"text":"Hey there","id":1},{"text":"Limit 2","id":2}]'`.

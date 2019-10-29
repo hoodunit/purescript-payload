@@ -24,7 +24,7 @@ getMessages :: { id :: Int, limit :: Int } -> Aff (Array Message)
 getMessages { id, limit } = pure
   [{ id: 1, text: "Hey there"}, { id: 2, text: "Limit " <> show limit }]
 
-api = { getMessages }
+handlers = { getMessages }
 
 main :: Effect Unit
-main = Payload.launch spec api
+main = Payload.launch spec handlers
