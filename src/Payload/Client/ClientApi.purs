@@ -1,8 +1,8 @@
 module Payload.Client.ClientApi
        ( class ClientApi
-       , mkClient
+       , mkClientApi
        , class ClientApiList
-       , mkClientList
+       , mkClientApiList
        ) where
 
 import Prelude
@@ -25,13 +25,13 @@ import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
 
 class ClientApi routesSpec client | routesSpec -> client where
-  mkClient :: forall r. Options -> Spec { routes :: routesSpec | r } -> client
+  mkClientApi :: forall r. Options -> Spec { routes :: routesSpec | r } -> client
 
 instance clientApiRecord ::
   ( RowToList routesSpec routesSpecList
   , ClientApiList routesSpecList "" () (Record client)
   ) => ClientApi (Record routesSpec) (Record client) where
-  mkClient opts routesSpec = mkClientList
+  mkClientApi opts routesSpec = mkClientApiList
                         opts
                         (RLProxy :: _ routesSpecList)
                         (SProxy :: _ "")
@@ -43,7 +43,7 @@ class ClientApiList
   (baseParams :: # Type)
   client
   | routesSpecList -> client where
-    mkClientList ::
+    mkClientApiList ::
       Options
       -> RLProxy routesSpecList
       -> SProxy basePath
@@ -51,7 +51,7 @@ class ClientApiList
       -> client
 
 instance clientApiListNil :: ClientApiList RowList.Nil basePath baseParams (Record ()) where
-  mkClientList _ _ _ _ = {}
+  mkClientApiList _ _ _ _ = {}
 
 instance clientApiListCons ::
   ( IsSymbol routeName
@@ -70,11 +70,11 @@ instance clientApiListCons ::
          basePath
          baseParams
          (Record client) where
-  mkClientList opts _ _ _ =
+  mkClientApiList opts _ _ _ =
     Record.insert
       (SProxy :: _ routeName)
       doRequest
-      (mkClientList opts (RLProxy :: _ remRoutes) (SProxy :: _ basePath) (Proxy :: _ (Record baseParams)))
+      (mkClientApiList opts (RLProxy :: _ remRoutes) (SProxy :: _ basePath) (Proxy :: _ (Record baseParams)))
     where
       doRequest :: ModifyRequest -> payload -> Aff (Either String res)
       doRequest modifyReq payload =
@@ -116,13 +116,13 @@ instance clientApiListConsRoutes ::
          basePath
          baseParams
          (Record client) where
-  mkClientList opts _ basePath baseParams =
+  mkClientApiList opts _ basePath baseParams =
     Record.insert
       (SProxy :: _ parentName)
       childRoutes
-      (mkClientList opts (RLProxy :: _ remRoutes) basePath baseParams)
+      (mkClientApiList opts (RLProxy :: _ remRoutes) basePath baseParams)
     where
-      childRoutes = mkClientList
+      childRoutes = mkClientApiList
                     opts
                     (RLProxy :: _ childRoutesList)
                     (SProxy :: _ childBasePath)
