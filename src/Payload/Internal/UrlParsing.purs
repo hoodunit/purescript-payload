@@ -113,6 +113,7 @@ data UrlListProxy (f :: UrlList) = UrlListProxy
 foreign import kind UrlList
 foreign import data UrlNil :: UrlList
 foreign import data UrlCons :: UrlPart -> UrlList -> UrlList
+foreign import data UrlParseFail :: UrlList
 
 class ParseUrl (string :: Symbol) (parts :: UrlList) | string -> parts
 instance aNilParse :: ParseUrl "" UrlNil
@@ -140,12 +141,12 @@ else instance startSlash ::
 else instance failNoSlashAtStart ::
   ( Symbol.Cons x xs fullUrl
   , ParseError u xs "Missing / - path segments must start with / and be separated by /" doc
-  ) => Match u x xs acc "start" rest
+  ) => Match u x xs acc "start" UrlParseFail
 
 -- Multi ----------------------------------------------------
 else instance failEmptyMulti ::
   ( ParseError u xs "multi-segment matches must have a name" doc
-  ) => Match u ">" xs "" "multi" rest
+  ) => Match u ">" xs "" "multi" UrlParseFail
 else instance endAtMulti ::
   Match u ">" "" acc "multi" (UrlCons (Multi acc) UrlNil)
 else instance queryAfterMulti ::
@@ -154,10 +155,10 @@ else instance queryAfterMulti ::
   ) => Match u ">" xs acc "multi" (UrlCons (Multi acc) UrlNil)
 else instance failMissingMultiEnd ::
   ( ParseError u "" "multi tag was not closed" doc
-  ) => Match u x "" acc "multi" rest
+  ) => Match u x "" acc "multi" UrlParseFail
 else instance failNestedOpenMulti ::
   ( ParseError u xs "tags cannot be nested in multi tags" doc
-  ) => Match u "<" xs acc "multi" rest
+  ) => Match u "<" xs acc "multi" UrlParseFail
 else instance contMulti ::
   ( Symbol.Cons y ys xs
   , Symbol.Append acc x newAcc
@@ -176,7 +177,7 @@ else instance switchKeyToMulti ::
   ) => Match u "." xs "" "key" rest
 else instance failEmptyKey ::
   ( ParseError u xs "key matches must have name" doc
-  ) => Match u ">" xs "" "key" rest
+  ) => Match u ">" xs "" "key" UrlParseFail
 else instance endAtKey ::
   Match u ">" "" acc "key" (UrlCons (Key acc) UrlNil)
 else instance endKey ::
@@ -186,10 +187,10 @@ else instance endKey ::
 else instance failMissingKeyEnd ::
   ( Symbol.Append acc x key
   , ParseError u "" "key tag was not closed" doc
-  ) => Match u x "" acc "key" rest
+  ) => Match u x "" acc "key" UrlParseFail
 else instance failNestedOpenKey ::
   ( ParseError u xs "key tags cannot be nested" doc
-  ) => Match u "<" xs acc "key" rest
+  ) => Match u "<" xs acc "key" UrlParseFail
 else instance contKey ::
   ( Symbol.Cons y ys xs
   , Symbol.Append acc x newAcc
@@ -197,7 +198,7 @@ else instance contKey ::
   ) => Match u x xs acc "key" rest
 else instance failEndKeyWithoutStart ::
   ( ParseError u xs "saw closing '>' for key without opening '<'" doc
-  ) => Match u ">" xs acc mode rest
+  ) => Match u ">" xs acc mode UrlParseFail
 
 -- Query ----------------------------------------------------
 else instance endLitAtQuery :: Match u "?" xs acc "lit" (UrlCons (Lit acc) UrlNil)
@@ -245,7 +246,7 @@ class ParseError
   | path remaining msg -> doc
 
 instance parseError ::
-  ( Fail (Text "Invalid route path: " <> Text msg
+  ( Fail (Text "Invalid URL path spec: " <> Text msg
           |> Text ""
           |> Text "Path: '" <> Text path <> Text "'"
           |> Text "------" <> Text arrow <> Text "^"

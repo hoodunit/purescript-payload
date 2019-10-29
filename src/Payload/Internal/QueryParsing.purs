@@ -83,6 +83,7 @@ instance toSegmentsConsLit ::
 data QueryListProxy (f :: QueryList) = QueryListProxy
 
 foreign import kind QueryList
+foreign import data QueryParseFail :: QueryList
 foreign import data QueryNil :: QueryList
 foreign import data QueryCons :: QueryPart -> QueryList -> QueryList
 
@@ -106,10 +107,10 @@ class Match
 -- Generic/ending matches --------------------------------------
 instance failTrailingAmpersand ::
   ( ParseError u "" "Trailing & - query params cannot end with trailing &" doc
-  ) => Match u "&" "" acc acc2 any QueryNil
+  ) => Match u "&" "" acc acc2 any QueryParseFail
 else instance failEmptyQueryString ::
   ( ParseError u "" "Empty query string - there were no query parameters following '?'" doc
-  ) => Match u "?" "" acc acc2 "start" rest
+  ) => Match u "?" "" acc acc2 "start" QueryParseFail
 else instance startQuestionMark ::
   ( Symbol.Cons y ys xs
   , Match u y ys "" "" "any" rest
@@ -122,7 +123,7 @@ else instance skipNonQuestionMarkAtStart ::
 else instance failNoSlashAtStart ::
   ( Symbol.Cons x xs fullUrl
   , ParseError u xs "Missing ? - query segments must start with ? and be separated by &" doc
-  ) => Match u x xs acc acc2 "start" rest
+  ) => Match u x xs acc acc2 "start" QueryParseFail
 else instance skipInBetweenAmpersand ::
   ( Symbol.Cons y ys xs
   , Match u y ys "" "" "any" rest
@@ -137,18 +138,18 @@ else instance startMulti ::
   ) => Match u "<" xs acc acc2 "any" rest
 else instance failEmptyMulti ::
   ( ParseError u xs "multi-segment query matches must have a name" doc
-  ) => Match u ">" xs "" acc2 "multi" rest
+  ) => Match u ">" xs "" acc2 "multi" QueryParseFail
 else instance endAtMulti ::
   Match u ">" "" acc acc2 "multi" (QueryCons (Multi acc) QueryNil)
 else instance failContinueAfterMulti ::
   ( ParseError u xs "multi-segment query match must be the final component of a path" doc
-  ) => Match u ">" xs acc acc2 "multi" rest
+  ) => Match u ">" xs acc acc2 "multi" QueryParseFail
 else instance failMissingMultiEnd ::
   ( ParseError u "" "multi-segment query match was not closed" doc
-  ) => Match u x "" acc acc2 "multi" rest
+  ) => Match u x "" acc acc2 "multi" QueryParseFail
 else instance failNestedOpenMulti ::
   ( ParseError u xs "tags cannot be nested in multi-segment query matches" doc
-  ) => Match u "<" xs acc acc2 "multi" rest
+  ) => Match u "<" xs acc acc2 "multi" QueryParseFail
 else instance contMulti ::
   ( Symbol.Cons y ys xs
   , Symbol.Append acc x newAcc
@@ -162,7 +163,7 @@ else instance keyStart ::
   ) => Match u "<" xs acc "" "keyStart" rest
 else instance failedKeyStart ::
   ( ParseError u xs "query param key name must start with opening '<', e.g. limit=<limit>" doc
-  ) => Match u x xs acc "" "keyStart" rest
+  ) => Match u x xs acc "" "keyStart" QueryParseFail
 else instance switchKeyToMulti ::
   ( Symbol.Cons "." ys xs
   , Symbol.Cons z zs ys
@@ -170,7 +171,7 @@ else instance switchKeyToMulti ::
   ) => Match u "." xs "" acc2 "key" rest
 else instance failEmptyKey ::
   ( ParseError u xs "query param matches must have a name" doc
-  ) => Match u ">" xs acc "" "key" rest
+  ) => Match u ">" xs acc "" "key" QueryParseFail
 else instance endAtKey ::
   Match u ">" "" name key "key" (QueryCons (Key name key) QueryNil)
 else instance endKey ::
@@ -180,10 +181,10 @@ else instance endKey ::
 else instance failMissingKeyEnd ::
   ( Symbol.Append acc x key
   , ParseError u "" "key tag was not closed" doc
-  ) => Match u x "" acc acc2 "key" rest
+  ) => Match u x "" acc acc2 "key" QueryParseFail
 else instance failNestedOpenKey ::
   ( ParseError u xs "key tags cannot be nested" doc
-  ) => Match u "<" xs acc acc2 "key" rest
+  ) => Match u "<" xs acc acc2 "key" QueryParseFail
 else instance contKey ::
   ( Symbol.Cons y ys xs
   , Symbol.Append acc2 x newAcc2
@@ -196,7 +197,7 @@ else instance ampersand ::
   ) => Match u "&" xs name key "ampersand" rest
 else instance ampersandFail ::
   ( ParseError u xs "expected '&' between query parts" doc
-  ) => Match u x xs name key "ampersand" (QueryCons (Key name key) rest)
+  ) => Match u x xs name key "ampersand" QueryParseFail
 
 else instance switchToKey ::
   ( Symbol.Cons y ys xs
@@ -204,24 +205,16 @@ else instance switchToKey ::
   ) => Match u "=" xs acc "" "lit" rest
 else instance failEndKeyWithoutStart ::
   ( ParseError u xs "saw closing '>' for key without opening '<'" doc
-  ) => Match u ">" xs acc acc2 mode rest
+  ) => Match u ">" xs acc acc2 mode QueryParseFail
 else instance failOpenKeyWithoutEquals ::
   ( ParseError u xs "saw key name without query param name - should be of form name=<keyName>" doc
-  ) => Match u "<" xs acc acc2 any rest
+  ) => Match u "<" xs acc acc2 any QueryParseFail
 
 -- Literals ----------------------------------------------------
 else instance startLit ::
   ( Symbol.Cons y ys xs
   , Match u y ys x "" "lit" rest
   ) => Match u x xs "" "" "any" rest
--- else instance switchToKey ::
---   ( Symbol.Cons "<" ys xs
---   , Symbol.Cons z zs ys
---   , Match u z zs acc "" "key" rest
---   ) => Match u "=" xs acc "" "lit" rest
--- else instance failedSwitchToKey ::
---   ( ParseError u xs "invalid query parameter syntax - keys should be of form name=<keyName>" doc
---   ) => Match u "=" xs acc "" "lit" rest
 else instance splitLit ::
   ( Symbol.Cons y ys xs
   , Match u y ys "" "" "any" rest
@@ -255,7 +248,7 @@ class ParseError
   | path remaining msg -> doc
 
 instance parseError ::
-  ( Fail (Text "Invalid route path: " <> Text msg
+  ( Fail (Text "Invalid query spec: " <> Text msg
           |> Text ""
           |> Text "Path: '" <> Text path <> Text "'"
           |> Text "------" <> Text arrow <> Text "^"

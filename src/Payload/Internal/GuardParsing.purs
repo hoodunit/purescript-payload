@@ -5,11 +5,12 @@ import Prelude
 import Data.List (List(..), (:))
 import Data.List as List
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
-import Debug.Trace as Debug
 import Payload.Internal.TypeErrors (class PrintArrow, type (<>), type (|>))
 import Payload.Spec (GCons, GNil, Guards(..), kind GuardList)
 import Prim.Symbol as Symbol
-import Prim.TypeError (class Fail, Above, Beside, Text, kind Doc)
+import Prim.TypeError (class Fail, Text, kind Doc)
+
+foreign import data GuardParseFail :: GuardList
 
 data GuardTypes types = GuardTypes
 
@@ -42,15 +43,15 @@ instance startBracket ::
   ) => Match u "[" xs "" "start" rest
 else instance failNoBracketAtStart ::
   ( ParseError u xs (Text "Missing [ - guard list must start with [") doc
-  ) => Match u x xs acc "start" rest
+  ) => Match u x xs acc "start" GuardParseFail
 else instance endEmptyGuardsAtBracket :: Match u "]" "" "" "guard" GNil
 else instance endGuardsAtBracket :: Match u "]" "" acc "guard" (GCons acc GNil)
 else instance failEndWithoutBracket ::
   ( ParseError u "" (Text "Guard list must end with ]") doc
-  ) => Match u x "" acc "guard" rest
+  ) => Match u x "" acc "guard" GuardParseFail
 else instance failAnythingAfterBracket ::
   ( ParseError u xs (Text "Guard list ended  at ] but there was more text after") doc
-  ) => Match u "]" xs acc "guard" rest
+  ) => Match u "]" xs acc "guard" GuardParseFail
 else instance failEndEmptyGuardAtComma ::
   ( ParseError u xs (Text "Guard names cannot be empty") doc
   ) => Match u "," xs "" "guard" (GCons acc rest)
@@ -64,13 +65,13 @@ else instance skipSpace ::
   ) => Match u " " xs acc "space" rest
 else instance failNoSpace ::
   ( ParseError u xs (Text "Guards must be separated by a comma and space (missing space after comma)") doc
-  ) => Match u x xs acc "space" rest
+  ) => Match u x xs acc "space" GuardParseFail
 else instance failSpaceWithoutComma ::
   ( ParseError u xs (Text "Guards must be separated by a comma and space (saw space without comma)") doc
-  ) => Match u " " xs acc "guard" rest
+  ) => Match u " " xs acc "guard" GuardParseFail
 else instance failOpenBracketInGuardName ::
   ( ParseError u xs (Text "Guard names cannot contain [") doc
-  ) => Match u "[" xs acc "guard" rest
+  ) => Match u "[" xs acc "guard" GuardParseFail
 else instance contGuard ::
   ( Symbol.Cons y ys xs
   , Symbol.Append acc x newAcc
@@ -79,7 +80,7 @@ else instance contGuard ::
 else instance failMatch ::
   ( ParseError u xs (Text "Failed parsing guards " <>
                      (Text "(acc: '" <> Text acc <> Text "', mode: " <> Text mode <> Text ")" )) doc
-  ) => Match u x xs acc mode rest
+  ) => Match u x xs acc mode GuardParseFail
 
 class ParseError
   (path :: Symbol)
@@ -89,7 +90,7 @@ class ParseError
   | path remaining msg -> doc
 
 instance parseError ::
-  ( Fail (Text "Invalid guard list: " <> msg
+  ( Fail (Text "Invalid spec guard list: " <> msg
           |> Text ""
           |> Text "Guards: '" <> Text path <> Text "'"
           |> Text "--------" <> Text arrow <> Text "^"
