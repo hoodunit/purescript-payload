@@ -272,15 +272,15 @@ A simple Payload handler is just a function that asynchronously returns a value,
 * Record (returns JSON)
 * `Json` (returns JSON)
 
-JSON is encoded via the [purescript-simple-json library](https://github.com/justinwoo/purescript-simple-json). Handlers can also return any other response body that implements [ToSpecResponse](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:ToSpecResponse) and [EncodeResponse](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:EncodeResponse).
+JSON is encoded via the [purescript-simple-json library](https://github.com/justinwoo/purescript-simple-json). Handlers can also return any other response body that implements [EncodeResponse](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:EncodeResponse).
 
-Payload validates at compile time that handler responses match the type specified in the API spec. Responses match the spec by either being exactly the type defined in the spec or by being convertable to that type via the `ToSpecResponse` type class.
+Payload validates at compile time that handler responses match the type specified in the API spec. Responses match the spec by either being exactly the type defined in the spec or by being convertable to that type via the [ToSpecResponse](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:ToSpecResponse) type class.
 
 What other responses can be converted to spec responses?
 
 #### Modified status or headers
 
-To modify the status or headers, handlers can return a [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:Response), which is a wrapper around a record with `status` and `headers` fields. There are various helpers in the [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:Response) module for creating and modifying responses.
+To modify the status or headers, handlers can return a [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:Response), which is a wrapper around a record with `status`, `headers`, and `body` fields. There are various helpers in the [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:Response) module for creating and modifying responses.
 
 #### Errors
 
@@ -288,11 +288,11 @@ To return an error, handlers can return `Either error val`, where `error` can be
 
 #### Static files
 
-Static files can be served using the [file](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers#v:file) or [directory](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers#v:directory) helpers in the [Handlers module](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers). The provided handlers will add appropriate MIME types to responses and protect against directory traversal attacks. There is also [an example module for serving static files](./examples/files/Main.purs).
+Static files can be served using the [file](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers#v:file) or [directory](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers#v:directory) helpers in the [Handlers module](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers). The provided handlers will add appropriate MIME types to responses and protect against directory traversal attacks. See also [the example for serving static files](./examples/files/Main.purs).
 
 ### Guards
 
-Payload borrows a concept called request guards from the [Rust Rocket library](https://rocket.rs/v0.4/guide/requests/#request-guards). A request guard is a function that is called before handlers are called that returns an arbitrary value which is passed to the handler function. It can also error or forward, in which case the handler is never called. A typical use case might be to decode and validate an authorization header or cookie.
+Payload borrows a concept [from the Rust Rocket library](https://rocket.rs/v0.4/guide/requests/#request-guards) called request guards. A request guard is a function that is called before handlers are called that returns an arbitrary value which is passed to the handler function. It can also error or forward, in which case the handler is never called. A typical use case might be to decode and validate an authorization header or cookie.
 
 Guards can be added to an endpoint by listing the guards by name in the API spec as a type-level list, e.g. `guards :: Guards ("guard1" : "guard2" : Nil)`. The listed guards will be called in order before the handler function is called. The value returned by a guard is specified separately at the root of the spec, and the guard functions themselves are passed to the server as a record separate from the server handlers. A guard name specified in a route spec must have a matching guard name in the top-level guards spec, and a corresponding guard must be passed in to the server when it is started, or the code won't compile.
 
