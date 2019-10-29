@@ -6,7 +6,18 @@
   </img>
 </a>
 
-Payload is an HTTP server library for PureScript inspired by [Rust's Rocket](https://rocket.rs/) and [Haskell's Servant](https://haskell-servant.readthedocs.io/en/stable/). Here is a complete Payload application:
+Payload is an HTTP server library for PureScript inspired by [Rust's Rocket](https://rocket.rs/) and [Haskell's Servant](https://haskell-servant.readthedocs.io/en/stable/).
+
+The basic idea: write one API spec. Write handlers as functions returning data. Get for free:
+
+* Request routing
+* Decoding URL parameters, query parameters, and request bodies into typed values
+* Encoding typed values into server responses
+* Client functions for calling the API
+
+It's like [OpenAPI/Swagger](https://swagger.io/) without the boilerplate and code generation. Unlike OpenAPI, if your handlers or clients don't match your spec the code won't compile, so servers and clients always stay in sync with the spec.
+
+Here is a complete Payload application:
 
 ```purescript
 import Prelude
@@ -39,15 +50,6 @@ main = Payload.launch spec handlers
 ```
 
 Visiting `http://localhost:3000/users/1/messages?limit=2` returns `'[{"text":"Hey there","id":1},{"text":"Limit 2","id":2}]'`.
-
-The basic idea: write one API spec. Write handlers as functions returning data. Get for free:
-
-* Request routing
-* Decoding URL parameters, query parameters, and request bodies into typed values
-* Encoding typed values into server responses
-* Client functions for calling the API
-
-It's like [OpenAPI/Swagger](https://swagger.io/) without the boilerplate and code generation. Unlike OpenAPI, if your handlers or clients don't match your spec the code won't compile, so servers and clients always stay in sync with the spec.
 
 This library is experimental, in flux, and will likely have breaking API changes.
 
