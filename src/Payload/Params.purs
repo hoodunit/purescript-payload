@@ -1,11 +1,9 @@
 module Payload.Params
        ( DecodeError
        , class FromParam
-       , class FromSegments
-       , class ToParam
        , fromParam
+       , class FromSegments
        , fromSegments
-       , toParam
        ) where
 
 import Prelude
@@ -33,12 +31,3 @@ class FromSegments a where
 
 instance fromSegmentsListString :: FromSegments (List String) where
   fromSegments s = Right s
-
-class ToParam a where
-  toParam :: a -> String
-
-instance toParamInt :: ToParam Int where
-  toParam = show
-
-instance toParamString :: ToParam String where
-  toParam s = s

@@ -14,8 +14,7 @@ import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
 import Payload.Client.FromResponse (class ReadResponse, readResponse)
 import Payload.Internal.Route (DefaultRequest)
-import Payload.Internal.Url (class EncodeUrl)
-import Payload.Internal.Url as PayloadUrl
+import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Response (ResponseBody(..))
 import Payload.Routable (DefaultParentRoute)
 import Payload.Spec (Spec, Route(Route), Routes)
@@ -221,7 +220,7 @@ else instance clientQueryablePostRoute ::
     pure (decodeResponse res)
 
 encodeUrl :: forall path params
-  . EncodeUrl path params
+  . PayloadUrl.EncodeUrl path params
   => Options -> SProxy path -> Record params -> String
 encodeUrl opts pathProxy params =
   "http://" <> opts.hostname <> ":" <> show opts.port <> path
