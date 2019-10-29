@@ -12,7 +12,7 @@ import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
-import Payload.Client.FromResponse (class ReadResponse, readResponse)
+import Payload.Client.FromResponse (class FromResponse, fromResponse)
 import Payload.Internal.Route (DefaultRequest)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Response (ResponseBody(..))
@@ -169,7 +169,7 @@ instance clientQueryableGetRoute ::
        , Symbol.Append basePath path fullPath
        , PayloadUrl.EncodeUrl fullPath fullParams
        , Row.Union baseParams params fullParams
-       , ReadResponse res
+       , FromResponse res
        , SimpleJson.ReadForeign res
        )
     => ClientQueryable (Route "GET" path (Record route)) basePath baseParams (Record fullParams) res where
@@ -199,7 +199,7 @@ else instance clientQueryablePostRoute ::
        , IsSymbol path
        , Symbol.Append basePath path fullPath
        , PayloadUrl.EncodeUrl fullPath fullParams
-       , ReadResponse res
+       , FromResponse res
        , SimpleJson.WriteForeign body
        , SimpleJson.ReadForeign res
        )
@@ -227,11 +227,11 @@ encodeUrl opts pathProxy params =
   where
     path = PayloadUrl.encodeUrl pathProxy params
 
-decodeResponse :: forall res. ReadResponse res =>
+decodeResponse :: forall res. FromResponse res =>
                  (AX.Response (Either AX.ResponseFormatError String)) -> Either String res
 decodeResponse res | res.status /= StatusCode 200 = Left $ "Received HTTP " <> show res.status <> "\n" <>
   (either AX.printResponseFormatError identity res.body)
 decodeResponse res = do
-  showingError res.body >>= (StringBody >>> readResponse)
+  showingError res.body >>= (StringBody >>> fromResponse)
   where
     showingError = lmap ResponseFormat.printResponseFormatError
