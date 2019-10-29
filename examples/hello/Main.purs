@@ -1,6 +1,8 @@
 module Payload.Examples.Hello.Main where
 
 import Prelude
+
+import Effect (Effect)
 import Effect.Aff (Aff)
 import Payload.Server as Payload
 import Payload.Spec (Spec(Spec), GET)
@@ -18,10 +20,11 @@ spec :: Spec {
 }
 spec = Spec
 
-api = { getMessages }
-
 getMessages :: { id :: Int, limit :: Int } -> Aff (Array Message)
 getMessages { id, limit } = pure
   [{ id: 1, text: "Hey there"}, { id: 2, text: "Limit " <> show limit }]
 
+api = { getMessages }
+
+main :: Effect Unit
 main = Payload.launch spec api

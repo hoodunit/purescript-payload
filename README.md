@@ -9,6 +9,12 @@
 Payload is an HTTP server library for PureScript inspired by [Rust's Rocket](https://rocket.rs/) and [Haskell's Servant](https://haskell-servant.readthedocs.io/en/stable/). Here is a complete Payload application:
 
 ```purescript
+import Prelude
+import Effect (Effect)
+import Effect.Aff (Aff)
+import Payload.Server as Payload
+import Payload.Spec (Spec(Spec), GET)
+
 type Message = 
   { id :: Int
   , text :: String }
@@ -22,14 +28,17 @@ spec :: Spec {
 }
 spec = Spec
 
-api = { getMessages }
-
 getMessages :: { id :: Int, limit :: Int } -> Aff (Array Message)
 getMessages { id, limit } = pure
   [{ id: 1, text: "Hey there"}, { id: 2, text: "Limit " <> show limit }]
 
+api = { getMessages }
+
+main :: Effect Unit
 main = Payload.launch spec api
 ```
+
+Visiting `http://localhost:3000/users/1/messages?limit=2` returns `'[{"text":"Hey there","id":1},{"text":"Limit 2","id":2}]'`.
 
 The basic idea: write one API spec. Write handlers as functions returning data. Get for free:
 
