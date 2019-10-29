@@ -13,9 +13,8 @@ The basic idea: write one API spec. Write handlers as functions returning data. 
 * Request routing
 * Decoding URL parameters, query parameters, and request bodies into typed values
 * Encoding typed values into server responses
-* Client functions for calling the API
 
-It's like [OpenAPI/Swagger](https://swagger.io/) without the boilerplate and code generation. Unlike OpenAPI, if your handlers or clients don't match your spec the code won't compile, so servers and clients always stay in sync with the spec.
+It's like [OpenAPI/Swagger](https://swagger.io/) without the boilerplate and code generation. Unlike OpenAPI, if your handlers don't match your spec the code won't compile, so servers always stay in sync with the spec.
 
 Here is a complete Payload application:
 
