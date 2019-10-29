@@ -245,15 +245,15 @@ createUser {body: user} = pure user
 
 #### Query strings
 
-Payload supports two different types of query parameters: literals and keys. Here is an example with both:
+Payload supports three different types of query parameters: literals, keys, and multi-matches. Here is an example with all three:
 
 ```purescript
 -- Spec:
-search :: GET "/search?a=<a>&foo&b=<b>"
-  { query :: { a :: Int, b :: Int }
+search :: GET "/search?a=<a>&foo&b=<b>&<..rest>"
+  { query :: { a :: Int, b :: Int, rest :: Object String }
   , response :: String }
 
-search :: { a :: Int, b :: Int } -> Aff String
+search :: { a :: Int, b :: Int, rest :: Object String } -> Aff String
 search _ = pure "Search result"
 ```
 

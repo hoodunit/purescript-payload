@@ -25,7 +25,6 @@ import Payload.Internal.GuardParsing (GuardTypes(..))
 import Payload.Internal.GuardParsing as GuardParsing
 import Payload.Internal.Query as PayloadQuery
 import Payload.Internal.Request (RequestUrl)
-import Payload.Internal.TypeErrors (type (<>))
 import Payload.Internal.Url as PayloadUrl
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments)
 import Payload.Response (Failure(..), RawResponse, Result)

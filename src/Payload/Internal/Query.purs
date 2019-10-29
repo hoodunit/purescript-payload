@@ -6,9 +6,9 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Payload.Internal.QueryParsing (kind QueryPart, Lit, Key, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
+import Payload.Internal.QueryParsing (kind QueryPart, Lit, Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
 import Payload.Internal.Querystring.Qs as Qs
-import Payload.QueryParams (class FromQueryParam, fromQueryParam)
+import Payload.QueryParams (class FromQueryParam, class FromQueryParamMulti, fromQueryParam, fromQueryParamMulti)
 import Prim.Row as Row
 import Record as Record
 import Type.Equality (class TypeEquals, to)
@@ -37,6 +37,19 @@ instance matchQueryNil ::
   ( TypeEquals (Record from) (Record to)
   ) => MatchQuery QueryNil query from to where
   matchQuery _ _ query _ = Right (to query)
+
+instance matchQueryConsMulti ::
+  ( IsSymbol ourKey
+  , Row.Cons ourKey valType from from'
+  , Row.Cons ourKey valType _params params
+  , Row.Lacks ourKey from
+  , FromQueryParamMulti valType
+  , TypeEquals (Record from') (Record to)
+  ) => MatchQuery (QueryCons (Multi ourKey) QueryNil) params from to where
+  matchQuery _ queryType query queryObj =
+    case fromQueryParamMulti queryObj of
+      Left errors -> Left $ show errors
+      Right decoded -> Right (to $ Record.insert (SProxy :: SProxy ourKey) decoded query)
 
 instance matchQueryConsKey ::
   ( IsSymbol queryKey

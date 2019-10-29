@@ -1,6 +1,8 @@
 module Payload.QueryParams
        ( class FromQueryParam
        , fromQueryParam
+       , class FromQueryParamMulti
+       , fromQueryParamMulti
        , class ToQueryParam
        , toQueryParam
        ) where
@@ -10,6 +12,7 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Int as Int
 import Data.Maybe (maybe)
+import Foreign.Object (Object)
 
 type DecodeError = String
 
@@ -23,6 +26,12 @@ instance fromQueryParamInt :: FromQueryParam Int where
 
 instance fromQueryParamString :: FromQueryParam String where
   fromQueryParam s = Right s
+
+class FromQueryParamMulti a where
+  fromQueryParamMulti :: Object String -> Either DecodeError a
+
+instance fromQueryParamMultiObjectString :: FromQueryParamMulti (Object String) where
+  fromQueryParamMulti o = Right o
 
 class ToQueryParam a where
   toQueryParam :: a -> String

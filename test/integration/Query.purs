@@ -2,6 +2,8 @@ module Payload.Test.Integration.QueryParams where
 
 import Prelude
 
+import Data.List (List)
+import Foreign.Object (Object)
 import Payload.Spec (GET, POST, Spec(..))
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers
@@ -57,6 +59,8 @@ tests = do
         withRoutes spec handlers do
           res <- get "/search?a=1&b=1&foo"
           respMatches { status: 200, body: "Search result" } res
+
+
     suite "keys (e.g. foo=<myFoo>)" do
       test "GET /search?limit=3 succeeds with valid int" $ do
         let spec = Spec :: _ { search :: GET "/search?limit=<limit>"
@@ -109,3 +113,14 @@ tests = do
         withRoutes spec handlers do
           res <- post "/profile?id=3.0&foo=asdf" ""
           respMatches { status: 404, body: "" } res
+
+
+    suite "multi-match (e.g. foo=<myFoo>)" do
+      test "GET /search?<..all> multimatch grabs all query parameters" $ do
+        let spec = Spec :: _ { search :: GET "/search?<..all>"
+                                { query :: { all :: Object String }
+                                , response :: String }}
+        let handlers = { search: \_ -> pure $ "Search result" }
+        withRoutes spec handlers do
+          res <- get "/search?limit=3"
+          respMatches { status: 200, body: "Search result" } res
