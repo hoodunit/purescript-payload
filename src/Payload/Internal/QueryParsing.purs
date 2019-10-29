@@ -142,7 +142,7 @@ else instance endAtMulti ::
   Match u ">" "" acc acc2 "multi" (QueryCons (Multi acc) QueryNil)
 else instance failContinueAfterMulti ::
   ( ParseError u xs "multi-segment query match must be the final component of a path" doc
-  ) => Match u ">" xs acc acc2 "multi" QueryNil
+  ) => Match u ">" xs acc acc2 "multi" rest
 else instance failMissingMultiEnd ::
   ( ParseError u "" "multi-segment query match was not closed" doc
   ) => Match u x "" acc acc2 "multi" rest
@@ -174,9 +174,8 @@ else instance failEmptyKey ::
 else instance endAtKey ::
   Match u ">" "" name key "key" (QueryCons (Key name key) QueryNil)
 else instance endKey ::
-  ( Symbol.Cons "&" ys xs
-  , Symbol.Cons z zs ys
-  , Match u z zs "" "" "any" rest
+  ( Symbol.Cons y ys xs
+  , Match u y ys "" "" "ampersand" rest
   ) => Match u ">" xs name key "key" (QueryCons (Key name key) rest)
 else instance failMissingKeyEnd ::
   ( Symbol.Append acc x key
@@ -190,6 +189,14 @@ else instance contKey ::
   , Symbol.Append acc2 x newAcc2
   , Match u y ys acc newAcc2 "key" rest
   ) => Match u x xs acc acc2 "key" rest
+
+else instance ampersand ::
+  ( Symbol.Cons y ys xs
+  , Match u y ys "" "" "any" rest
+  ) => Match u "&" xs name key "ampersand" rest
+else instance ampersandFail ::
+  ( ParseError u xs "expected '&' between query parts" doc
+  ) => Match u x xs name key "ampersand" (QueryCons (Key name key) rest)
 
 else instance switchToKey ::
   ( Symbol.Cons y ys xs

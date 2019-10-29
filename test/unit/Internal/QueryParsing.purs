@@ -49,6 +49,7 @@ tests = suite "Query type-level parsing" do
     -- decode (SProxy :: _ "/foo?session=session>") Nil
     -- decode (SProxy :: _ "/foo?session=<ses<sion>") Nil
     -- decode (SProxy :: _ "/foo?session=<ses>sion>") Nil
+    -- decode (SProxy :: _ "/foo?session=<session><..rest>") Nil
 
   suite "multi" do
     decode (SProxy :: _ "/foo?<..rest>") (Multi "rest" : Nil)
