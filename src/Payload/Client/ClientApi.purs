@@ -96,19 +96,20 @@ instance clientApiListConsRoutes ::
   , TypeEquals
       (Record parentSpecWithDefaults)
       {params :: Record parentParams, guards :: parentGuards | childRoutes}
-  , Symbol.Append basePath path childBasePath
   , Row.Union baseParams parentParams childParams
 
   -- Extra check: fail here already if they don't match
   , PayloadUrl.EncodeUrl path parentParams
 
+  , Row.Cons parentName (Record childClient) remClient client 
+
   -- Recurse through child routes
   , RowToList childRoutes childRoutesList
+  , Symbol.Append basePath path childBasePath
   , ClientApiList childRoutesList childBasePath childParams (Record childClient)
 
   -- Iterate through rest of list of routes 
   , Row.Lacks parentName remClient
-  , Row.Cons parentName (Record childClient) remClient client 
   , ClientApiList remRoutes basePath baseParams (Record remClient)
   ) => ClientApiList
          (RowList.Cons parentName (Routes path (Record parentSpec)) remRoutes)
