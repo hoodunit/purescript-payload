@@ -8,6 +8,7 @@ import Payload.Examples.Basic.Test as BasicExample
 import Payload.Examples.Files.Test as FilesExample
 import Payload.Examples.Hello.Test as HelloExample
 import Payload.Examples.Movies.Test as MoviesExample
+import Payload.Test.Integration.Client.Methods as ClientMethodsTest
 import Payload.Test.Integration.Guards as GuardsTest
 import Payload.Test.Integration.Methods as MethodsTest
 import Payload.Test.Integration.QueryParams as QueryParamsTest
@@ -43,6 +44,7 @@ tests = do
     QueryParamsTest.tests
     GuardsTest.tests
     StatusTest.tests
+    ClientMethodsTest.tests
 
   suite "Examples" do
     HelloExample.tests

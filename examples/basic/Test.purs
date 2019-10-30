@@ -5,10 +5,10 @@ import Prelude
 import Affjax.RequestHeader (RequestHeader(..))
 import Data.Either (Either(..))
 import Effect.Aff (Aff)
-import Payload.Client.Client (mkClient)
+import Payload.Client.Client (mkClient, mkGuardedClient)
 import Payload.Client.Client as Client
-import Payload.Examples.Basic.Spec (spec)
 import Payload.Examples.Basic.Main (api)
+import Payload.Examples.Basic.Spec (spec)
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
@@ -30,7 +30,7 @@ assertFail req = do
 tests :: TestSuite
 tests = do
   let withApi = withServer spec api
-  let client = mkClient Client.defaultOpts spec
+  let client = mkGuardedClient Client.defaultOpts spec
   let authHeader = RequestHeader "Authorization" "Token secret"
   let addAuthHeader req = req { headers = req.headers <> [authHeader] }
   suite "Example: basic" do

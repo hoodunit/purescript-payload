@@ -226,9 +226,9 @@ files { path } = Handlers.directory "test" path
 
 #### Request body
 
-When a request body is specified on an API route, the route will only be called if a request body can be decoded into the specified type via the [FromData](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.FromData) type class. If decoding fails, a 404 response is returned. Handlers will be called with a payload field named `body` containing the decoded body.
+When a request body is specified on an API route, the route will only be called if a request body can be decoded into the specified type via the [DecodeBody](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.DecodeBody) type class. If decoding fails, a 404 response is returned. Handlers will be called with a payload field named `body` containing the decoded body.
 
-Body decoding can be specified for custom types or overwritten by writing an instance of [FromData](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.FromData).
+Body decoding can be specified for custom types or overwritten by writing an instance of [DecodeBody](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.DecodeBody).
 
 Example endpoint with body:
 

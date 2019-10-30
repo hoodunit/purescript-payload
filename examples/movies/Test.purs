@@ -7,7 +7,7 @@ import Data.Map (Map)
 import Data.Map as Map
 import Data.Tuple (Tuple(..))
 import Node.HTTP as HTTP
-import Payload.Client.Client (mkClient)
+import Payload.Client.Client (mkClient, mkGuardedClient)
 import Payload.Client.Client as Client
 import Payload.Cookies (requestCookies)
 import Payload.Cookies as Cookies
@@ -26,12 +26,13 @@ withCookies cookies req = req { withCredentials = true, headers = req.headers <>
   
 tests :: TestSuite
 tests = do
-  let client = mkClient Client.defaultOpts moviesApiSpec
+  let client = mkGuardedClient Client.defaultOpts moviesApiSpec
   let withApi = withServer moviesApiSpec moviesApi
   suite "Example: movies API" do
     test "Sub-route fails if parent route guard fails (missing API key)" $ do
       withApi do
         assertFail (client.v1.movies.latest identity {})
+        -- assertFail (client.v1.auth.session.delete identity { body: { sessionId: "blah" }})
     test "Sub-route succeeds if parent route guard succeeds (has API key)" $ do
       withApi do
         assertRes (client.v1.movies.latest (withCookies (Map.singleton "apiKey" "key")) {})

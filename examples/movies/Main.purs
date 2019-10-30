@@ -31,9 +31,8 @@ moviesApiSpec :: Spec {
              body :: { requestToken :: String },
              response :: SessionIdResponse
            },
-           -- DELETE not supported yet in client
-           -- delete :: DELETE "/" {
-           delete :: GET "/" {
+           delete :: DELETE "/" {
+           -- delete :: POST "/" {
              body :: { sessionId :: String },
              response :: StatusResponse
            }
@@ -137,6 +136,7 @@ newToken _ = pure { success: true, expiresAt: "date", requestToken: "328dsdweoi"
 createSession :: forall r. { | r} -> Aff SessionIdResponse
 createSession _ = pure { success: true, sessionId: "date", requestToken: "23988w9" }
 
+-- deleteSession :: forall r. { body :: { sessionId :: String } | r} -> Aff StatusResponse
 deleteSession :: forall r. { | r} -> Aff StatusResponse
 deleteSession _ = pure { success: true }
 

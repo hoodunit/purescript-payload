@@ -19,7 +19,7 @@ import Effect.Ref as Ref
 import Node.Encoding (Encoding(..))
 import Node.HTTP as HTTP
 import Node.Stream (onDataString, onEnd, onError)
-import Payload.FromData (class FromData, fromData)
+import Payload.DecodeBody (class DecodeBody, decodeBody)
 import Payload.Guards (class RunGuards, runGuards)
 import Payload.Internal.GuardParsing (GuardTypes(..))
 import Payload.Internal.GuardParsing as GuardParsing
@@ -70,7 +70,7 @@ instance handleablePostRoute ::
        , Resp.ToSpecResponse docRoute handlerRes res
        , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
-       , FromData body
+       , DecodeBody body
 
        , Row.Union baseParams params fullUrlParams
        , Row.Union fullUrlParams query fullParams
@@ -96,7 +96,7 @@ instance handleablePostRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
-    body <- withExceptT Forward $ except $ (fromData bodyStr :: Either String body)
+    body <- withExceptT Forward $ except $ (decodeBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload' :: Record payload') = Record.union fullParams { body }
@@ -216,7 +216,7 @@ instance handleablePutRoute ::
        , Resp.ToSpecResponse docRoute handlerRes res
        , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
-       , FromData body
+       , DecodeBody body
 
        , Row.Union baseParams params fullUrlParams
        , Row.Union fullUrlParams query fullParams
@@ -242,7 +242,7 @@ instance handleablePutRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
-    body <- withExceptT Forward $ except $ (fromData bodyStr :: Either String body)
+    body <- withExceptT Forward $ except $ (decodeBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
     let (payload' :: Record payload') = Record.union fullParams { body }
@@ -260,6 +260,7 @@ instance handleableDeleteRoute ::
        ( TypeEquals (Record route)
            { response :: res
            , params :: Record params
+           , body :: body
            , guards :: Guards guardNames
            | r }
        , IsSymbol path
@@ -267,6 +268,7 @@ instance handleableDeleteRoute ::
        , Resp.ToSpecResponse docRoute handlerRes res
        , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
+       , DecodeBody body
 
        , Row.Union baseParams params fullUrlParams
        , Row.Union fullUrlParams query fullParams
@@ -275,7 +277,8 @@ instance handleableDeleteRoute ::
        , ParseUrl fullPath urlParts
        , ToSegments urlParts
 
-       , Row.Union fullParams routeGuardSpec payload
+       , Row.Union fullParams ( body :: body ) payload'
+       , Row.Union payload' routeGuardSpec payload
 
        , GuardParsing.Append baseGuards guardNames fullGuards
        , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
@@ -290,9 +293,12 @@ instance handleableDeleteRoute ::
   handle _ _ _ _ route handler allGuards { method, path, query } req res = do
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
+    bodyStr <- lift $ readBody req
+    body <- withExceptT Forward $ except $ (decodeBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
-    let (payload :: Record payload) = Record.union fullParams guards
+    let (payload' :: Record payload') = Record.union fullParams { body }
+    let (payload :: Record payload) = Record.union payload' guards
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler payload)
 
     where
