@@ -5,7 +5,7 @@ import Prelude
 import Data.Array as Array
 import Data.List (List)
 import Data.String as String
-import Payload.Client.Params (class ToParam, toParam)
+import Payload.Client.EncodeParam (class EncodeParam, encodeParam)
 import Payload.Internal.UrlParsing (class ParseUrl, UrlListProxy(..), Key, Lit, Multi, UrlCons, UrlNil, kind UrlList)
 import Prim.Row as Row
 import Record as Record
@@ -29,12 +29,12 @@ instance writeUrlUrlNil :: WriteUrl UrlNil params where
 instance writeUrlConsKey ::
   ( IsSymbol key
   , Row.Cons key valType from params
-  , ToParam valType
+  , EncodeParam valType
   , WriteUrl rest params
   ) => WriteUrl (UrlCons (Key key) rest) params where
   writeUrl _ params = "/" <> encodedParam <> restOfUrl
     where
-      encodedParam = toParam (Record.get (SProxy :: SProxy key) params)
+      encodedParam = encodeParam (Record.get (SProxy :: SProxy key) params)
       restOfUrl = writeUrl (UrlListProxy :: _ rest) params
 
 instance writeUrlConsLit ::
