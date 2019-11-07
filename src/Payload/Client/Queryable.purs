@@ -12,7 +12,7 @@ import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
-import Payload.Client.FromResponse (class FromResponse, fromResponse)
+import Payload.Client.DecodeResponse (class DecodeResponse, decodeResponse)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (Options, ModifyRequest)
 import Payload.Internal.Route (DefaultRouteSpec, DefaultRouteSpecNoBody, NoBody)
@@ -52,7 +52,7 @@ instance queryableGetRoute ::
        , Symbol.Append basePath path fullPath
        , PayloadUrl.EncodeUrl fullPath fullParams
        , Row.Union baseParams params fullParams
-       , FromResponse res
+       , DecodeResponse res
        , SimpleJson.ReadForeign res
        )
     => Queryable (Route "GET" path (Record route)) basePath baseParams (Record fullParams) res where
@@ -65,7 +65,7 @@ instance queryableGetRoute ::
           , responseFormat = ResponseFormat.string }
     let req = modifyReq defaultReq
     res <- AX.request req
-    pure (decodeResponse res)
+    pure (decodeAffjaxResponse res)
 else instance queryablePostRoute ::
        ( Row.Union route DefaultRouteSpec mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
@@ -82,7 +82,7 @@ else instance queryablePostRoute ::
        , IsSymbol path
        , Symbol.Append basePath path fullPath
        , PayloadUrl.EncodeUrl fullPath fullParams
-       , FromResponse res
+       , DecodeResponse res
        , EncodeBody body
        , SimpleJson.ReadForeign res
        )
@@ -100,7 +100,7 @@ else instance queryablePostRoute ::
           , responseFormat = ResponseFormat.string }
     let req = modifyReq defaultReq
     res <- AX.request req
-    pure (decodeResponse res)
+    pure (decodeAffjaxResponse res)
 else instance queryableHeadRoute ::
        ( Row.Lacks "body" route
        , Row.Union route DefaultRouteSpec mergedRoute
@@ -123,7 +123,7 @@ else instance queryableHeadRoute ::
           , responseFormat = ResponseFormat.string }
     let req = modifyReq defaultReq
     res <- AX.request req
-    pure (decodeResponse res)
+    pure (decodeAffjaxResponse res)
 else instance queryablePutRoute ::
        ( Row.Union route DefaultRouteSpecNoBody mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
@@ -138,7 +138,7 @@ else instance queryablePutRoute ::
        , PayloadUrl.EncodeUrl fullPath fullParams
        , Row.Lacks "body" fullParams
        , EncodeOptionalBody body fullParams payload
-       , FromResponse res
+       , DecodeResponse res
        , SimpleJson.ReadForeign res
        )
     => Queryable (Route "PUT" path (Record route)) basePath baseParams (Record payload) res where
@@ -152,7 +152,7 @@ else instance queryablePutRoute ::
           , responseFormat = ResponseFormat.string }
     let req = modifyReq defaultReq
     res <- AX.request req
-    pure (decodeResponse res)
+    pure (decodeAffjaxResponse res)
 else instance queryableDeleteRoute ::
        ( Row.Union route DefaultRouteSpecNoBody mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
@@ -167,7 +167,7 @@ else instance queryableDeleteRoute ::
        , PayloadUrl.EncodeUrl fullPath fullParams
        , Row.Lacks "body" fullParams
        , EncodeOptionalBody body fullParams payload
-       , FromResponse res
+       , DecodeResponse res
        , SimpleJson.ReadForeign res
        )
     => Queryable (Route "DELETE" path (Record route)) basePath baseParams (Record payload) res where
@@ -181,7 +181,7 @@ else instance queryableDeleteRoute ::
           , responseFormat = ResponseFormat.string }
     let req = modifyReq defaultReq
     res <- AX.request req
-    pure (decodeResponse res)
+    pure (decodeAffjaxResponse res)
 
 encodeUrl :: forall path params
   . PayloadUrl.EncodeUrl path params
@@ -191,12 +191,12 @@ encodeUrl opts pathProxy params =
   where
     path = PayloadUrl.encodeUrl pathProxy params
 
-decodeResponse :: forall res. FromResponse res =>
+decodeAffjaxResponse :: forall res. DecodeResponse res =>
                  (AX.Response (Either AX.ResponseFormatError String)) -> Either String res
-decodeResponse res | res.status /= StatusCode 200 = Left $ "Received HTTP " <> show res.status <> "\n" <>
+decodeAffjaxResponse res | res.status /= StatusCode 200 = Left $ "Received HTTP " <> show res.status <> "\n" <>
   (either AX.printResponseFormatError identity res.body)
-decodeResponse res = do
-  showingError res.body >>= (StringBody >>> fromResponse)
+decodeAffjaxResponse res = do
+  showingError res.body >>= (StringBody >>> decodeResponse)
   where
     showingError = lmap ResponseFormat.printResponseFormatError
 
