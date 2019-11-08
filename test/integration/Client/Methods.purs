@@ -3,8 +3,6 @@ module Payload.Test.Integration.Client.Methods where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
-import Effect.Aff (Aff)
 import Payload.Client.Client (mkClient_)
 import Payload.Response as Response
 import Payload.Spec (DELETE, GET, HEAD, POST, PUT, Routes(..), Spec(Spec))
