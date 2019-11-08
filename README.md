@@ -258,7 +258,7 @@ search :: { a :: Int, b :: Int, rest :: Object String } -> Aff String
 search _ = pure "Search result"
 ```
 
-For query literals, the handler will only be called if the literal exists somewhere in the query string. For key matches, the query parameter must be decodable via the [FromQueryParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.QueryParams#t:FromQueryParam) type class. Query param decoding can also be extended via this type class.
+For query literals, the handler will only be called if the literal exists somewhere in the query string. For key matches, the query parameter must be decodable via the [DecodeQueryParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.QueryParams#t:DecodeQueryParam) type class. Query param decoding can also be extended via this type class.
 
 See the [query integration test](./test/integration/Query.purs) for further examples.
 

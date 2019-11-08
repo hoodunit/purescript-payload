@@ -8,7 +8,7 @@ import Foreign.Object (Object)
 import Foreign.Object as Object
 import Payload.Internal.QueryParsing (kind QueryPart, Lit, Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
 import Payload.Internal.Querystring.Qs as Qs
-import Payload.QueryParams (class FromQueryParam, class FromQueryParamMulti, fromQueryParam, fromQueryParamMulti)
+import Payload.QueryParams (class DecodeQueryParam, class DecodeQueryParamMulti, decodeQueryParam, decodeQueryParamMulti)
 import Prim.Row as Row
 import Record as Record
 import Type.Equality (class TypeEquals, to)
@@ -43,11 +43,11 @@ instance matchQueryConsMulti ::
   , Row.Cons ourKey valType from from'
   , Row.Cons ourKey valType _params params
   , Row.Lacks ourKey from
-  , FromQueryParamMulti valType
+  , DecodeQueryParamMulti valType
   , TypeEquals (Record from') (Record to)
   ) => MatchQuery (QueryCons (Multi ourKey) QueryNil) params from to where
   matchQuery _ queryType query queryObj =
-    case fromQueryParamMulti queryObj of
+    case decodeQueryParamMulti queryObj of
       Left errors -> Left $ show errors
       Right decoded -> Right (to $ Record.insert (SProxy :: SProxy ourKey) decoded query)
 
@@ -58,12 +58,12 @@ instance matchQueryConsKey ::
   , Row.Cons ourKey valType from from'
   , Row.Cons ourKey valType _params params
   , Row.Lacks ourKey from
-  , FromQueryParam valType
+  , DecodeQueryParam valType
   ) => MatchQuery (QueryCons (Key queryKey ourKey) rest) params from to where
   matchQuery _ queryType query queryObj =
     case Object.lookup queryKey queryObj of
       Nothing -> Left $ "Could not find query parameter with key '" <> queryKey <> "'"
-      Just paramVal -> case fromQueryParam paramVal of
+      Just paramVal -> case decodeQueryParam paramVal of
         Left errors -> Left $ show errors
         Right decoded -> let newParams = Record.insert (SProxy :: SProxy ourKey) decoded query
                              newQueryObj = Object.delete queryKey queryObj

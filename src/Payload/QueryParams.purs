@@ -1,10 +1,10 @@
 module Payload.QueryParams
-       ( class FromQueryParam
-       , fromQueryParam
-       , class FromQueryParamMulti
-       , fromQueryParamMulti
-       , class ToQueryParam
-       , toQueryParam
+       ( class DecodeQueryParam
+       , decodeQueryParam
+       , class DecodeQueryParamMulti
+       , decodeQueryParamMulti
+       , class EncodeQueryParam
+       , encodeQueryParam
        ) where
 
 import Prelude
@@ -16,28 +16,28 @@ import Foreign.Object (Object)
 
 type DecodeError = String
 
-class FromQueryParam a where
-  fromQueryParam :: String -> Either DecodeError a
+class DecodeQueryParam a where
+  decodeQueryParam :: String -> Either DecodeError a
 
-instance fromQueryParamInt :: FromQueryParam Int where
-  fromQueryParam s = maybe (Left errorMsg) Right (Int.fromString s)
+instance decodeQueryParamInt :: DecodeQueryParam Int where
+  decodeQueryParam s = maybe (Left errorMsg) Right (Int.fromString s)
     where
       errorMsg = "Could not decode '" <> s <> "' into an Int"
 
-instance fromQueryParamString :: FromQueryParam String where
-  fromQueryParam s = Right s
+instance decodeQueryParamString :: DecodeQueryParam String where
+  decodeQueryParam s = Right s
 
-class FromQueryParamMulti a where
-  fromQueryParamMulti :: Object String -> Either DecodeError a
+class DecodeQueryParamMulti a where
+  decodeQueryParamMulti :: Object String -> Either DecodeError a
 
-instance fromQueryParamMultiObjectString :: FromQueryParamMulti (Object String) where
-  fromQueryParamMulti o = Right o
+instance decodeQueryParamMultiObjectString :: DecodeQueryParamMulti (Object String) where
+  decodeQueryParamMulti o = Right o
 
-class ToQueryParam a where
-  toQueryParam :: a -> String
+class EncodeQueryParam a where
+  encodeQueryParam :: a -> String
 
-instance toQueryParamInt :: ToQueryParam Int where
-  toQueryParam = show
+instance encodeQueryParamInt :: EncodeQueryParam Int where
+  encodeQueryParam = show
 
-instance toQueryParamString :: ToQueryParam String where
-  toQueryParam s = s
+instance encodeQueryParamString :: EncodeQueryParam String where
+  encodeQueryParam s = s
