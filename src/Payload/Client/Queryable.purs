@@ -15,6 +15,7 @@ import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
 import Payload.Client.DecodeResponse (class DecodeResponse, decodeResponse)
 import Payload.Client.EncodeBody (class EncodeBody, encodeBody)
+import Payload.Client.Internal.Query (class EncodeQuery, encodeQuery)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (Options, ModifyRequest)
 import Payload.Internal.Route (DefaultRouteSpec, DefaultRouteSpecNoBody, Undefined)
@@ -49,18 +50,27 @@ instance queryableGetRoute ::
        , TypeEquals (Record routeWithDefaults)
            { response :: res
            , params :: Record params
+           , query :: Record query
            | r }
        , IsSymbol path
        , Symbol.Append basePath path fullPath
-       , PayloadUrl.EncodeUrl fullPath fullParams
-       , Row.Union baseParams params fullParams
+       , PayloadUrl.EncodeUrl fullPath fullUrlParams payload
+       , Row.Union baseParams params fullUrlParams
+       , Row.Union fullUrlParams query fullParams
+       , EncodeQuery fullPath query payload
        , DecodeResponse res
        , SimpleJson.ReadForeign res
        )
-    => Queryable (Route "GET" path (Record route)) basePath baseParams (Record fullParams) res where
+    => Queryable (Route "GET" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts modifyReq payload = do
-    let params = payload
-    let url = encodeUrl opts (SProxy :: _ fullPath) params
+    let urlPath = encodeUrl opts
+                        (SProxy :: _ fullPath)
+                        (Proxy :: _ (Record fullUrlParams))
+                        payload
+    let urlQuery = encodeQuery (SProxy :: _ fullPath)
+                               (Proxy :: _ (Record query))
+                               payload
+    let url = urlPath <> urlQuery
     let defaultReq = AX.defaultRequest
           { method = Left GET
           , url = url
@@ -79,25 +89,26 @@ else instance queryablePostRoute ::
        , Row.Union baseParams params fullParams
        , TypeEquals (Record payload)
            { body :: body
-           | fullParams }
+           | rest }
        , Row.Lacks "body" fullParams
        , IsSymbol path
        , Symbol.Append basePath path fullPath
-       , PayloadUrl.EncodeUrl fullPath fullParams
+       , PayloadUrl.EncodeUrl fullPath fullParams payload
        , DecodeResponse res
        , EncodeBody body
        , SimpleJson.ReadForeign res
        )
     => Queryable (Route "POST" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts modifyReq payload = do
-    let p = to payload
-    let (params :: Record fullParams) = Record.delete (SProxy :: SProxy "body") p
-    let url = encodeUrl opts (SProxy :: SProxy fullPath) params
-    let (body :: body) = Record.get (SProxy :: SProxy "body") p
+    let urlPath = encodeUrl opts
+                        (SProxy :: _ fullPath)
+                        (Proxy :: _ (Record fullParams))
+                        payload
+    let (body :: body) = Record.get (SProxy :: SProxy "body") (to payload)
     let encodedBody = RequestBody.String (encodeBody body)
     let defaultReq = AX.defaultRequest
           { method = Left POST
-          , url = url
+          , url = urlPath
           , content = Just encodedBody
           , responseFormat = ResponseFormat.string }
     let req = modifyReq defaultReq
@@ -112,16 +123,18 @@ else instance queryableHeadRoute ::
            | r }
        , IsSymbol path
        , Symbol.Append basePath path fullPath
-       , PayloadUrl.EncodeUrl fullPath fullParams
+       , PayloadUrl.EncodeUrl fullPath fullParams payload
        , Row.Union baseParams params fullParams
        )
-    => Queryable (Route "HEAD" path (Record route)) basePath baseParams (Record fullParams) String where
+    => Queryable (Route "HEAD" path (Record route)) basePath baseParams (Record payload) String where
   request _ _ _ opts modifyReq payload = do
-    let params = payload
-    let url = encodeUrl opts (SProxy :: _ fullPath) params
+    let urlPath = encodeUrl opts
+                        (SProxy :: _ fullPath)
+                        (Proxy :: _ (Record fullParams))
+                        payload
     let defaultReq = AX.defaultRequest
           { method = Left HEAD
-          , url = url
+          , url = urlPath
           , responseFormat = ResponseFormat.string }
     let req = modifyReq defaultReq
     res <- AX.request req
@@ -137,7 +150,7 @@ else instance queryablePutRoute ::
        , Row.Union baseParams params fullParams
        , IsSymbol path
        , Symbol.Append basePath path fullPath
-       , PayloadUrl.EncodeUrl fullPath fullParams
+       , PayloadUrl.EncodeUrl fullPath fullParams payload
        , Row.Lacks "body" fullParams
        , EncodeOptionalBody body fullParams payload
        , DecodeResponse res
@@ -146,7 +159,10 @@ else instance queryablePutRoute ::
     => Queryable (Route "PUT" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts modifyReq payload = do
     let { body, fullParams } = encodeOptionalBody (Proxy :: _ body) (Proxy :: _ (Record fullParams)) payload
-    let url = encodeUrl opts (SProxy :: SProxy fullPath) fullParams
+    let url = encodeUrl opts
+                       (SProxy :: _ fullPath)
+                       (Proxy :: _ (Record fullParams))
+                       payload
     let defaultReq = AX.defaultRequest
           { method = Left PUT
           , url = url
@@ -166,7 +182,7 @@ else instance queryableDeleteRoute ::
        , Row.Union baseParams params fullParams
        , IsSymbol path
        , Symbol.Append basePath path fullPath
-       , PayloadUrl.EncodeUrl fullPath fullParams
+       , PayloadUrl.EncodeUrl fullPath fullParams payload
        , Row.Lacks "body" fullParams
        , EncodeOptionalBody body fullParams payload
        , DecodeResponse res
@@ -175,7 +191,10 @@ else instance queryableDeleteRoute ::
     => Queryable (Route "DELETE" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts modifyReq payload = do
     let { body, fullParams } = encodeOptionalBody (Proxy :: _ body) (Proxy :: _ (Record fullParams)) payload
-    let url = encodeUrl opts (SProxy :: SProxy fullPath) fullParams
+    let url = encodeUrl opts
+                        (SProxy :: _ fullPath)
+                        (Proxy :: _ (Record fullParams))
+                        payload
     let defaultReq = AX.defaultRequest
           { method = Left DELETE
           , url = url
@@ -185,13 +204,13 @@ else instance queryableDeleteRoute ::
     res <- AX.request req
     pure (decodeAffjaxResponse res)
 
-encodeUrl :: forall path params
-  . PayloadUrl.EncodeUrl path params
-  => Options -> SProxy path -> Record params -> String
-encodeUrl opts pathProxy params =
+encodeUrl :: forall path params payload
+  . PayloadUrl.EncodeUrl path params payload
+  => Options -> SProxy path -> Proxy (Record params) -> Record payload -> String
+encodeUrl opts pathProxy params payload =
   baseUrl <> path
   where
-    path = PayloadUrl.encodeUrl pathProxy params
+    path = PayloadUrl.encodeUrl pathProxy params payload
     baseUrl = stripTrailingSlash opts.baseUrl
 
 stripTrailingSlash :: String -> String

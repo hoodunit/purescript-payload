@@ -10,6 +10,7 @@ import Payload.Examples.Hello.Test as HelloExample
 import Payload.Examples.Movies.Test as MoviesExample
 import Payload.Test.Config (defaultConfig)
 import Payload.Test.Integration.Client.Methods as ClientMethodsTest
+import Payload.Test.Integration.Client.QueryParams as ClientQueryParams
 import Payload.Test.Integration.Guards as GuardsTest
 import Payload.Test.Integration.Methods as MethodsTest
 import Payload.Test.Integration.QueryParams as QueryParamsTest
@@ -41,12 +42,15 @@ tests = do
     CookiesTest.tests
     ResponseTest.tests
 
-  suite "Integration" do
+  suite "Server integration" do
     MethodsTest.tests
     QueryParamsTest.tests
     GuardsTest.tests
     StatusTest.tests
+
+  suite "Client integration" do
     ClientMethodsTest.tests cfg
+    ClientQueryParams.tests cfg
 
   suite "Examples" do
     HelloExample.tests
