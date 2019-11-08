@@ -1,7 +1,7 @@
 module Payload.Internal.Route
        ( DefaultRouteSpec
        , DefaultRouteSpecNoBody
-       , NoBody
+       , Undefined
        ) where
 
 import Payload.Response as Response
@@ -17,8 +17,8 @@ type DefaultRouteSpec =
 type DefaultRouteSpecNoBody =
   ( params :: {}
   , query :: {}
-  , body :: NoBody
+  , body :: Undefined
   , guards :: Guards GNil
   , response :: Response.Empty )
 
-data NoBody = NoBody
+data Undefined

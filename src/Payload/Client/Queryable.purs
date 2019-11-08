@@ -17,7 +17,7 @@ import Payload.Client.DecodeResponse (class DecodeResponse, decodeResponse)
 import Payload.Client.EncodeBody (class EncodeBody, encodeBody)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (Options, ModifyRequest)
-import Payload.Internal.Route (DefaultRouteSpec, DefaultRouteSpecNoBody, NoBody)
+import Payload.Internal.Route (DefaultRouteSpec, DefaultRouteSpecNoBody, Undefined)
 import Payload.Response (ResponseBody(..))
 import Payload.Spec (Route)
 import Prim.Row as Row
@@ -223,7 +223,7 @@ class EncodeOptionalBody
                   -> Record payload
                   -> { body :: Maybe RequestBody.RequestBody, fullParams :: Record fullParams }
 
-instance encodeOptionalBodyNoBody :: EncodeOptionalBody NoBody fullParams fullParams where
+instance encodeOptionalBodyUndefined :: EncodeOptionalBody Undefined fullParams fullParams where
   encodeOptionalBody _ _ payload = { body: Nothing, fullParams: payload }
 else instance encodeOptionalBodyWithBody ::
   ( Row.Lacks "body" fullParams
