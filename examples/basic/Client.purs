@@ -12,6 +12,7 @@ import Payload.Examples.Basic.Spec (spec)
 
 main :: Effect Unit
 main = launchAff_ do
-  let client = mkGuardedClient Client.defaultOpts spec
+  let clientOpts = Client.defaultOpts { baseUrl = "http://localhost:3000" }
+  let client = mkGuardedClient clientOpts spec
   users <- client.adminUsers.getUsers identity {}
   liftEffect $ log (show users)

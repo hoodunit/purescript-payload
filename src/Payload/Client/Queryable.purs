@@ -10,6 +10,7 @@ import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
+import Data.String as String
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
 import Payload.Client.DecodeResponse (class DecodeResponse, decodeResponse)
@@ -188,9 +189,15 @@ encodeUrl :: forall path params
   . PayloadUrl.EncodeUrl path params
   => Options -> SProxy path -> Record params -> String
 encodeUrl opts pathProxy params =
-  "http://" <> opts.hostname <> ":" <> show opts.port <> path
+  baseUrl <> path
   where
     path = PayloadUrl.encodeUrl pathProxy params
+    baseUrl = stripTrailingSlash opts.baseUrl
+
+stripTrailingSlash :: String -> String
+stripTrailingSlash s = case String.stripSuffix (String.Pattern "/") s of
+  Just stripped -> stripped
+  Nothing -> s
 
 decodeAffjaxResponse :: forall res. DecodeResponse res =>
                  (AX.Response (Either AX.ResponseFormatError String)) -> Either String res

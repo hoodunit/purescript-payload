@@ -9,6 +9,7 @@ import Payload.Client.Client (mkClient, mkGuardedClient)
 import Payload.Client.Client as Client
 import Payload.Examples.Basic.Main (api)
 import Payload.Examples.Basic.Spec (spec)
+import Payload.Test.Config (TestConfig)
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
@@ -27,10 +28,10 @@ assertFail req = do
     Right val -> failure $ "Request succeeded with response " <> show val
     Left errors -> pure unit
   
-tests :: TestSuite
-tests = do
+tests :: TestConfig -> TestSuite
+tests cfg = do
   let withApi = withServer spec api
-  let client = mkGuardedClient Client.defaultOpts spec
+  let client = mkGuardedClient cfg.clientOpts spec
   let authHeader = RequestHeader "Authorization" "Token secret"
   let addAuthHeader req = req { headers = req.headers <> [authHeader] }
   suite "Example: basic" do

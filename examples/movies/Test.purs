@@ -13,6 +13,7 @@ import Payload.Cookies (requestCookies)
 import Payload.Cookies as Cookies
 import Payload.Examples.Movies.Main (moviesApi, moviesApiSpec)
 import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
+import Payload.Test.Config (TestConfig)
 import Payload.Test.Helpers (assertFail, assertRes, withServer)
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Main (runTestWith)
@@ -24,9 +25,9 @@ withCookies cookies req = req { withCredentials = true, headers = req.headers <>
     cookieHeader = case Cookies.cookieHeader cookies of
                      Tuple field value -> RequestHeader field value
   
-tests :: TestSuite
-tests = do
-  let client = mkGuardedClient Client.defaultOpts moviesApiSpec
+tests :: TestConfig -> TestSuite
+tests cfg = do
+  let client = mkGuardedClient cfg.clientOpts moviesApiSpec
   let withApi = withServer moviesApiSpec moviesApi
   suite "Example: movies API" do
     test "Sub-route fails if parent route guard fails (missing API key)" $ do

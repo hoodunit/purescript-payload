@@ -8,6 +8,7 @@ import Payload.Examples.Basic.Test as BasicExample
 import Payload.Examples.Files.Test as FilesExample
 import Payload.Examples.Hello.Test as HelloExample
 import Payload.Examples.Movies.Test as MoviesExample
+import Payload.Test.Config (defaultConfig)
 import Payload.Test.Integration.Client.Methods as ClientMethodsTest
 import Payload.Test.Integration.Guards as GuardsTest
 import Payload.Test.Integration.Methods as MethodsTest
@@ -28,6 +29,7 @@ import Test.Unit.Output.Fancy as Fancy
   
 tests :: TestSuite
 tests = do
+  let cfg = defaultConfig
   suite "Unit" do
     UrlParsingTest.tests
     UrlTest.tests
@@ -44,13 +46,13 @@ tests = do
     QueryParamsTest.tests
     GuardsTest.tests
     StatusTest.tests
-    ClientMethodsTest.tests
+    ClientMethodsTest.tests cfg
 
   suite "Examples" do
     HelloExample.tests
-    BasicExample.tests
+    BasicExample.tests cfg
     FilesExample.tests
-    MoviesExample.tests
+    MoviesExample.tests cfg
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do
