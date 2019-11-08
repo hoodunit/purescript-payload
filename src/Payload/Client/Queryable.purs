@@ -13,6 +13,7 @@ import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
 import Payload.Client.DecodeResponse (class DecodeResponse, decodeResponse)
+import Payload.Client.EncodeBody (class EncodeBody, encodeBody)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (Options, ModifyRequest)
 import Payload.Internal.Route (DefaultRouteSpec, DefaultRouteSpecNoBody, NoBody)
@@ -225,15 +226,3 @@ else instance encodeOptionalBodyWithBody ::
     where
       body = Just $ RequestBody.String $ encodeBody payload.body
       fullParams = Record.delete (SProxy :: _ "body") payload
-
-class EncodeBody body where
-  encodeBody :: body -> String
-
-instance encodeBodyString :: EncodeBody String where
-  encodeBody b = b
-
-instance encodeBodyRecord :: SimpleJson.WriteForeign (Record r) => EncodeBody (Record r) where
-  encodeBody = SimpleJson.writeJSON
-
-instance encodeBodyArray :: SimpleJson.WriteForeign (Array r) => EncodeBody (Array r) where
-  encodeBody = SimpleJson.writeJSON
