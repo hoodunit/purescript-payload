@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
-import Payload.Params (class FromParam, class FromSegments, fromParam, fromSegments)
+import Payload.Params (class DecodeParam, class DecodeSegments, decodeParam, decodeSegments)
 import Payload.Internal.UrlParsing (class ParseUrl, UrlListProxy(..), Key, Lit, Multi, UrlCons, UrlNil, kind UrlList)
 import Prim.Row as Row
 import Record as Record
@@ -34,9 +34,9 @@ instance matchUrlMulti ::
   ( IsSymbol key
   , Row.Cons key valType from to
   , Row.Lacks key from
-  , FromSegments valType
+  , DecodeSegments valType
   ) => MatchUrl (UrlCons (Multi key) UrlNil) to from to where
-  match _ paramsType params segments = case fromSegments segments of
+  match _ paramsType params segments = case decodeSegments segments of
     Left errors -> Left $ show errors
     Right decoded -> Right $ Record.insert (SProxy :: SProxy key) decoded params
 
@@ -46,10 +46,10 @@ instance matchUrlConsKey ::
   , Row.Cons key valType from from'
   , Row.Cons key valType _params params
   , Row.Lacks key from
-  , FromParam valType
+  , DecodeParam valType
   ) => MatchUrl (UrlCons (Key key) rest) params from to where
   match _ paramsType params Nil = Left "Decoding error at key"
-  match _ paramsType params (segment : rest) = case fromParam segment of
+  match _ paramsType params (segment : rest) = case decodeParam segment of
     Left errors -> Left $ show errors
     Right decoded -> let newParams = Record.insert (SProxy :: SProxy key) decoded params in
       match (UrlListProxy :: _ rest) paramsType newParams rest

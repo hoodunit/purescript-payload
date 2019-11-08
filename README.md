@@ -208,9 +208,9 @@ getMessage { id, limit } = pure
   [{ id: 1, text: "Hey there"}, { id: 2, text: "Limit " <> show limit }]
 ```
 
-Single URL parameter decoding can be extended by implementing the [FromParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Params#t:FromParam) type class.
+Single URL parameter decoding can be extended by implementing the [DecodeParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Params#t:DecodeParam) type class.
 
-Multi-matches must appear at the end of a URL and similarly given a type in the `params` field. The only supported type for multi-matches is `List String` unless the [FromSegments](https://pursuit.purescript.org/packages/purescript-payload/0.1.0/docs/Payload.Params#t:FromSegments) class is implemented. Example:
+Multi-matches must appear at the end of a URL and similarly given a type in the `params` field. The only supported type for multi-matches is `List String` unless the [DecodeSegments](https://pursuit.purescript.org/packages/purescript-payload/0.1.0/docs/Payload.Params#t:DecodeSegments) class is implemented. Example:
 
 ```purescript
 -- Spec:
