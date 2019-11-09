@@ -152,13 +152,13 @@ else instance queryablePutRoute ::
        , Symbol.Append basePath path fullPath
        , PayloadUrl.EncodeUrl fullPath fullParams payload
        , Row.Lacks "body" fullParams
-       , EncodeOptionalBody body fullParams payload
+       , EncodeOptionalBody body payload
        , DecodeResponse res
        , SimpleJson.ReadForeign res
        )
     => Queryable (Route "PUT" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts modifyReq payload = do
-    let { body, fullParams } = encodeOptionalBody (Proxy :: _ body) (Proxy :: _ (Record fullParams)) payload
+    let body = encodeOptionalBody (Proxy :: _ body) payload
     let url = encodeUrl opts
                        (SProxy :: _ fullPath)
                        (Proxy :: _ (Record fullParams))
@@ -184,13 +184,13 @@ else instance queryableDeleteRoute ::
        , Symbol.Append basePath path fullPath
        , PayloadUrl.EncodeUrl fullPath fullParams payload
        , Row.Lacks "body" fullParams
-       , EncodeOptionalBody body fullParams payload
+       , EncodeOptionalBody body payload
        , DecodeResponse res
        , SimpleJson.ReadForeign res
        )
     => Queryable (Route "DELETE" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts modifyReq payload = do
-    let { body, fullParams } = encodeOptionalBody (Proxy :: _ body) (Proxy :: _ (Record fullParams)) payload
+    let body = encodeOptionalBody (Proxy :: _ body) payload
     let url = encodeUrl opts
                         (SProxy :: _ fullPath)
                         (Proxy :: _ (Record fullParams))
@@ -233,22 +233,16 @@ decodeAffjaxResponse res = do
 -- | including the body).
 class EncodeOptionalBody
   (body :: Type)
-  (fullParams :: # Type)
   (payload :: # Type)
-  | body fullParams -> payload
   where
     encodeOptionalBody :: Proxy body
-                  -> Proxy (Record fullParams)
                   -> Record payload
-                  -> { body :: Maybe RequestBody.RequestBody, fullParams :: Record fullParams }
+                  -> Maybe RequestBody.RequestBody
 
-instance encodeOptionalBodyUndefined :: EncodeOptionalBody Undefined fullParams fullParams where
-  encodeOptionalBody _ _ payload = { body: Nothing, fullParams: payload }
+instance encodeOptionalBodyUndefined :: EncodeOptionalBody Undefined payload where
+  encodeOptionalBody _ payload = Nothing
 else instance encodeOptionalBodyWithBody ::
-  ( Row.Lacks "body" fullParams
+  ( TypeEquals (Record payload) { body :: body | rest }
   , EncodeBody body
-  ) => EncodeOptionalBody body fullParams (body :: body | fullParams) where
-  encodeOptionalBody _ _ payload = { body, fullParams }
-    where
-      body = Just $ RequestBody.String $ encodeBody payload.body
-      fullParams = Record.delete (SProxy :: _ "body") payload
+  ) => EncodeOptionalBody body payload where
+  encodeOptionalBody _ payload = Just $ RequestBody.String $ encodeBody (to payload).body
