@@ -38,7 +38,7 @@ tests cfg = do
         let handlers = { foo: \{id, thing} -> pure $ "ID " <> show id <> ", " <> thing }
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
-          res <- client.foo identity { id: 1, thing: "hey" }
+          res <- client.foo identity { params: { id: 1, thing: "hey" } }
           Assert.equal res (Right "ID 1, hey")
 
     suite "POST" do
@@ -108,6 +108,13 @@ tests cfg = do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo identity { body: [1] }
           Assert.equal (Right "[1]") res
+      test "DELETE succeeds with params" $ do
+        let spec = Spec :: _ { foo :: DELETE "/foo/<id>" { params :: { id :: Int }, response :: String } }
+        let handlers = { foo: \{id} -> pure $ "Delete " <> show id }
+        withRoutes spec handlers do
+          let client = mkClient cfg.clientOpts spec
+          res <- client.foo identity { params: { id: 1 } }
+          Assert.equal (Right "Delete 1") res
       test "DELETE succeeds with nested route" $ do
         let spec = Spec :: _ { v1 :: Routes "/v1" { foo :: DELETE "/foo" { body :: Array Int, response :: String } } }
         let handlers = { v1: { foo: ((\{body} -> pure (show body) )) } }

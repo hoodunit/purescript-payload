@@ -98,9 +98,6 @@ instance clientApiListConsRoutes ::
       {params :: Record parentParams, guards :: parentGuards | childRoutes}
   , Row.Union baseParams parentParams childParams
 
-  -- Extra check: fail here already if they don't match
-  , PayloadUrl.EncodeUrl path parentParams payload
-
   , Row.Cons parentName (Record childClient) remClient client 
 
   -- Recurse through child routes

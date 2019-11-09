@@ -39,10 +39,10 @@ tests cfg = do
       assertResp (client.adminUsers.getUsers addAuthHeader {})
         [{ id: 1, name: "John Admin" }, { id: 1, name: "John Doe" }]
     test "GET /users without secret should fall through to non-admin route" $ withApi do
-      assertResp (client.getUsersNonAdmin identity { name: "users" })
+      assertResp (client.getUsersNonAdmin identity { params: { name: "users" } })
         [{ id: 1, name: "John Doe" }]
     test "GET /users/<id>" $ withApi do
-      assertResp (client.users.userById.getUser identity { id: 1 })
+      assertResp (client.users.userById.getUser identity { params: { id: 1 } })
         { id: 1, name: "John Doe" }
     test "GET /users/profile" $ withApi do
       assertResp (client.users.getUsersProfiles identity {})
@@ -54,13 +54,13 @@ tests cfg = do
     test "POST /users/new fails without the secret" $ withApi do
       assertFail (client.adminUsers.createUser identity { body: { id: 5, name: "New user!" }})
     test "GET /users/<id>/posts/<postId>" $ withApi $ assertResp
-      (client.users.userById.getUserPost identity { id: 1, postId: "1" })
+      (client.users.userById.getUserPost identity { params: { id: 1, postId: "1" } })
       { id: "1", text: "Some post" }
     test "GET /pages/<id>" $ withApi $ assertResp
-      (client.getPage identity { id: "1" })
+      (client.getPage identity { params: { id: "1" } })
       "Page 1"
     test "GET /pages/<id>/metadata" $ withApi $ assertResp
-      (client.getPageMetadata identity { id: "1"})
+      (client.getPageMetadata identity { params: { id: "1" }})
       "Page metadata 1"
     test "GET /hello%20there" $ withApi $ assertResp
       (client.getHello identity {})
