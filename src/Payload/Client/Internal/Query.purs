@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..))
 import Data.String as String
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Payload.Client.QueryParams (class EncodeQueryParam, encodeQueryParam)
+import Payload.Client.QueryParams (class EncodeQueryParam, class EncodeQueryParamMulti, encodeQueryParam, encodeQueryParamMulti)
 import Payload.Internal.QueryParsing (kind QueryPart, Lit, Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
 import Payload.Internal.Querystring.Qs as Qs
 import Prim.Row as Row
@@ -69,3 +69,12 @@ instance encodeQueryListConsKey ::
       rest = encodeQueryList (QueryListProxy :: _ rest)
                              (Proxy :: _ (Record query'))
                              payload
+
+instance encodeQueryListConsMulti ::
+  ( IsSymbol ourKey
+  , Row.Cons ourKey valType payload' payload
+  , EncodeQueryParamMulti valType
+  ) => EncodeQueryList (QueryCons (Multi ourKey) QueryNil) query payload where
+  encodeQueryList _ q payload = encodeQueryParamMulti queryObj : Nil
+    where
+      queryObj = Record.get (SProxy :: _ ourKey) payload

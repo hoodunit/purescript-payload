@@ -27,7 +27,7 @@ import Prim.RowList as RowList
 import Prim.Symbol as Symbol
 import Record as Record
 import Simple.JSON as SimpleJson
-import Type.Equality (class TypeEquals, from, to)
+import Type.Equality (class TypeEquals, to)
 import Type.Proxy (Proxy(..))
 import Type.RowList (class ListToRow, RLProxy(..))
 
@@ -57,10 +57,11 @@ instance queryableGetRoute ::
            | r }
        , IsSymbol path
        , Symbol.Append basePath path fullPath
-       , RowToList fullUrlParams fullParamsList
-       , EncodeUrlWithParams fullPath fullParamsList payload
        , Row.Union baseParams params fullUrlParams
        , Row.Union fullUrlParams query fullParams
+
+       , RowToList fullUrlParams fullParamsList
+       , EncodeUrlWithParams fullPath fullParamsList payload
        , EncodeQuery fullPath query payload
        , DecodeResponse res
        , SimpleJson.ReadForeign res
@@ -88,17 +89,19 @@ else instance queryablePostRoute ::
        , TypeEquals (Record routeWithDefaults)
            { response :: res
            , params :: Record params
+           , query :: Record query
            , body :: body
            | r }
        , Row.Union baseParams params fullParams
        , TypeEquals (Record payload)
            { body :: body
            | rest }
-       , Row.Lacks "body" fullParams
        , IsSymbol path
        , Symbol.Append basePath path fullPath
+
        , RowToList fullParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
+       , EncodeQuery fullPath query payload
        , DecodeResponse res
        , EncodeBody body
        , SimpleJson.ReadForeign res
@@ -109,11 +112,15 @@ else instance queryablePostRoute ::
                         (SProxy :: _ fullPath)
                         (RLProxy :: _ fullParamsList)
                         payload
+    let urlQuery = encodeQuery (SProxy :: _ fullPath)
+                               (Proxy :: _ (Record query))
+                               payload
+    let url = urlPath <> urlQuery
     let (body :: body) = Record.get (SProxy :: SProxy "body") (to payload)
     let encodedBody = RequestBody.String (encodeBody body)
     let defaultReq = AX.defaultRequest
           { method = Left POST
-          , url = urlPath
+          , url = url
           , content = Just encodedBody
           , responseFormat = ResponseFormat.string }
     let req = modifyReq defaultReq
@@ -125,12 +132,15 @@ else instance queryableHeadRoute ::
        , Row.Nub mergedRoute routeWithDefaults
        , TypeEquals (Record routeWithDefaults)
            { params :: Record params
+           , query :: Record query
            | r }
        , IsSymbol path
        , Symbol.Append basePath path fullPath
+       , Row.Union baseParams params fullParams
+
        , RowToList fullParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
-       , Row.Union baseParams params fullParams
+       , EncodeQuery fullPath query payload
        )
     => Queryable (Route "HEAD" path (Record route)) basePath baseParams (Record payload) String where
   request _ _ _ opts modifyReq payload = do
@@ -138,9 +148,13 @@ else instance queryableHeadRoute ::
                         (SProxy :: _ fullPath)
                         (RLProxy :: _ fullParamsList)
                         payload
+    let urlQuery = encodeQuery (SProxy :: _ fullPath)
+                               (Proxy :: _ (Record query))
+                               payload
+    let url = urlPath <> urlQuery
     let defaultReq = AX.defaultRequest
           { method = Left HEAD
-          , url = urlPath
+          , url = url
           , responseFormat = ResponseFormat.string }
     let req = modifyReq defaultReq
     res <- AX.request req
@@ -151,14 +165,16 @@ else instance queryablePutRoute ::
        , TypeEquals (Record routeWithDefaults)
            { response :: res
            , params :: Record params
+           , query :: Record query
            , body :: body
            | r }
        , Row.Union baseParams params fullParams
        , IsSymbol path
        , Symbol.Append basePath path fullPath
+
        , RowToList fullParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
-       , Row.Lacks "body" fullParams
+       , EncodeQuery fullPath query payload
        , EncodeOptionalBody body payload
        , DecodeResponse res
        , SimpleJson.ReadForeign res
@@ -170,9 +186,13 @@ else instance queryablePutRoute ::
                         (SProxy :: _ fullPath)
                         (RLProxy :: _ fullParamsList)
                         payload
+    let urlQuery = encodeQuery (SProxy :: _ fullPath)
+                               (Proxy :: _ (Record query))
+                               payload
+    let url = urlPath <> urlQuery
     let defaultReq = AX.defaultRequest
           { method = Left PUT
-          , url = urlPath
+          , url = url
           , content = body
           , responseFormat = ResponseFormat.string }
     let req = modifyReq defaultReq
@@ -185,6 +205,7 @@ else instance queryableDeleteRoute ::
        , TypeEquals (Record routeWithDefaults)
            { response :: res
            , params :: Record params
+           , query :: Record query
            , body :: body
            | r }
 
@@ -197,15 +218,20 @@ else instance queryableDeleteRoute ::
 
        , RowToList fullParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
+       , EncodeQuery fullPath query payload
        , EncodeOptionalBody body payload
        )
     => Queryable (Route "DELETE" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts modifyReq payload = do
     let body = encodeOptionalBody (Proxy :: _ body) payload
-    let url = encodeUrlWithParams opts
+    let urlPath = encodeUrlWithParams opts
                         (SProxy :: _ fullPath)
                         (RLProxy :: _ fullParamsList)
                         payload
+    let urlQuery = encodeQuery (SProxy :: _ fullPath)
+                               (Proxy :: _ (Record query))
+                               payload
+    let url = urlPath <> urlQuery
     let defaultReq = AX.defaultRequest
           { method = Left DELETE
           , url = url
