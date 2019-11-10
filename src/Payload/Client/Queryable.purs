@@ -18,7 +18,7 @@ import Payload.Client.EncodeBody (class EncodeBody, encodeBody)
 import Payload.Client.Internal.Query (class EncodeQuery, encodeQuery)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (Options, ModifyRequest)
-import Payload.Internal.Route (DefaultRouteSpec, DefaultRouteSpecNoBody, Undefined)
+import Payload.Internal.Route (DefaultRouteSpec, DefaultRouteSpecOptionalBody, Undefined)
 import Payload.Response (ResponseBody(..))
 import Payload.Spec (Route)
 import Prim.Row as Row
@@ -55,16 +55,15 @@ instance queryableGetRoute ::
            , params :: Record params
            , query :: Record query
            | r }
-       , IsSymbol path
-       , Symbol.Append basePath path fullPath
        , Row.Union baseParams params fullUrlParams
        , Row.Union fullUrlParams query fullParams
+       , IsSymbol path
+       , Symbol.Append basePath path fullPath
 
        , RowToList fullUrlParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
        , EncodeQuery fullPath query payload
        , DecodeResponse res
-       , SimpleJson.ReadForeign res
        )
     => Queryable (Route "GET" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts modifyReq payload = do
@@ -92,19 +91,19 @@ else instance queryablePostRoute ::
            , query :: Record query
            , body :: body
            | r }
-       , Row.Union baseParams params fullParams
+       , Row.Union baseParams params fullUrlParams
+       , Row.Union fullUrlParams query fullParams
+       , IsSymbol path
+       , Symbol.Append basePath path fullPath
        , TypeEquals (Record payload)
            { body :: body
            | rest }
-       , IsSymbol path
-       , Symbol.Append basePath path fullPath
 
-       , RowToList fullParams fullParamsList
+       , RowToList fullUrlParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
        , EncodeQuery fullPath query payload
        , DecodeResponse res
        , EncodeBody body
-       , SimpleJson.ReadForeign res
        )
     => Queryable (Route "POST" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts modifyReq payload = do
@@ -128,6 +127,7 @@ else instance queryablePostRoute ::
     pure (decodeAffjaxResponse res)
 else instance queryableHeadRoute ::
        ( Row.Lacks "body" route
+       , Row.Lacks "response" route
        , Row.Union route DefaultRouteSpec mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
        , TypeEquals (Record routeWithDefaults)
@@ -136,9 +136,10 @@ else instance queryableHeadRoute ::
            | r }
        , IsSymbol path
        , Symbol.Append basePath path fullPath
-       , Row.Union baseParams params fullParams
+       , Row.Union baseParams params fullUrlParams
+       , Row.Union fullUrlParams query fullParams
 
-       , RowToList fullParams fullParamsList
+       , RowToList fullUrlParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
        , EncodeQuery fullPath query payload
        )
@@ -160,7 +161,7 @@ else instance queryableHeadRoute ::
     res <- AX.request req
     pure (decodeAffjaxResponse res)
 else instance queryablePutRoute ::
-       ( Row.Union route DefaultRouteSpecNoBody mergedRoute
+       ( Row.Union route DefaultRouteSpecOptionalBody mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
        , TypeEquals (Record routeWithDefaults)
            { response :: res
@@ -168,16 +169,16 @@ else instance queryablePutRoute ::
            , query :: Record query
            , body :: body
            | r }
-       , Row.Union baseParams params fullParams
+       , Row.Union baseParams params fullUrlParams
+       , Row.Union fullUrlParams query fullParams
        , IsSymbol path
        , Symbol.Append basePath path fullPath
 
-       , RowToList fullParams fullParamsList
+       , RowToList fullUrlParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
        , EncodeQuery fullPath query payload
        , EncodeOptionalBody body payload
        , DecodeResponse res
-       , SimpleJson.ReadForeign res
        )
     => Queryable (Route "PUT" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts modifyReq payload = do
@@ -199,8 +200,7 @@ else instance queryablePutRoute ::
     res <- AX.request req
     pure (decodeAffjaxResponse res)
 else instance queryableDeleteRoute ::
-       -- Set and parse out spec defaults
-       ( Row.Union route DefaultRouteSpecNoBody mergedRoute
+       ( Row.Union route DefaultRouteSpecOptionalBody mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
        , TypeEquals (Record routeWithDefaults)
            { response :: res
@@ -209,14 +209,14 @@ else instance queryableDeleteRoute ::
            , body :: body
            | r }
 
-       , Row.Union baseParams params fullParams
+       , Row.Union baseParams params fullUrlParams
+       , Row.Union fullUrlParams query fullParams
        , IsSymbol path
        , Symbol.Append basePath path fullPath
 
        , DecodeResponse res
-       , SimpleJson.ReadForeign res
 
-       , RowToList fullParams fullParamsList
+       , RowToList fullUrlParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
        , EncodeQuery fullPath query payload
        , EncodeOptionalBody body payload

@@ -1,6 +1,6 @@
 module Payload.Internal.Route
        ( DefaultRouteSpec
-       , DefaultRouteSpecNoBody
+       , DefaultRouteSpecOptionalBody
        , Undefined
        ) where
 
@@ -14,7 +14,7 @@ type DefaultRouteSpec =
   , guards :: Guards GNil
   , response :: Response.Empty )
 
-type DefaultRouteSpecNoBody =
+type DefaultRouteSpecOptionalBody =
   ( params :: {}
   , query :: {}
   , body :: Undefined
