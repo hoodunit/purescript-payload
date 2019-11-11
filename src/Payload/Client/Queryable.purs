@@ -26,7 +26,6 @@ import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList
 import Prim.Symbol as Symbol
 import Record as Record
-import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals, to)
 import Type.Proxy (Proxy(..))
 import Type.RowList (class ListToRow, RLProxy(..))
@@ -53,16 +52,14 @@ instance queryableGetRoute ::
        , TypeEquals (Record routeWithDefaults)
            { response :: res
            , params :: Record params
-           , query :: Record query
+           , query :: query
            | r }
        , Row.Union baseParams params fullUrlParams
-       , Row.Union fullUrlParams query fullParams
-       , IsSymbol path
        , Symbol.Append basePath path fullPath
 
        , RowToList fullUrlParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
-       , EncodeQuery fullPath query payload
+       , EncodeOptionalQuery fullPath query payload
        , DecodeResponse res
        )
     => Queryable (Route "GET" path (Record route)) basePath baseParams (Record payload) res where
@@ -71,8 +68,8 @@ instance queryableGetRoute ::
                         (SProxy :: _ fullPath)
                         (RLProxy :: _ fullParamsList)
                         payload
-    let urlQuery = encodeQuery (SProxy :: _ fullPath)
-                               (Proxy :: _ (Record query))
+    let urlQuery = encodeOptionalQuery (SProxy :: _ fullPath)
+                               (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
     let defaultReq = AX.defaultRequest
@@ -88,12 +85,10 @@ else instance queryablePostRoute ::
        , TypeEquals (Record routeWithDefaults)
            { response :: res
            , params :: Record params
-           , query :: Record query
+           , query :: query
            , body :: body
            | r }
        , Row.Union baseParams params fullUrlParams
-       , Row.Union fullUrlParams query fullParams
-       , IsSymbol path
        , Symbol.Append basePath path fullPath
        , TypeEquals (Record payload)
            { body :: body
@@ -101,7 +96,7 @@ else instance queryablePostRoute ::
 
        , RowToList fullUrlParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
-       , EncodeQuery fullPath query payload
+       , EncodeOptionalQuery fullPath query payload
        , DecodeResponse res
        , EncodeBody body
        )
@@ -111,8 +106,8 @@ else instance queryablePostRoute ::
                         (SProxy :: _ fullPath)
                         (RLProxy :: _ fullParamsList)
                         payload
-    let urlQuery = encodeQuery (SProxy :: _ fullPath)
-                               (Proxy :: _ (Record query))
+    let urlQuery = encodeOptionalQuery (SProxy :: _ fullPath)
+                               (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
     let (body :: body) = Record.get (SProxy :: SProxy "body") (to payload)
@@ -132,16 +127,14 @@ else instance queryableHeadRoute ::
        , Row.Nub mergedRoute routeWithDefaults
        , TypeEquals (Record routeWithDefaults)
            { params :: Record params
-           , query :: Record query
+           , query :: query
            | r }
-       , IsSymbol path
        , Symbol.Append basePath path fullPath
        , Row.Union baseParams params fullUrlParams
-       , Row.Union fullUrlParams query fullParams
 
        , RowToList fullUrlParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
-       , EncodeQuery fullPath query payload
+       , EncodeOptionalQuery fullPath query payload
        )
     => Queryable (Route "HEAD" path (Record route)) basePath baseParams (Record payload) String where
   request _ _ _ opts modifyReq payload = do
@@ -149,8 +142,8 @@ else instance queryableHeadRoute ::
                         (SProxy :: _ fullPath)
                         (RLProxy :: _ fullParamsList)
                         payload
-    let urlQuery = encodeQuery (SProxy :: _ fullPath)
-                               (Proxy :: _ (Record query))
+    let urlQuery = encodeOptionalQuery (SProxy :: _ fullPath)
+                               (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
     let defaultReq = AX.defaultRequest
@@ -166,17 +159,15 @@ else instance queryablePutRoute ::
        , TypeEquals (Record routeWithDefaults)
            { response :: res
            , params :: Record params
-           , query :: Record query
+           , query :: query
            , body :: body
            | r }
        , Row.Union baseParams params fullUrlParams
-       , Row.Union fullUrlParams query fullParams
-       , IsSymbol path
        , Symbol.Append basePath path fullPath
 
        , RowToList fullUrlParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
-       , EncodeQuery fullPath query payload
+       , EncodeOptionalQuery fullPath query payload
        , EncodeOptionalBody body payload
        , DecodeResponse res
        )
@@ -187,8 +178,8 @@ else instance queryablePutRoute ::
                         (SProxy :: _ fullPath)
                         (RLProxy :: _ fullParamsList)
                         payload
-    let urlQuery = encodeQuery (SProxy :: _ fullPath)
-                               (Proxy :: _ (Record query))
+    let urlQuery = encodeOptionalQuery (SProxy :: _ fullPath)
+                               (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
     let defaultReq = AX.defaultRequest
@@ -205,20 +196,18 @@ else instance queryableDeleteRoute ::
        , TypeEquals (Record routeWithDefaults)
            { response :: res
            , params :: Record params
-           , query :: Record query
+           , query :: query
            , body :: body
            | r }
 
        , Row.Union baseParams params fullUrlParams
-       , Row.Union fullUrlParams query fullParams
-       , IsSymbol path
        , Symbol.Append basePath path fullPath
 
        , DecodeResponse res
 
        , RowToList fullUrlParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
-       , EncodeQuery fullPath query payload
+       , EncodeOptionalQuery fullPath query payload
        , EncodeOptionalBody body payload
        )
     => Queryable (Route "DELETE" path (Record route)) basePath baseParams (Record payload) res where
@@ -228,8 +217,8 @@ else instance queryableDeleteRoute ::
                         (SProxy :: _ fullPath)
                         (RLProxy :: _ fullParamsList)
                         payload
-    let urlQuery = encodeQuery (SProxy :: _ fullPath)
-                               (Proxy :: _ (Record query))
+    let urlQuery = encodeOptionalQuery (SProxy :: _ fullPath)
+                               (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
     let defaultReq = AX.defaultRequest
@@ -250,10 +239,6 @@ decodeAffjaxResponse res = do
   where
     showingError = lmap ResponseFormat.printResponseFormatError
 
--- | Allows specs to optionally specify a body for HTTP methods where
--- | a body may or may not appear. If a body is specified in the spec,
--- | it is required in client requests (by deriving the type here as
--- | including the body).
 class EncodeOptionalBody
   (body :: Type)
   (payload :: # Type)
@@ -269,6 +254,27 @@ else instance encodeOptionalBodyDefined ::
   , EncodeBody body
   ) => EncodeOptionalBody body payload where
   encodeOptionalBody _ payload = Just $ RequestBody.String $ encodeBody (to payload).body
+
+class EncodeOptionalQuery
+  (url :: Symbol)
+  (query :: Type)
+  (payload :: # Type)
+  where
+    encodeOptionalQuery :: SProxy url
+                  -> Proxy query
+                  -> Record payload
+                  -> String
+
+-- Still need to encode here in case of query literals
+instance encodeOptionalQueryUndefined ::
+  ( EncodeQuery url ()
+  ) => EncodeOptionalQuery url Undefined payload where
+  encodeOptionalQuery url _ payload = encodeQuery url {}
+else instance encodeOptionalQueryDefined ::
+  ( TypeEquals (Record payload) { query :: Record query | rest }
+  , EncodeQuery url query
+  ) => EncodeOptionalQuery url (Record query) payload where
+  encodeOptionalQuery url _ payload = encodeQuery url (to payload).query
 
 class EncodeUrlWithParams
   (url :: Symbol)

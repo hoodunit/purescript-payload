@@ -3,78 +3,75 @@ module Payload.Client.Internal.Query where
 import Prelude
 
 import Data.Array as Array
-import Data.Either (Either(..))
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..))
 import Data.String as String
-import Foreign.Object (Object)
-import Foreign.Object as Object
 import Payload.Client.QueryParams (class EncodeQueryParam, class EncodeQueryParamMulti, encodeQueryParam, encodeQueryParamMulti)
-import Payload.Internal.QueryParsing (kind QueryPart, Lit, Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
-import Payload.Internal.Querystring.Qs as Qs
+import Payload.Internal.QueryParsing (Lit, Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
 import Prim.Row as Row
 import Record as Record
-import Type.Equality (class TypeEquals, to)
 import Type.Prelude (class IsSymbol, SProxy(..), reflectSymbol)
-import Type.Proxy (Proxy(..))
 
-class EncodeQuery (urlStr :: Symbol) query payload where
+class EncodeQuery (urlStr :: Symbol) (query :: # Type) | urlStr -> query where
   encodeQuery :: SProxy urlStr
-                 -> Proxy (Record query)
-                 -> Record payload
+                 -> Record query
                  -> String
 
 instance encodeQuerySymbol ::
-  ( ParseQuery queryUrlSpec queryParts
-  , EncodeQueryList queryParts query payload
-  ) => EncodeQuery queryUrlSpec query payload where
- encodeQuery _ q payload = case encoded of
+  ( ParseQuery urlStr queryParts
+  , EncodeQueryList queryParts query
+  ) => EncodeQuery urlStr query where
+ encodeQuery _ query = case encoded of
    Nil -> ""
    e -> "?" <> String.joinWith "&" (Array.fromFoldable e)
    where
-     encoded = encodeQueryList (QueryListProxy :: _ queryParts) q payload
+     encoded = encodeQueryList (QueryListProxy :: _ queryParts) query
 
-class EncodeQueryList (queryParts :: QueryList) query payload where
+class EncodeQueryList
+      (queryParts :: QueryList)
+      (query :: # Type) where
   encodeQueryList :: QueryListProxy queryParts
-                 -> Proxy (Record query)
-                -> Record payload
+                -> Record query
                 -> List String
 
-instance encodeQueryListNil :: EncodeQueryList QueryNil query payload where
-  encodeQueryList _ _ _ = Nil
+instance encodeQueryListNil :: EncodeQueryList QueryNil query where
+  encodeQueryList _ _ = Nil
 
 instance encodeQueryListConsLiteral ::
   ( IsSymbol lit
-  , EncodeQueryList rest query payload
-  ) => EncodeQueryList (QueryCons (Lit lit) rest) query payload where
-  encodeQueryList _ q payload = literal : rest
+  , EncodeQueryList rest query
+  ) => EncodeQueryList
+         (QueryCons (Lit lit) rest)
+         query where
+  encodeQueryList _ query = literal : rest
     where
       literal = reflectSymbol (SProxy :: SProxy lit)
-      rest = encodeQueryList (QueryListProxy :: _ rest) q payload
+      rest = encodeQueryList (QueryListProxy :: _ rest) query
 
 instance encodeQueryListConsKey ::
   ( IsSymbol queryKey
   , IsSymbol ourKey
-  , Row.Cons queryKey valType query' query
-  , Row.Cons ourKey valType payload' payload
+  , Row.Cons ourKey valType queryRest query
+  , Row.Lacks ourKey queryRest
   , EncodeQueryParam valType
-  , EncodeQueryList rest query' payload
-  ) => EncodeQueryList (QueryCons (Key queryKey ourKey) rest) query payload where
-  encodeQueryList _ q payload = queryKey : rest
+  , EncodeQueryList rest queryRest
+  ) => EncodeQueryList
+         (QueryCons (Key queryKey ourKey) rest)
+         query where
+  encodeQueryList _ query = queryKey : rest
     where
       label = reflectSymbol (SProxy :: SProxy queryKey) 
-      val = Record.get (SProxy :: SProxy ourKey) payload
+      val = Record.get (SProxy :: SProxy ourKey) query
       encoded = encodeQueryParam val
+      queryRest = Record.delete (SProxy :: SProxy ourKey) query
       queryKey = label <> "=" <> encodeQueryParam val
       rest = encodeQueryList (QueryListProxy :: _ rest)
-                             (Proxy :: _ (Record query'))
-                             payload
+                             queryRest
 
 instance encodeQueryListConsMulti ::
   ( IsSymbol ourKey
-  , Row.Cons ourKey valType payload' payload
+  , Row.Cons ourKey valType () query
   , EncodeQueryParamMulti valType
-  ) => EncodeQueryList (QueryCons (Multi ourKey) QueryNil) query payload where
-  encodeQueryList _ q payload = encodeQueryParamMulti queryObj : Nil
+  ) => EncodeQueryList (QueryCons (Multi ourKey) QueryNil) query where
+  encodeQueryList _ query = encodeQueryParamMulti queryObj : Nil
     where
-      queryObj = Record.get (SProxy :: _ ourKey) payload
+      queryObj = Record.get (SProxy :: _ ourKey) query

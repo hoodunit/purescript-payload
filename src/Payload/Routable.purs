@@ -24,7 +24,7 @@ import Payload.Handleable (class Handleable, MethodHandler, handle)
 import Payload.Internal.GuardParsing (GuardTypes(GuardTypes))
 import Payload.Internal.GuardParsing as GuardParsing
 import Payload.Internal.Request (RequestUrl)
-import Payload.Internal.Route (DefaultRouteSpec)
+import Payload.Internal.Route (DefaultServerRouteSpec)
 import Payload.Internal.ServerResponse (sendResponse)
 import Payload.Internal.Trie (Trie)
 import Payload.Internal.Trie as Trie
@@ -109,7 +109,7 @@ instance routableListCons ::
   ( IsSymbol routeName
   , IsSymbol path
   , IsSymbol method
-  , Row.Union spec DefaultRouteSpec mergedSpec
+  , Row.Union spec DefaultServerRouteSpec mergedSpec
   , Row.Nub mergedSpec specWithDefaults
   , Handleable (Route method path (Record specWithDefaults)) handler basePath baseParams baseGuards guardsSpec (Record guards)
   , RoutableList remRoutes basePath baseParams baseGuards guardsSpec (Record handlers) (Record guards)
