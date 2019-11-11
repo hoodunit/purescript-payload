@@ -35,7 +35,7 @@ tests cfg = do
         let spec = Spec :: _ { foo :: GET "/foo/<id>/<thing>"
                                        { params :: { id :: Int, thing :: String }
                                        , response :: String } }
-        let handlers = { foo: \{id, thing} -> pure $ "ID " <> show id <> ", " <> thing }
+        let handlers = { foo: \{params: {id, thing}} -> pure $ "ID " <> show (id :: Int) <> ", " <> thing }
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo identity { params: { id: 1, thing: "hey" } }
@@ -110,7 +110,7 @@ tests cfg = do
           Assert.equal (Right "[1]") res
       test "DELETE succeeds with params" $ do
         let spec = Spec :: _ { foo :: DELETE "/foo/<id>" { params :: { id :: Int }, response :: String } }
-        let handlers = { foo: \{id} -> pure $ "Delete " <> show id }
+        let handlers = { foo: \{params: {id}} -> pure $ "Delete " <> show id }
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo identity { params: { id: 1 } }

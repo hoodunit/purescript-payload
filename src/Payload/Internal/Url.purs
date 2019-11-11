@@ -12,42 +12,42 @@ import Type.Equality (class TypeEquals, to)
 import Type.Prelude (class IsSymbol, SProxy(..))
 import Type.Proxy (Proxy)
 
-class DecodeUrl (urlStr :: Symbol) (params :: # Type) | urlStr -> params where
+class DecodeUrl (urlStr :: Symbol) (params :: # Type) where
   decodeUrl :: SProxy urlStr -> Proxy (Record params) -> List String -> Either String (Record params)
 
 instance decodeUrlSymbol ::
   ( ParseUrl urlStr urlParts
-  , MatchUrl urlParts params () params
+  , MatchUrl urlParts params ()
   ) => DecodeUrl urlStr params where
   decodeUrl _ paramsType path = match (UrlListProxy :: _ urlParts) paramsType {} path
 
-class MatchUrl (urlParts :: UrlList) params from to | urlParts -> from to where
-  match :: UrlListProxy urlParts -> Proxy (Record params) -> Record from -> List String -> Either String (Record to)
+class MatchUrl (urlParts :: UrlList) params from | urlParts -> from where
+  match :: UrlListProxy urlParts -> Proxy (Record params) -> Record from -> List String -> Either String (Record params)
 
 instance matchUrlUrlNil ::
-  ( TypeEquals (Record from) (Record to)
-  ) => MatchUrl UrlNil params from to where
+  ( TypeEquals (Record from) (Record params)
+  ) => MatchUrl UrlNil params from where
   match _ _ params Nil = Right (to params)
   match _ _ _ path = Left $ "Path mismatch: Ran out of params when path still had '" <> show path <> "'"
 
 instance matchUrlMulti ::
   ( IsSymbol key
-  , Row.Cons key valType from to
-  , Row.Lacks key from
+  , Row.Cons key valType rest params
+  , Row.Lacks key rest
   , DecodeSegments valType
-  ) => MatchUrl (UrlCons (Multi key) UrlNil) to from to where
+  ) => MatchUrl (UrlCons (Multi key) UrlNil) params rest where
   match _ paramsType params segments = case decodeSegments segments of
     Left errors -> Left $ show errors
     Right decoded -> Right $ Record.insert (SProxy :: SProxy key) decoded params
 
 instance matchUrlConsKey ::
   ( IsSymbol key
-  , MatchUrl rest params from' to
+  , MatchUrl rest params from'
+  , Row.Cons key valType params' params
   , Row.Cons key valType from from'
-  , Row.Cons key valType _params params
   , Row.Lacks key from
   , DecodeParam valType
-  ) => MatchUrl (UrlCons (Key key) rest) params from to where
+  ) => MatchUrl (UrlCons (Key key) rest) params from where
   match _ paramsType params Nil = Left "Decoding error at key"
   match _ paramsType params (segment : rest) = case decodeParam segment of
     Left errors -> Left $ show errors
@@ -56,8 +56,8 @@ instance matchUrlConsKey ::
 
 instance matchUrlConsLit ::
   ( IsSymbol lit
-  , MatchUrl rest params from to
-  ) => MatchUrl (UrlCons (Lit lit) rest) params from to where
+  , MatchUrl rest params from
+  ) => MatchUrl (UrlCons (Lit lit) rest) params from where
   match _ paramsType params Nil = Left "Decoding error at literal"
   match _ paramsType params (segment : rest) =
     match (UrlListProxy :: _ rest) paramsType params rest

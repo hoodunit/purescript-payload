@@ -20,11 +20,11 @@ import Payload.Response as Response
 getUsers :: forall r. { adminUser :: AdminUser | r } -> Aff (Array User)
 getUsers { adminUser: AdminUser adminUser } = pure [adminUser, { id: 1, name: "John Doe" }]
 
-getUsersNonAdmin :: forall r. { | r } -> Aff (Array User)
+getUsersNonAdmin :: forall r. { params :: { name :: String } | r } -> Aff (Array User)
 getUsersNonAdmin _ = pure [{ id: 1, name: "John Doe" }]
 
-getUser :: forall r. { id :: Int | r } -> Aff User
-getUser {id} = pure { id, name: "John Doe" }
+getUser :: forall r. { params :: { id :: Int } | r } -> Aff User
+getUser {params: {id}} = pure { id, name: "John Doe" }
 
 getUsersProfiles :: forall r. { | r } -> Aff (Array String)
 getUsersProfiles _ = pure ["Profile1", "Profile2"]
@@ -32,20 +32,20 @@ getUsersProfiles _ = pure ["Profile1", "Profile2"]
 createUser :: forall r. { body :: User | r } -> Aff User
 createUser {body: user} = pure user
 
-getUserPost :: forall r. { postId :: String | r } -> Aff Post
-getUserPost {postId} = pure { id: postId, text: "Some post" }
+getUserPost :: forall r. { params :: { id :: String, postId :: String } | r } -> Aff Post
+getUserPost {params: {postId}} = pure { id: postId, text: "Some post" }
 
 indexPage :: forall r. { | r} -> Aff File
 indexPage _ = pure (File "test/index.html")
 
-files :: forall r. { path :: List String | r} -> Aff (Either Failure File)
-files { path } = Handlers.directory "test" path
+files :: forall r. { params :: { path :: List String} | r } -> Aff (Either Failure File)
+files { params: {path} } = Handlers.directory "test" path
 
-getPage :: forall r. { id :: String | r} -> Aff String
-getPage { id } = pure $ "Page " <> id
+getPage :: forall r. { params :: { id :: String } | r} -> Aff String
+getPage { params: {id} } = pure $ "Page " <> id
 
-getPageMetadata :: forall r. { id :: String | r} -> Aff String
-getPageMetadata { id } = pure $ "Page metadata " <> id
+getPageMetadata :: forall r. { params :: { id :: String } | r} -> Aff String
+getPageMetadata { params: {id} } = pure $ "Page metadata " <> id
 
 getHello :: forall r. { | r} -> Aff String
 getHello _ = pure "Hello!"

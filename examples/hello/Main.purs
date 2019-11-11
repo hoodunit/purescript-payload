@@ -20,8 +20,8 @@ spec :: Spec {
 }
 spec = Spec
 
-getMessages :: { id :: Int, query :: { limit :: Int } } -> Aff (Array Message)
-getMessages { id, query: { limit } } = pure
+getMessages :: { params :: { id :: Int }, query :: { limit :: Int } } -> Aff (Array Message)
+getMessages {params: {id}, query: {limit}} = pure
   [{ id: 1, text: "Hey there"}, { id: 2, text: "Limit " <> show limit }]
 
 handlers = { getMessages }

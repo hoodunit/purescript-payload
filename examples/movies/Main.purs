@@ -144,16 +144,16 @@ popularMovies _ = pure { results: [
   { id: 723, title: "The Godfather" },
   { id: 722, title: "Citizen Kane" }] }
 
-getMovie :: forall r. { movieId :: Int | r} -> Aff Movie
-getMovie { movieId } = pure { id: movieId, title: "Fetched movie" }
+getMovie :: forall r. { params :: { movieId :: Int } | r} -> Aff Movie
+getMovie { params: { movieId } } = pure { id: movieId, title: "Fetched movie" }
 
 createRating :: forall r.
-                { movieId :: Int, apiKey :: ApiKey, sessionId :: SessionId | r}
+                { params :: { movieId :: Int }, apiKey :: ApiKey, sessionId :: SessionId | r}
                 -> Aff StatusCodeResponse
 createRating _ = pure { statusCode: 1, statusMessage: "Created" }
 
 deleteRating :: forall r.
-                { movieId :: Int, apiKey :: ApiKey, sessionId :: SessionId | r}
+                { params :: { movieId :: Int }, apiKey :: ApiKey, sessionId :: SessionId | r}
                 -> Aff StatusCodeResponse
 deleteRating _ = pure { statusCode: 1, statusMessage: "Deleted" }
 
