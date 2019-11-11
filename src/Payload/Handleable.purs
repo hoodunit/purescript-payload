@@ -62,6 +62,7 @@ instance handleablePostRoute ::
        ( TypeEquals (Record route)
            { response :: res
            , params :: Record params
+           , query :: Record query
            , body :: body
            , guards :: Guards guardNames
            | r }
@@ -73,7 +74,7 @@ instance handleablePostRoute ::
        , DecodeBody body
 
        , Row.Union baseParams params fullUrlParams
-       , Row.Union fullUrlParams query fullParams
+       , Row.Union fullUrlParams ( query :: Record query ) fullParams
        , PayloadUrl.DecodeUrl fullPath fullUrlParams
        , PayloadQuery.DecodeQuery fullPath query
        , ParseUrl fullPath urlParts
@@ -98,7 +99,7 @@ instance handleablePostRoute ::
     bodyStr <- lift $ readBody req
     body <- withExceptT Forward $ except $ (decodeBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
-    let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
+    let (fullParams :: Record fullParams) = from (Record.union params { query: decodedQuery })
     let (payload' :: Record payload') = Record.union fullParams { body }
     let (payload :: Record payload) = Record.union payload' guards
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler payload)
@@ -124,7 +125,7 @@ instance handleableRoute ::
        , Symbol.Append basePath path fullPath
 
        , Row.Union baseParams params fullUrlParams
-       , Row.Union fullUrlParams query fullParams
+       , Row.Union fullUrlParams (query :: Record query) fullParams
        , PayloadUrl.DecodeUrl fullPath fullUrlParams
        , PayloadQuery.DecodeQuery fullPath query
        , ParseUrl fullPath urlParts
@@ -146,7 +147,7 @@ instance handleableRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
-    let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
+    let (fullParams :: Record fullParams) = from (Record.union params { query: decodedQuery })
     let (payload :: Record payload) = from (Record.union fullParams guards)
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler payload)
 
@@ -171,7 +172,7 @@ instance handleableHeadRoute ::
        , Resp.EncodeResponse res
 
        , Row.Union baseParams params fullUrlParams
-       , Row.Union fullUrlParams query fullParams
+       , Row.Union fullUrlParams (query :: Record query) fullParams
        , PayloadUrl.DecodeUrl fullPath fullUrlParams
        , PayloadQuery.DecodeQuery fullPath query
        , ParseUrl fullPath urlParts
@@ -193,7 +194,7 @@ instance handleableHeadRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
-    let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
+    let (fullParams :: Record fullParams) = from (Record.union params { query: decodedQuery })
     let (payload :: Record payload) = from (Record.union fullParams guards)
     Resp.setBody Resp.EmptyBody <$> mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler payload)
 
@@ -208,6 +209,7 @@ instance handleablePutRoute ::
        ( TypeEquals (Record route)
            { response :: res
            , params :: Record params
+           , query :: Record query
            , body :: body
            , guards :: Guards guardNames
            | r }
@@ -219,7 +221,7 @@ instance handleablePutRoute ::
        , DecodeBody body
 
        , Row.Union baseParams params fullUrlParams
-       , Row.Union fullUrlParams query fullParams
+       , Row.Union fullUrlParams (query :: Record query) fullParams
        , PayloadUrl.DecodeUrl fullPath fullUrlParams
        , PayloadQuery.DecodeQuery fullPath query
        , ParseUrl fullPath urlParts
@@ -244,7 +246,7 @@ instance handleablePutRoute ::
     bodyStr <- lift $ readBody req
     body <- withExceptT Forward $ except $ (decodeBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
-    let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
+    let (fullParams :: Record fullParams) = from (Record.union params { query: decodedQuery })
     let (payload' :: Record payload') = Record.union fullParams { body }
     let (payload :: Record payload) = Record.union payload' guards
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler payload)
@@ -260,6 +262,7 @@ instance handleableDeleteRoute ::
        ( TypeEquals (Record route)
            { response :: res
            , params :: Record params
+           , query :: Record query
            , body :: body
            , guards :: Guards guardNames
            | r }
@@ -271,7 +274,7 @@ instance handleableDeleteRoute ::
        , DecodeBody body
 
        , Row.Union baseParams params fullUrlParams
-       , Row.Union fullUrlParams query fullParams
+       , Row.Union fullUrlParams (query :: Record query) fullParams
        , PayloadUrl.DecodeUrl fullPath fullUrlParams
        , PayloadQuery.DecodeQuery fullPath query
        , ParseUrl fullPath urlParts
@@ -296,7 +299,7 @@ instance handleableDeleteRoute ::
     bodyStr <- lift $ readBody req
     body <- withExceptT Forward $ except $ (decodeBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
-    let (fullParams :: Record fullParams) = from (Record.union params decodedQuery)
+    let (fullParams :: Record fullParams) = from (Record.union params { query: decodedQuery })
     let (payload' :: Record payload') = Record.union fullParams { body }
     let (payload :: Record payload) = Record.union payload' guards
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler payload)

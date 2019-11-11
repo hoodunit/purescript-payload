@@ -91,7 +91,7 @@ tests = do
                                 { query :: { id :: Int, foo :: String }
                                 , body :: String
                                 , response :: String }}
-        let handlers = { profile: \(_ :: { id :: Int, foo :: String, body :: String }) -> pure "Saved profile" }
+        let handlers = { profile: \_ -> pure "Saved profile" }
         withRoutes spec handlers do
           res <- post "/profile?id=3&foo=asdf" ""
           respMatches { status: 200, body: "Saved profile" } res
@@ -100,7 +100,7 @@ tests = do
                                 { query :: { id :: Int, foo :: String }
                                 , body :: String
                                 , response :: String }}
-        let handlers = { profile: \(_ :: { id :: Int, foo :: String, body :: String }) -> pure "Saved profile" }
+        let handlers = { profile: \_ -> pure "Saved profile" }
         withRoutes spec handlers do
           res <- post "/profile?foo=asdf&id=3" ""
           respMatches { status: 200, body: "Saved profile" } res
@@ -109,7 +109,7 @@ tests = do
                                 { query :: { id :: Int, foo :: String }
                                 , body :: String
                                 , response :: String }}
-        let handlers = { profile: \(_ :: { id :: Int, foo :: String, body :: String }) -> pure "Saved profile" }
+        let handlers = { profile: \_ -> pure "Saved profile" }
         withRoutes spec handlers do
           res <- post "/profile?id=3.0&foo=asdf" ""
           respMatches { status: 404, body: "" } res

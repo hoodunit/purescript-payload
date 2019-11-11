@@ -30,7 +30,7 @@ tests cfg = do
       let spec = Spec :: _ { foo :: GET "/foo?secret=<secret>"
                                      { query :: { secret :: String }
                                      , response :: String } }
-      let handlers = { foo: \{ secret } -> pure secret }
+      let handlers = { foo: \{ query: { secret } } -> pure secret }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
         res <- client.foo identity { query: { secret: "something" } }
@@ -39,7 +39,7 @@ tests cfg = do
       let spec = Spec :: _ { foo :: GET "/foo?<..any>"
                                      { query :: { any :: Object String }
                                      , response :: String } }
-      let handlers = { foo: \{ any } -> pure (show any) }
+      let handlers = { foo: \{ query: { any } } -> pure (show any) }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
         res <- client.foo identity { query: { any: Object.fromFoldable [Tuple "foo" "foo1", Tuple "bar" "bar1"] } }
@@ -49,7 +49,7 @@ tests cfg = do
       let spec = Spec :: _ { foo :: GET "/foo?literal&key=<key>&<..rest>"
                                      { query :: { key :: Int, rest :: Object String }
                                      , response :: String } }
-      let handlers = { foo: \{ key, rest } -> pure $ "key " <> show key <> ", " <> show rest }
+      let handlers = { foo: \{ query: { key, rest } } -> pure $ "key " <> show key <> ", " <> show rest }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
         res <- client.foo identity { query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
@@ -60,7 +60,7 @@ tests cfg = do
                                      { query :: { key :: Int, rest :: Object String }
                                      , body :: String
                                      , response :: String } }
-      let handlers = { foo: \({ key, rest } :: { key :: Int, rest :: Object String, body :: String }) -> pure $ "key " <> show key <> ", " <> show rest }
+      let handlers = { foo: \({ query: { key, rest } }) -> pure $ "key " <> show key <> ", " <> show rest }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
         res <- client.foo identity { body: "_", query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
@@ -69,7 +69,7 @@ tests cfg = do
     test "HEAD succeeds" $ do
       let spec = Spec :: _ { foo :: HEAD "/foo?literal&key=<key>&<..rest>"
                                      { query :: { key :: Int, rest :: Object String }} }
-      let handlers = { foo: \{ key, rest } -> pure $ Response.Empty }
+      let handlers = { foo: \{ query: { key, rest } } -> pure $ Response.Empty }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
         res <- client.foo identity { query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
@@ -79,7 +79,7 @@ tests cfg = do
                                      { query :: { key :: Int, rest :: Object String }
                                      , body :: String
                                      , response :: String } }
-      let handlers = { foo: \({ key, rest } :: { key :: Int, rest :: Object String, body :: String }) -> pure $ "key " <> show key <> ", " <> show rest }
+      let handlers = { foo: \({ query: { key, rest } }) -> pure $ "key " <> show key <> ", " <> show rest }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
         res <- client.foo identity { body: "_", query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
@@ -90,7 +90,7 @@ tests cfg = do
                                      { query :: { key :: Int, rest :: Object String }
                                      , body :: String
                                      , response :: String } }
-      let handlers = { foo: \({ key, rest } :: { key :: Int, rest :: Object String, body :: String }) -> pure $ "key " <> show key <> ", " <> show rest }
+      let handlers = { foo: \({ query: { key, rest } }) -> pure $ "key " <> show key <> ", " <> show rest }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
         res <- client.foo identity { body: "_", query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }

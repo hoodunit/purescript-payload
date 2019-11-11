@@ -12,7 +12,7 @@ import Type.Equality (class TypeEquals, to)
 import Type.Prelude (class IsSymbol, SProxy(..))
 import Type.Proxy (Proxy)
 
-class DecodeUrl (urlStr :: Symbol) params | urlStr -> params where
+class DecodeUrl (urlStr :: Symbol) (params :: # Type) | urlStr -> params where
   decodeUrl :: SProxy urlStr -> Proxy (Record params) -> List String -> Either String (Record params)
 
 instance decodeUrlSymbol ::
