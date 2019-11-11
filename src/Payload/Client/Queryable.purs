@@ -18,7 +18,7 @@ import Payload.Client.EncodeBody (class EncodeBody, encodeBody)
 import Payload.Client.Internal.Query (class EncodeQuery, encodeQuery)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (Options, ModifyRequest)
-import Payload.Internal.Route (DefaultRouteSpec, DefaultRouteSpecOptionalBody, Undefined)
+import Payload.Internal.Route (DefaultRouteSpec, Undefined)
 import Payload.Response (ResponseBody(..))
 import Payload.Spec (Route)
 import Prim.Row as Row
@@ -154,7 +154,7 @@ else instance queryableHeadRoute ::
     res <- AX.request req
     pure (decodeAffjaxResponse res)
 else instance queryablePutRoute ::
-       ( Row.Union route DefaultRouteSpecOptionalBody mergedRoute
+       ( Row.Union route DefaultRouteSpec mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
        , TypeEquals (Record routeWithDefaults)
            { response :: res
@@ -191,7 +191,7 @@ else instance queryablePutRoute ::
     res <- AX.request req
     pure (decodeAffjaxResponse res)
 else instance queryableDeleteRoute ::
-       ( Row.Union route DefaultRouteSpecOptionalBody mergedRoute
+       ( Row.Union route DefaultRouteSpec mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
        , TypeEquals (Record routeWithDefaults)
            { response :: res
