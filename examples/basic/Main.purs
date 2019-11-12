@@ -17,8 +17,10 @@ import Payload.Headers as Headers
 import Payload.Response (Failure(Forward))
 import Payload.Response as Response
 
-getUsers :: forall r. { adminUser :: AdminUser | r } -> Aff (Array User)
-getUsers { adminUser: AdminUser adminUser } = pure [adminUser, { id: 1, name: "John Doe" }]
+getUsers :: forall r.
+            { guards :: { adminUser :: AdminUser, request :: HTTP.Request }
+            | r } -> Aff (Array User)
+getUsers { guards: { adminUser: AdminUser adminUser } } = pure [adminUser, { id: 1, name: "John Doe" }]
 
 getUsersNonAdmin :: forall r. { params :: { name :: String } | r } -> Aff (Array User)
 getUsersNonAdmin _ = pure [{ id: 1, name: "John Doe" }]

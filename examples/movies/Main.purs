@@ -148,13 +148,15 @@ getMovie :: forall r. { params :: { movieId :: Int } | r} -> Aff Movie
 getMovie { params: { movieId } } = pure { id: movieId, title: "Fetched movie" }
 
 createRating :: forall r.
-                { params :: { movieId :: Int }, apiKey :: ApiKey, sessionId :: SessionId | r}
-                -> Aff StatusCodeResponse
+                { params :: { movieId :: Int }
+                , guards :: { apiKey :: ApiKey, sessionId :: SessionId}
+                | r} -> Aff StatusCodeResponse
 createRating _ = pure { statusCode: 1, statusMessage: "Created" }
 
 deleteRating :: forall r.
-                { params :: { movieId :: Int }, apiKey :: ApiKey, sessionId :: SessionId | r}
-                -> Aff StatusCodeResponse
+                { params :: { movieId :: Int }
+                , guards :: { apiKey :: ApiKey, sessionId :: SessionId }
+                | r} -> Aff StatusCodeResponse
 deleteRating _ = pure { statusCode: 1, statusMessage: "Deleted" }
 
 getApiKey :: HTTP.Request -> Aff (Either String ApiKey)
