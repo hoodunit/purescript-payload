@@ -72,6 +72,7 @@ instance handleablePostRoute ::
        , Symbol.Append basePath path fullPath
        , DecodeBody body
 
+       , Row.Union baseParams params fullUrlParams
        , PayloadUrl.DecodeUrl fullPath fullUrlParams
        , PayloadQuery.DecodeQuery fullPath query
        , ParseUrl fullPath urlParts
@@ -123,6 +124,7 @@ instance handleableRoute ::
        , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
 
+       , Row.Union baseParams params fullUrlParams
        , PayloadUrl.DecodeUrl fullPath fullUrlParams
        , PayloadQuery.DecodeQuery fullPath query
        , ParseUrl fullPath urlParts
@@ -171,6 +173,7 @@ instance handleableHeadRoute ::
        , Resp.ToSpecResponse docRoute handlerRes res
        , Resp.EncodeResponse res
 
+       , Row.Union baseParams params fullUrlParams
        , PayloadUrl.DecodeUrl fullPath fullUrlParams
        , PayloadQuery.DecodeQuery fullPath query
        , ParseUrl fullPath urlParts
@@ -221,6 +224,7 @@ instance handleablePutRoute ::
        , Symbol.Append basePath path fullPath
        , DecodeBody body
 
+       , Row.Union baseParams params fullUrlParams
        , PayloadUrl.DecodeUrl fullPath fullUrlParams
        , PayloadQuery.DecodeQuery fullPath query
        , ParseUrl fullPath urlParts

@@ -34,7 +34,7 @@ getUsersProfiles _ = pure ["Profile1", "Profile2"]
 createUser :: forall r. { body :: User | r } -> Aff User
 createUser {body: user} = pure user
 
-getUserPost :: forall r. { params :: { id :: String, postId :: String } | r } -> Aff Post
+getUserPost :: forall r. { params :: { id :: Int, postId :: String } | r } -> Aff Post
 getUserPost {params: {postId}} = pure { id: postId, text: "Some post" }
 
 indexPage :: forall r. { | r} -> Aff File
