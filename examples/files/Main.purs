@@ -20,10 +20,10 @@ spec :: Spec
   }
 spec = Spec
 
-indexPage :: forall r. { | r} -> Aff File
+indexPage :: {} -> Aff File
 indexPage = Handlers.file "examples/files/index.html"
 
-public :: forall r. { params :: { path :: List String } | r } -> Aff (Either Failure File)
+public :: { params :: { path :: List String } } -> Aff (Either Failure File)
 public { params: {path} } = Handlers.directory "examples/files/public" path 
 
 api =

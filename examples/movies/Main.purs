@@ -147,10 +147,10 @@ popularMovies _ = pure { results: [
 getMovie :: forall r. { params :: { movieId :: Int } | r} -> Aff Movie
 getMovie { params: { movieId } } = pure { id: movieId, title: "Fetched movie" }
 
-createRating :: forall r.
-                { params :: { movieId :: Int }
+createRating :: { params :: { movieId :: Int }
                 , guards :: { apiKey :: ApiKey, sessionId :: SessionId}
-                | r} -> Aff StatusCodeResponse
+                , body :: RatingValue
+                } -> Aff StatusCodeResponse
 createRating _ = pure { statusCode: 1, statusMessage: "Created" }
 
 deleteRating :: forall r.

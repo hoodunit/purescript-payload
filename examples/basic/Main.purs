@@ -17,39 +17,37 @@ import Payload.Headers as Headers
 import Payload.Response (Failure(Forward))
 import Payload.Response as Response
 
-getUsers :: forall r.
-            { guards :: { adminUser :: AdminUser, request :: HTTP.Request }
-            | r } -> Aff (Array User)
+getUsers :: { guards :: { adminUser :: AdminUser, request :: HTTP.Request }} -> Aff (Array User)
 getUsers { guards: { adminUser: AdminUser adminUser } } = pure [adminUser, { id: 1, name: "John Doe" }]
 
-getUsersNonAdmin :: forall r. { params :: { name :: String } | r } -> Aff (Array User)
+getUsersNonAdmin :: { params :: { name :: String } } -> Aff (Array User)
 getUsersNonAdmin _ = pure [{ id: 1, name: "John Doe" }]
 
-getUser :: forall r. { params :: { id :: Int } | r } -> Aff User
+getUser :: { params :: { id :: Int } } -> Aff User
 getUser {params: {id}} = pure { id, name: "John Doe" }
 
-getUsersProfiles :: forall r. { | r } -> Aff (Array String)
+getUsersProfiles :: {} -> Aff (Array String)
 getUsersProfiles _ = pure ["Profile1", "Profile2"]
 
 createUser :: forall r. { body :: User | r } -> Aff User
 createUser {body: user} = pure user
 
-getUserPost :: forall r. { params :: { id :: Int, postId :: String } | r } -> Aff Post
+getUserPost :: { params :: { id :: Int, postId :: String } } -> Aff Post
 getUserPost {params: {postId}} = pure { id: postId, text: "Some post" }
 
-indexPage :: forall r. { | r} -> Aff File
+indexPage :: {} -> Aff File
 indexPage _ = pure (File "test/index.html")
 
-files :: forall r. { params :: { path :: List String} | r } -> Aff (Either Failure File)
+files :: { params :: { path :: List String} } -> Aff (Either Failure File)
 files { params: {path} } = Handlers.directory "test" path
 
-getPage :: forall r. { params :: { id :: String } | r} -> Aff String
+getPage :: { params :: { id :: String } } -> Aff String
 getPage { params: {id} } = pure $ "Page " <> id
 
-getPageMetadata :: forall r. { params :: { id :: String } | r} -> Aff String
+getPageMetadata :: { params :: { id :: String } } -> Aff String
 getPageMetadata { params: {id} } = pure $ "Page metadata " <> id
 
-getHello :: forall r. { | r} -> Aff String
+getHello :: {} -> Aff String
 getHello _ = pure "Hello!"
 
 getAdminUser :: HTTP.Request -> Aff (Either Response.Failure AdminUser)
