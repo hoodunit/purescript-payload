@@ -2,11 +2,13 @@ module Payload.Handleable
        ( class Handleable
        , MethodHandler
        , handle
+       , class DecodeOptionalBody
+       , decodeOptionalBody
        ) where
 
 import Prelude
 
-import Control.Monad.Except (ExceptT(..), except, lift, withExceptT)
+import Control.Monad.Except (except, lift, withExceptT)
 import Data.Either (Either(..))
 import Data.List (List)
 import Data.Symbol (class IsSymbol, SProxy(..))
@@ -26,6 +28,7 @@ import Payload.Internal.GuardParsing as GuardParsing
 import Payload.Internal.OmitEmpty (class OmitEmpty, omitEmpty)
 import Payload.Internal.Query as PayloadQuery
 import Payload.Internal.Request (RequestUrl)
+import Payload.Internal.Route (Undefined(..))
 import Payload.Internal.Url as PayloadUrl
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments)
 import Payload.Response (Failure(..), RawResponse, Result)
@@ -226,7 +229,7 @@ instance handleablePutRoute ::
        , Resp.ToSpecResponse docRoute handlerRes res
        , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
-       , DecodeBody body
+       , DecodeOptionalBody body
 
        , Row.Union baseParams params fullUrlParams
        , PayloadUrl.DecodeUrl fullPath fullUrlParams
@@ -256,7 +259,7 @@ instance handleablePutRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
-    body <- withExceptT Forward $ except $ (decodeBody bodyStr :: Either String body)
+    body <- withExceptT Forward $ except $ (decodeOptionalBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards }
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
@@ -281,7 +284,7 @@ instance handleableDeleteRoute ::
        , Resp.ToSpecResponse docRoute handlerRes res
        , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
-       , DecodeBody body
+       , DecodeOptionalBody body
 
        , Row.Union baseParams params fullUrlParams
        , PayloadUrl.DecodeUrl fullPath fullUrlParams
@@ -311,7 +314,7 @@ instance handleableDeleteRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
-    body <- withExceptT Forward $ except $ (decodeBody bodyStr :: Either String body)
+    body <- withExceptT Forward $ except $ (decodeOptionalBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards }
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
@@ -350,3 +353,14 @@ readBody_ req cb = do
   where
     returnError msg = cb $ Left $ msg
     returnBody val = cb $ Right $ val
+
+class DecodeOptionalBody
+  (body :: Type)
+  where
+    decodeOptionalBody :: String -> Either String body
+
+instance decodeOptionalBodyUndefined :: DecodeOptionalBody Undefined where
+  decodeOptionalBody _ = Right Undefined
+else instance encodeOptionalBodyDefined ::
+  DecodeBody body => DecodeOptionalBody body where
+  decodeOptionalBody body = decodeBody body

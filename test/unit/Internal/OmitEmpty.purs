@@ -3,6 +3,7 @@ module Payload.Test.Unit.Internal.OmitEmpty where
 import Prelude
 
 import Payload.Internal.OmitEmpty (omitEmpty)
+import Payload.Internal.Route (Undefined(..))
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 
@@ -17,3 +18,5 @@ tests = do
         (omitEmpty { foo1: {}, foo: { a: "foo" }, bar: {}, qux: { q: "q" } })
     test "ignores non-record fields" do
       Assert.equal { foo: "a", bar: 1 } (omitEmpty { foo: "a", bar: 1 })
+    test "removes Undefined field" do
+      Assert.equal {} (omitEmpty { foo: Undefined })

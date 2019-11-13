@@ -133,7 +133,9 @@ newToken _ = pure { success: true, expiresAt: "date", requestToken: "328dsdweoi"
 createSession :: forall r. { | r} -> Aff SessionIdResponse
 createSession _ = pure { success: true, sessionId: "date", requestToken: "23988w9" }
 
-deleteSession :: forall r. { | r} -> Aff StatusResponse
+deleteSession :: { body :: { sessionId :: String }
+                 , guards :: { apiKey :: String }
+                 } -> Aff StatusResponse
 deleteSession _ = pure { success: true }
 
 latestMovie :: forall r. { | r} -> Aff Movie
@@ -153,10 +155,9 @@ createRating :: { params :: { movieId :: Int }
                 } -> Aff StatusCodeResponse
 createRating _ = pure { statusCode: 1, statusMessage: "Created" }
 
-deleteRating :: forall r.
-                { params :: { movieId :: Int }
+deleteRating :: { params :: { movieId :: Int }
                 , guards :: { apiKey :: ApiKey, sessionId :: SessionId }
-                | r} -> Aff StatusCodeResponse
+                } -> Aff StatusCodeResponse
 deleteRating _ = pure { statusCode: 1, statusMessage: "Deleted" }
 
 getApiKey :: HTTP.Request -> Aff (Either String ApiKey)
