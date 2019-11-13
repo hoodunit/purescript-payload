@@ -17,6 +17,7 @@ import Payload.Test.Integration.QueryParams as QueryParamsTest
 import Payload.Test.Integration.Status as StatusTest
 import Payload.Test.Unit.Cookies as CookiesTest
 import Payload.Test.Unit.Internal.GuardParsing as GuardParsingTest
+import Payload.Test.Unit.Internal.OmitEmpty as OmitEmptyTest
 import Payload.Test.Unit.Internal.Query as QueryTest
 import Payload.Test.Unit.Internal.QueryParsing as QueryParsingTest
 import Payload.Test.Unit.Internal.Trie as TrieTest
@@ -39,6 +40,7 @@ tests = do
     ParamsTest.tests
     TrieTest.tests
     GuardParsingTest.tests
+    OmitEmptyTest.tests
     CookiesTest.tests
     ResponseTest.tests
 

@@ -23,6 +23,7 @@ import Payload.DecodeBody (class DecodeBody, decodeBody)
 import Payload.Guards (class RunGuards, runGuards)
 import Payload.Internal.GuardParsing (GuardTypes(..))
 import Payload.Internal.GuardParsing as GuardParsing
+import Payload.Internal.OmitEmpty (class OmitEmpty, omitEmpty)
 import Payload.Internal.Query as PayloadQuery
 import Payload.Internal.Request (RequestUrl)
 import Payload.Internal.Url as PayloadUrl
@@ -83,7 +84,8 @@ instance handleablePostRoute ::
            , params :: Record fullUrlParams
            , body :: body
            , guards :: Record routeGuardSpec }
-           (Record payload)
+           (Record payloadWithEmpty)
+       , OmitEmpty payloadWithEmpty payload
 
        , GuardParsing.Append baseGuards guardNames fullGuards
        , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
@@ -101,8 +103,8 @@ instance handleablePostRoute ::
     bodyStr <- lift $ readBody req
     body <- withExceptT Forward $ except $ (decodeBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
-    let (payload :: Record payload) = to { params, body, query: decodedQuery, guards: guards }
-    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler payload)
+    let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards: guards }
+    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
       decodePath :: List String -> Either String (Record fullUrlParams)
@@ -134,7 +136,8 @@ instance handleableRoute ::
            { query :: Record query
            , params :: Record fullUrlParams
            , guards :: Record routeGuardSpec }
-           (Record payload)
+           (Record payloadWithEmpty)
+       , OmitEmpty payloadWithEmpty payload
 
        , GuardParsing.Append baseGuards guardNames fullGuards
        , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
@@ -150,8 +153,8 @@ instance handleableRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
-    let (payload :: Record payload) = to { params, query: decodedQuery, guards }
-    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler payload)
+    let (payload :: Record payloadWithEmpty) = to { params, query: decodedQuery, guards }
+    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
       decodePath :: List String -> Either String (Record fullUrlParams)
@@ -183,7 +186,8 @@ instance handleableHeadRoute ::
            { query :: Record query
            , params :: Record fullUrlParams
            , guards :: Record routeGuardSpec }
-           (Record payload)
+           (Record payloadWithEmpty)
+       , OmitEmpty payloadWithEmpty payload
 
        , GuardParsing.Append baseGuards guardNames fullGuards
        , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
@@ -199,8 +203,8 @@ instance handleableHeadRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
-    let (payload :: Record payload) = to { params, query: decodedQuery, guards }
-    Resp.setBody Resp.EmptyBody <$> mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler payload)
+    let (payload :: Record payloadWithEmpty) = to { params, query: decodedQuery, guards }
+    Resp.setBody Resp.EmptyBody <$> mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
       decodePath :: List String -> Either String (Record fullUrlParams)
@@ -235,7 +239,8 @@ instance handleablePutRoute ::
            , params :: Record fullUrlParams
            , body :: body
            , guards :: Record routeGuardSpec }
-           (Record payload)
+           (Record payloadWithEmpty)
+       , OmitEmpty payloadWithEmpty payload
 
        , GuardParsing.Append baseGuards guardNames fullGuards
        , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
@@ -253,8 +258,8 @@ instance handleablePutRoute ::
     bodyStr <- lift $ readBody req
     body <- withExceptT Forward $ except $ (decodeBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
-    let (payload :: Record payload) = to { params, body, query: decodedQuery, guards }
-    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler payload)
+    let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards }
+    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
       decodePath :: List String -> Either String (Record fullUrlParams)
@@ -289,7 +294,8 @@ instance handleableDeleteRoute ::
            , params :: Record fullUrlParams
            , body :: body
            , guards :: Record routeGuardSpec }
-           (Record payload)
+           (Record payloadWithEmpty)
+       , OmitEmpty payloadWithEmpty payload
 
        , GuardParsing.Append baseGuards guardNames fullGuards
        , RunGuards fullGuards guardsSpec allGuards () routeGuardSpec
@@ -307,8 +313,8 @@ instance handleableDeleteRoute ::
     bodyStr <- lift $ readBody req
     body <- withExceptT Forward $ except $ (decodeBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
-    let (payload :: Record payload) = to { params, body, query: decodedQuery, guards }
-    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler payload)
+    let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards }
+    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
       decodePath :: List String -> Either String (Record fullUrlParams)
