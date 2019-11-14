@@ -18,7 +18,7 @@ import Type.Proxy (Proxy)
 class DecodeQuery (queryUrlSpec :: Symbol) query | queryUrlSpec -> query where
   decodeQuery :: SProxy queryUrlSpec -> Proxy (Record query) -> String -> Either String (Record query)
 
-instance decodeQuerySymbol ::
+instance decodeQueryAny ::
   ( ParseQuery queryUrlSpec queryParts
   , MatchQuery queryParts query () query
   ) => DecodeQuery queryUrlSpec query where
