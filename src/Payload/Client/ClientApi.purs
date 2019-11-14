@@ -55,14 +55,22 @@ instance clientApiListNil :: ClientApiList RowList.Nil basePath baseParams (Reco
 
 instance clientApiListCons ::
   ( IsSymbol routeName
+  , IsSymbol routeNameWithOptions
   , IsSymbol method
   , IsSymbol path
   , Row.Cons
      routeName
-     (ModifyRequest -> payload -> Aff (Either String res))
+     (payload -> Aff (Either String res))
      remClient
+     remClient'
+  , Row.Cons
+     routeNameWithOptions
+     (ModifyRequest -> payload -> Aff (Either String res))
+     remClient'
      client
+  , Symbol.Append routeName "_" routeNameWithOptions
   , Row.Lacks routeName remClient
+  , Row.Lacks routeNameWithOptions remClient'
   , Queryable (Route method path routeSpec) basePath baseParams payload res
   , ClientApiList remRoutes basePath baseParams (Record remClient)
   ) => ClientApiList
@@ -71,13 +79,18 @@ instance clientApiListCons ::
          baseParams
          (Record client) where
   mkClientApiList opts _ _ _ =
-    Record.insert
-      (SProxy :: _ routeName)
-      doRequest
-      (mkClientApiList opts (RLProxy :: _ remRoutes) (SProxy :: _ basePath) (Proxy :: _ (Record baseParams)))
+    Record.insert (SProxy :: _ routeName) doRequest rest
+    # Record.insert (SProxy :: _ routeNameWithOptions) doRequestWithOptions
     where
-      doRequest :: ModifyRequest -> payload -> Aff (Either String res)
-      doRequest modifyReq payload =
+      rest = mkClientApiList opts
+             (RLProxy :: _ remRoutes)
+             (SProxy :: _ basePath)
+             (Proxy :: _ (Record baseParams))
+      doRequest :: payload -> Aff (Either String res)
+      doRequest = doRequestWithOptions identity
+
+      doRequestWithOptions :: ModifyRequest -> payload -> Aff (Either String res)
+      doRequestWithOptions modifyReq payload =
         request (Route :: Route method path routeSpec)
                 (SProxy :: _ basePath)
                 (Proxy :: _ (Record baseParams))

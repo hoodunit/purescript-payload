@@ -28,19 +28,19 @@ tests cfg = do
   suite "Example: movies API" do
     test "Sub-route fails if parent route guard fails (missing API key)" $ do
       withApi do
-        assertFail (client.v1.movies.latest identity {})
+        assertFail (client.v1.movies.latest {})
     test "Sub-route succeeds if parent route guard succeeds (has API key)" $ do
       withApi do
-        assertRes (client.v1.movies.latest (withCookies (Map.singleton "apiKey" "key")) {})
+        assertRes (client.v1.movies.latest_ (withCookies (Map.singleton "apiKey" "key")) {})
                  { id: 723, title: "The Godfather" }
     test "Sub-route fails if passes parent guard but not child guard (missing session key)" $ do
       withApi do
         let payload = { params: { movieId: 1 }, body: { value: 9.0 } }
         let opts = withCookies $ Map.singleton "apiKey" "key"
-        assertFail $ client.v1.movies.byId.rating.create opts payload
+        assertFail $ client.v1.movies.byId.rating.create_ opts payload
     test "Sub-route succeeds if passes parent and child guards (has API and session keys)" $ do
       withApi do
         let opts = withCookies $ Map.fromFoldable [Tuple "apiKey" "key", Tuple "sessionId" "sessionId"]
-        assertRes (client.v1.movies.byId.rating.create opts
+        assertRes (client.v1.movies.byId.rating.create_ opts
                      { params: { movieId: 1 }, body: { value: 9.0 } })
                    { statusCode: 1, statusMessage: "Created" }

@@ -3,7 +3,6 @@ module Payload.Test.Integration.Client.QueryParams where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.List (List)
 import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
@@ -24,7 +23,7 @@ tests cfg = do
       let handlers = { foo: \_ -> pure "Response" }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
-        res <- client.foo identity {}
+        res <- client.foo {}
         Assert.equal (Right "Response") res
     test "succeeds with query key" $ do
       let spec = Spec :: _ { foo :: GET "/foo?secret=<secret>"
@@ -33,7 +32,7 @@ tests cfg = do
       let handlers = { foo: \{ query: { secret } } -> pure secret }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
-        res <- client.foo identity { query: { secret: "something" } }
+        res <- client.foo { query: { secret: "something" } }
         Assert.equal (Right "something") res
     test "succeeds with multimatch" $ do
       let spec = Spec :: _ { foo :: GET "/foo?<..any>"
@@ -42,7 +41,7 @@ tests cfg = do
       let handlers = { foo: \{ query: { any } } -> pure (show any) }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
-        res <- client.foo identity { query: { any: Object.fromFoldable [Tuple "foo" "foo1", Tuple "bar" "bar1"] } }
+        res <- client.foo { query: { any: Object.fromFoldable [Tuple "foo" "foo1", Tuple "bar" "bar1"] } }
         let expected = (Right "(fromFoldable [(Tuple \"foo\" \"\\\"foo1\\\"\"),(Tuple \"bar\" \"\\\"bar1\\\"\")])")
         Assert.equal expected res
     test "GET succeeds" $ do
@@ -52,7 +51,7 @@ tests cfg = do
       let handlers = { foo: \{ query: { key, rest } } -> pure $ "key " <> show key <> ", " <> show rest }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
-        res <- client.foo identity { query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
+        res <- client.foo { query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
         let expected = (Right "key 1, (fromFoldable [(Tuple \"literal\" \"\"),(Tuple \"a\" \"\\\"a\\\"\")])")
         Assert.equal expected res
     test "POST succeeds" $ do
@@ -63,7 +62,7 @@ tests cfg = do
       let handlers = { foo: \({ query: { key, rest } }) -> pure $ "key " <> show key <> ", " <> show rest }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
-        res <- client.foo identity { body: "_", query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
+        res <- client.foo { body: "_", query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
         let expected = (Right "key 1, (fromFoldable [(Tuple \"literal\" \"\"),(Tuple \"a\" \"\\\"a\\\"\")])")
         Assert.equal expected res
     test "HEAD succeeds" $ do
@@ -72,7 +71,7 @@ tests cfg = do
       let handlers = { foo: \{ query: { key, rest } } -> pure $ Response.Empty }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
-        res <- client.foo identity { query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
+        res <- client.foo { query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
         Assert.equal (Right "") res
     test "DELETE succeeds" $ do
       let spec = Spec :: _ { foo :: DELETE "/foo?literal&key=<key>&<..rest>"
@@ -82,7 +81,7 @@ tests cfg = do
       let handlers = { foo: \({ query: { key, rest } }) -> pure $ "key " <> show key <> ", " <> show rest }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
-        res <- client.foo identity { body: "_", query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
+        res <- client.foo { body: "_", query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
         let expected = (Right "key 1, (fromFoldable [(Tuple \"literal\" \"\"),(Tuple \"a\" \"\\\"a\\\"\")])")
         Assert.equal expected res
     test "PUT succeeds" $ do
@@ -93,6 +92,6 @@ tests cfg = do
       let handlers = { foo: \({ query: { key, rest } }) -> pure $ "key " <> show key <> ", " <> show rest }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
-        res <- client.foo identity { body: "_", query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
+        res <- client.foo { body: "_", query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }
         let expected = (Right "key 1, (fromFoldable [(Tuple \"literal\" \"\"),(Tuple \"a\" \"\\\"a\\\"\")])")
         Assert.equal expected res
