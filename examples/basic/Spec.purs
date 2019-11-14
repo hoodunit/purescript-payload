@@ -1,6 +1,7 @@
 module Payload.Examples.Basic.Spec where
 
 import Data.List (List)
+import Foreign.Object (Object)
 import Node.HTTP as HTTP
 import Payload.Handlers (File)
 import Payload.Spec (type (:), Spec(Spec), GET, Guards, Nil, POST, Routes)
@@ -57,6 +58,10 @@ spec :: Spec {
       response :: String
     },
     getHello :: GET "/hello there" {
+      response :: String
+    },
+    search :: GET "/search?a=<a>&foo&b=<b>&<..rest>" {
+      query :: { a :: Int, b :: Int, rest :: Object String },
       response :: String
     }
   }

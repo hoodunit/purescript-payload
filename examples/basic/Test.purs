@@ -43,7 +43,7 @@ tests cfg = do
         [{ id: 1, name: "John Doe" }]
     test "GET /users/<id>" $ withApi do
       assertResp (client.users.userById.getUser identity { params: { id: 1 } })
-        { id: 1, name: "John Doe" }
+        { id: 1, name: "whodunnit" }
     test "GET /users/profile" $ withApi do
       assertResp (client.users.getUsersProfiles identity {})
         ["Profile1", "Profile2"]

@@ -38,17 +38,17 @@ spec :: Spec {
 }
 spec = Spec
 
-getMessages :: { id :: Int, limit :: Int } -> Aff (Array Message)
-getMessages { id, limit } = pure
-  [{ id: 1, text: "Hey there"}, { id: 2, text: "Limit " <> show limit }]
+getMessages :: { params :: { id :: Int }, query :: { limit :: Int } } -> Aff (Array Message)
+getMessages {params: {id}, query: {limit}} = pure
+  [{ id: 1, text: "Hey " <> show id}, { id: 2, text: "Limit " <> show limit }]
 
-handlers = { getMessages: getMessages }
+handlers = { getMessages }
 
 main :: Effect Unit
 main = Payload.launch spec handlers
 ```
 
-Visiting `http://localhost:3000/users/1/messages?limit=2` returns `'[{"text":"Hey there","id":1},{"text":"Limit 2","id":2}]'`.
+Visiting `http://localhost:3000/users/1/messages?limit=2` returns `'[{"text":"Hey 1","id":1},{"text":"Limit 2","id":2}]'`.
 
 This library is experimental, in flux, and will likely have breaking API changes.
 
@@ -117,13 +117,13 @@ To run a Payload server, you provide a spec and a record of handlers correspondi
 ```purescript
 api = { getUser: getUser }
 
-getUser :: { id :: Int } -> Aff User
-getUser { id, limit } = pure { id: 1, name: "whodunnit"}
+getUser :: { params :: { id :: Int } } -> Aff User
+getUser {params: {id}} = pure { id, name: "whodunnit" }
 
 main = Payload.launch spec api
 ```
 
-Payload will helpfully fail to compile if an endpoint was defined in the spec but no corresponding handler was provided when starting the server. A handler is just an asynchronous function taking in a Record of the request parameters defined in the spec: in this case just an `id` field of type `Int`. URL parameters, query parameters, and bodies defined in the spec are automatically decoded into typed values and merged into the handler payload record by name. The returned `User` value is also automatically encoded to JSON.
+Payload will helpfully fail to compile if an endpoint was defined in the spec but no corresponding handler was provided when starting the server. A handler is just an asynchronous function taking in a Record of the request parameters defined in the spec: in this case just a `params` field with the `id` param of type `Int`. URL parameters, query parameters, and bodies defined in the spec are automatically decoded into typed values and merged into the fields `params`, `query`, and `body`, respectively, of the handler payload. The returned `User` value is also automatically encoded to JSON.
 
 Specs can also be hierarchical:
 
@@ -203,8 +203,8 @@ getMessage :: GET "/users/<id>/messages/<messageId>" {
 }
 
 -- Handler:
-getMessage :: { id :: Int, messageId :: String } -> Aff (Array Message)
-getMessage { id, limit } = pure
+getMessage :: { params :: { id :: Int, messageId :: String } } -> Aff (Array Message)
+getMessage { params: { id, limit } } = pure
   [{ id: 1, text: "Hey there"}, { id: 2, text: "Limit " <> show limit }]
 ```
 
@@ -220,8 +220,8 @@ files :: GET "/<..path>" {
 }
 
 -- Handler:
-files :: forall r. { path :: List String | r} -> Aff (Either Failure File)
-files { path } = Handlers.directory "test" path
+files :: { params :: { path :: List String} } -> Aff (Either Failure File)
+files { params: {path} } = Handlers.directory "test" path
 ```
 
 #### Request body
@@ -240,8 +240,8 @@ createUser :: POST "/users/new" {
 }
 
 -- Handler:
-createUser :: forall r. { body :: User | r } -> Aff User
-createUser {body: user} = pure user
+createUser :: { body :: User } -> Aff User
+createUser { body: user } = pure user
 ```
 
 #### Query strings
@@ -254,7 +254,8 @@ search :: GET "/search?a=<a>&foo&b=<b>&<..rest>"
   { query :: { a :: Int, b :: Int, rest :: Object String }
   , response :: String }
 
-search :: { a :: Int, b :: Int, rest :: Object String } -> Aff String
+search :: { query :: { a :: Int, b :: Int, rest :: Object String } }
+          -> Aff String
 search _ = pure "Search result"
 ```
 
@@ -332,6 +333,9 @@ getAdminUser req = do
 To use guards, the server must be started with [startGuarded](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server#v:startGuarded) and given the guard functions as a record:
 
 ```purescript
+adminIndex :: { guards :: { adminUser :: AdminUser } } -> Aff String
+adminIndex { guards: { adminUser } } = pure "Response"
+
 main = do
   let guards = { adminUser: getAdminUser, user: getUser }
   let handlers = { adminIndex, userIndex, unauthenticatedIndex }

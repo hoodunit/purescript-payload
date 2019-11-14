@@ -8,6 +8,7 @@ import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.String.Utils as StringUtils
 import Effect.Aff (Aff)
+import Foreign.Object (Object)
 import Node.HTTP as HTTP
 import Payload.Examples.Basic.Spec (AdminUser(..), Post, User)
 import Payload.Guards as Guards
@@ -24,7 +25,7 @@ getUsersNonAdmin :: { params :: { name :: String } } -> Aff (Array User)
 getUsersNonAdmin _ = pure [{ id: 1, name: "John Doe" }]
 
 getUser :: { params :: { id :: Int } } -> Aff User
-getUser {params: {id}} = pure { id, name: "John Doe" }
+getUser {params: {id}} = pure { id, name: "whodunnit" }
 
 getUsersProfiles :: {} -> Aff (Array String)
 getUsersProfiles _ = pure ["Profile1", "Profile2"]
@@ -49,6 +50,10 @@ getPageMetadata { params: {id} } = pure $ "Page metadata " <> id
 
 getHello :: {} -> Aff String
 getHello _ = pure "Hello!"
+
+search :: { query :: { a :: Int, b :: Int, rest :: Object String } }
+          -> Aff String
+search _ = pure "Search result"
 
 getAdminUser :: HTTP.Request -> Aff (Either Response.Failure AdminUser)
 getAdminUser req = do
@@ -86,7 +91,8 @@ api = {
     files,
     getPage,
     getPageMetadata,
-    getHello
+    getHello,
+    search
   },
   guards: {
     adminUser: getAdminUser,

@@ -1,7 +1,6 @@
 module Payload.Examples.Hello.Main where
 
 import Prelude
-
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Payload.Server as Payload
@@ -22,7 +21,7 @@ spec = Spec
 
 getMessages :: { params :: { id :: Int }, query :: { limit :: Int } } -> Aff (Array Message)
 getMessages {params: {id}, query: {limit}} = pure
-  [{ id: 1, text: "Hey there"}, { id: 2, text: "Limit " <> show limit }]
+  [{ id: 1, text: "Hey " <> show id}, { id: 2, text: "Limit " <> show limit }]
 
 handlers = { getMessages }
 
