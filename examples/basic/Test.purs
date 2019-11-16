@@ -4,11 +4,13 @@ import Prelude
 
 import Affjax.RequestHeader (RequestHeader(..))
 import Data.Either (Either(..))
+import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Payload.Client.Client (mkClient, mkGuardedClient)
 import Payload.Client.Client as Client
 import Payload.Examples.Basic.Main (api)
 import Payload.Examples.Basic.Spec (spec)
+import Payload.Headers as Headers
 import Payload.Test.Config (TestConfig)
 import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
@@ -32,11 +34,11 @@ tests :: TestConfig -> TestSuite
 tests cfg = do
   let withApi = withServer spec api
   let client = mkGuardedClient cfg.clientOpts spec
-  let authHeader = RequestHeader "Authorization" "Token secret"
-  let addAuthHeader req = req { headers = req.headers <> [authHeader] }
+  let authHeader = Tuple "Authorization" "Token secret"
+  let authenticatedOpts = { headers: Headers.fromFoldable [ authHeader ] }
   suite "Example: basic" do
     test "GET /users (with secret)" $ withApi do
-      assertResp (client.adminUsers.getUsers_ addAuthHeader {})
+      assertResp (client.adminUsers.getUsers_ authenticatedOpts {})
         [{ id: 1, name: "John Admin" }, { id: 1, name: "John Doe" }]
     test "GET /users without secret should fall through to non-admin route" $ withApi do
       assertResp (client.getUsersNonAdmin { params: { name: "users" } })
@@ -49,7 +51,7 @@ tests cfg = do
         ["Profile1", "Profile2"]
     test "POST /users/new" $ withApi do
       assertResp
-        (client.adminUsers.createUser_ addAuthHeader { body: { id: 5, name: "New user!" }})
+        (client.adminUsers.createUser_ authenticatedOpts { body: { id: 5, name: "New user!" }})
         { id: 5, name: "New user!" }
     test "POST /users/new fails without the secret" $ withApi do
       assertFail (client.adminUsers.createUser { body: { id: 5, name: "New user!" }})

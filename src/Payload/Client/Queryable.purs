@@ -4,6 +4,7 @@ import Prelude
 
 import Affjax as AX
 import Affjax.RequestBody as RequestBody
+import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Data.Bifunctor (lmap)
@@ -11,13 +12,15 @@ import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import Data.Symbol (class IsSymbol, SProxy(..))
+import Data.Symbol (SProxy(..))
+import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Payload.Client.DecodeResponse (class DecodeResponse, decodeResponse)
 import Payload.Client.EncodeBody (class EncodeBody, encodeBody)
 import Payload.Client.Internal.Query (class EncodeQuery, encodeQuery)
 import Payload.Client.Internal.Url as PayloadUrl
-import Payload.Client.Options (Options, ModifyRequest)
+import Payload.Client.Options (Options, RequestOptions)
+import Payload.Headers as Headers
 import Payload.Internal.Route (DefaultRouteSpec, Undefined)
 import Payload.Response (ResponseBody(..))
 import Payload.Spec (Route)
@@ -41,7 +44,7 @@ class Queryable
              -> SProxy basePath
              -> Proxy (Record baseParams)
              -> Options
-             -> ModifyRequest
+             -> RequestOptions
              -> payload
              -> Aff (Either String res)
 
@@ -63,7 +66,7 @@ instance queryableGetRoute ::
        , DecodeResponse res
        )
     => Queryable (Route "GET" path (Record route)) basePath baseParams (Record payload) res where
-  request _ _ _ opts modifyReq payload = do
+  request _ _ _ opts reqOpts payload = do
     let urlPath = encodeUrlWithParams opts
                         (SProxy :: _ fullPath)
                         (RLProxy :: _ fullParamsList)
@@ -76,7 +79,7 @@ instance queryableGetRoute ::
           { method = Left GET
           , url = url
           , responseFormat = ResponseFormat.string }
-    let req = modifyReq defaultReq
+    let req = applyReqOpts reqOpts defaultReq
     res <- AX.request req
     pure (decodeAffjaxResponse res)
 else instance queryablePostRoute ::
@@ -101,7 +104,7 @@ else instance queryablePostRoute ::
        , EncodeBody body
        )
     => Queryable (Route "POST" path (Record route)) basePath baseParams (Record payload) res where
-  request _ _ _ opts modifyReq payload = do
+  request _ _ _ opts reqOpts payload = do
     let urlPath = encodeUrlWithParams opts
                         (SProxy :: _ fullPath)
                         (RLProxy :: _ fullParamsList)
@@ -117,7 +120,7 @@ else instance queryablePostRoute ::
           , url = url
           , content = Just encodedBody
           , responseFormat = ResponseFormat.string }
-    let req = modifyReq defaultReq
+    let req = applyReqOpts reqOpts defaultReq
     res <- AX.request req
     pure (decodeAffjaxResponse res)
 else instance queryableHeadRoute ::
@@ -137,7 +140,7 @@ else instance queryableHeadRoute ::
        , EncodeOptionalQuery fullPath query payload
        )
     => Queryable (Route "HEAD" path (Record route)) basePath baseParams (Record payload) String where
-  request _ _ _ opts modifyReq payload = do
+  request _ _ _ opts reqOpts payload = do
     let urlPath = encodeUrlWithParams opts
                         (SProxy :: _ fullPath)
                         (RLProxy :: _ fullParamsList)
@@ -150,7 +153,7 @@ else instance queryableHeadRoute ::
           { method = Left HEAD
           , url = url
           , responseFormat = ResponseFormat.string }
-    let req = modifyReq defaultReq
+    let req = applyReqOpts reqOpts defaultReq
     res <- AX.request req
     pure (decodeAffjaxResponse res)
 else instance queryablePutRoute ::
@@ -172,7 +175,7 @@ else instance queryablePutRoute ::
        , DecodeResponse res
        )
     => Queryable (Route "PUT" path (Record route)) basePath baseParams (Record payload) res where
-  request _ _ _ opts modifyReq payload = do
+  request _ _ _ opts reqOpts payload = do
     let body = encodeOptionalBody (Proxy :: _ body) payload
     let urlPath = encodeUrlWithParams opts
                         (SProxy :: _ fullPath)
@@ -187,7 +190,7 @@ else instance queryablePutRoute ::
           , url = url
           , content = body
           , responseFormat = ResponseFormat.string }
-    let req = modifyReq defaultReq
+    let req = applyReqOpts reqOpts defaultReq
     res <- AX.request req
     pure (decodeAffjaxResponse res)
 else instance queryableDeleteRoute ::
@@ -211,7 +214,7 @@ else instance queryableDeleteRoute ::
        , EncodeOptionalBody body payload
        )
     => Queryable (Route "DELETE" path (Record route)) basePath baseParams (Record payload) res where
-  request _ _ _ opts modifyReq payload = do
+  request _ _ _ opts reqOpts payload = do
     let body = encodeOptionalBody (Proxy :: _ body) payload
     let urlPath = encodeUrlWithParams opts
                         (SProxy :: _ fullPath)
@@ -226,7 +229,7 @@ else instance queryableDeleteRoute ::
           , url = url
           , content = body
           , responseFormat = ResponseFormat.string }
-    let req = modifyReq defaultReq
+    let req = applyReqOpts reqOpts defaultReq
     res <- AX.request req
     pure (decodeAffjaxResponse res)
 
@@ -312,3 +315,11 @@ stripTrailingSlash :: String -> String
 stripTrailingSlash s = case String.stripSuffix (String.Pattern "/") s of
   Just stripped -> stripped
   Nothing -> s
+
+applyReqOpts :: forall a. RequestOptions -> AX.Request a -> AX.Request a
+applyReqOpts { headers } req = req { headers = newHeaders }
+  where
+    newHeaders = req.headers <> (asAxHeader <$> Headers.toUnfoldable headers)
+
+    asAxHeader :: Tuple String String -> RequestHeader
+    asAxHeader (Tuple key val) = RequestHeader key val

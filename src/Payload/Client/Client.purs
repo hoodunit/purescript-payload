@@ -7,7 +7,7 @@ module Payload.Client.Client
        ) where
 
 import Payload.Client.ClientApi (class ClientApi, mkClientApi)
-import Payload.Client.Options (ModifyRequest, Options, defaultOpts)
+import Payload.Client.Options (RequestOptions, Options, defaultOpts)
 import Payload.Spec (Spec(..))
 
 mkClient :: forall routesSpec client

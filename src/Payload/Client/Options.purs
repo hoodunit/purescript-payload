@@ -1,11 +1,12 @@
 module Payload.Client.Options where
 
-import Affjax as AX
+import Payload.Headers (Headers)
 
 type Options =
   { baseUrl :: String }
 
-type ModifyRequest = AX.Request String -> AX.Request String
+type RequestOptions =
+  { headers :: Headers }
 
 defaultOpts :: Options
 defaultOpts =

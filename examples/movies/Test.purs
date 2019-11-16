@@ -10,16 +10,17 @@ import Payload.Client.Client (mkGuardedClient)
 import Payload.Client.Client as Client
 import Payload.Cookies as Cookies
 import Payload.Examples.Movies.Main (moviesApi, moviesApiSpec)
+import Payload.Headers as Headers
 import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
 import Payload.Test.Config (TestConfig)
 import Payload.Test.Helpers (assertFail, assertRes, withServer)
 import Test.Unit (TestSuite, suite, test)
 
-withCookies :: Map String String -> Client.ModifyRequest
-withCookies cookies req = req { withCredentials = true, headers = req.headers <> [ cookieHeader ] }
+cookieOpts :: Map String String -> Client.RequestOptions
+cookieOpts cookies = { headers: Headers.fromFoldable [cookieHeader] }
   where
     cookieHeader = case Cookies.cookieHeader cookies of
-                     Tuple field value -> RequestHeader field value
+                     Tuple field value -> Tuple field value
   
 tests :: TestConfig -> TestSuite
 tests cfg = do
@@ -31,16 +32,17 @@ tests cfg = do
         assertFail (client.v1.movies.latest {})
     test "Sub-route succeeds if parent route guard succeeds (has API key)" $ do
       withApi do
-        assertRes (client.v1.movies.latest_ (withCookies (Map.singleton "apiKey" "key")) {})
+        let opts = cookieOpts (Map.singleton "apiKey" "key")
+        assertRes (client.v1.movies.latest_ opts {})
                  { id: 723, title: "The Godfather" }
     test "Sub-route fails if passes parent guard but not child guard (missing session key)" $ do
       withApi do
         let payload = { params: { movieId: 1 }, body: { value: 9.0 } }
-        let opts = withCookies $ Map.singleton "apiKey" "key"
+        let opts = cookieOpts $ Map.singleton "apiKey" "key"
         assertFail $ client.v1.movies.byId.rating.create_ opts payload
     test "Sub-route succeeds if passes parent and child guards (has API and session keys)" $ do
       withApi do
-        let opts = withCookies $ Map.fromFoldable [Tuple "apiKey" "key", Tuple "sessionId" "sessionId"]
+        let opts = cookieOpts $ Map.fromFoldable [Tuple "apiKey" "key", Tuple "sessionId" "sessionId"]
         assertRes (client.v1.movies.byId.rating.create_ opts
                      { params: { movieId: 1 }, body: { value: 9.0 } })
                    { statusCode: 1, statusMessage: "Created" }
