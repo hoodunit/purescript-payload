@@ -12,7 +12,7 @@ import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (RequestOptions, Options)
-import Payload.Client.Queryable (class Queryable, request)
+import Payload.Client.Queryable (class Queryable, ClientFn, ClientFnWithOptions, request)
 import Payload.Headers as Headers
 import Payload.Routable (DefaultParentRoute)
 import Payload.Spec (Spec, Route(Route), Routes)
@@ -61,12 +61,12 @@ instance clientApiListCons ::
   , IsSymbol path
   , Row.Cons
      routeName
-     (payload -> Aff (Either String res))
+     (ClientFn payload res)
      remClient
      remClient'
   , Row.Cons
      routeNameWithOptions
-     (RequestOptions -> payload -> Aff (Either String res))
+     (ClientFnWithOptions payload res)
      remClient'
      client
   , Symbol.Append routeName "_" routeNameWithOptions
@@ -87,10 +87,10 @@ instance clientApiListCons ::
              (RLProxy :: _ remRoutes)
              (SProxy :: _ basePath)
              (Proxy :: _ (Record baseParams))
-      doRequest :: payload -> Aff (Either String res)
+      doRequest :: ClientFn payload res
       doRequest = doRequestWithOptions { headers: Headers.empty }
 
-      doRequestWithOptions :: RequestOptions -> payload -> Aff (Either String res)
+      doRequestWithOptions :: ClientFnWithOptions payload res
       doRequestWithOptions reqOpts payload =
         request (Route :: Route method path routeSpec)
                 (SProxy :: _ basePath)

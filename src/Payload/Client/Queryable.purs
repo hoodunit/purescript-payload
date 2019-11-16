@@ -33,6 +33,9 @@ import Type.Equality (class TypeEquals, to)
 import Type.Proxy (Proxy(..))
 import Type.RowList (class ListToRow, RLProxy(..))
 
+type ClientFnWithOptions payload res = RequestOptions -> ClientFn payload res
+type ClientFn payload res = payload -> Aff (Either String res)
+
 class Queryable
   route
   (basePath :: Symbol)
@@ -44,9 +47,7 @@ class Queryable
              -> SProxy basePath
              -> Proxy (Record baseParams)
              -> Options
-             -> RequestOptions
-             -> payload
-             -> Aff (Either String res)
+             -> ClientFnWithOptions payload res
 
 instance queryableGetRoute ::
        ( Row.Lacks "body" route
