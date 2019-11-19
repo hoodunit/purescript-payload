@@ -8,7 +8,7 @@ import Data.Map as Map
 import Data.Tuple (Tuple(..))
 import Payload.Client.Client (mkGuardedClient)
 import Payload.Client.Client as Client
-import Payload.Cookies as Cookies
+import Payload.Server.Cookies as Cookies
 import Payload.Examples.Movies.Main (moviesApi, moviesApiSpec)
 import Payload.Headers as Headers
 import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)

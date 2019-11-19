@@ -22,7 +22,7 @@ import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (Options, RequestOptions)
 import Payload.Headers as Headers
 import Payload.Internal.Route (DefaultRouteSpec, Undefined)
-import Payload.Response (ResponseBody(..))
+import Payload.ResponseTypes (ResponseBody(..))
 import Payload.Spec (Route)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)

@@ -4,7 +4,8 @@ import Prelude
 
 import Data.Either (Either(..))
 import Payload.Client.Client (mkClient)
-import Payload.Response as Response
+import Payload.ResponseTypes (Empty(..))
+import Payload.Server.Response as Response
 import Payload.Spec (DELETE, GET, HEAD, POST, PUT, Routes, Spec(Spec))
 import Payload.Test.Config (TestConfig)
 import Payload.Test.Helpers (withRoutes)
@@ -64,7 +65,7 @@ tests cfg = do
     suite "HEAD" do
       test "HEAD succeeds" $ do
         let spec = Spec :: _ { foo :: HEAD "/foo" {} }
-        let handlers = { foo: \_ -> pure Response.Empty }
+        let handlers = { foo: \_ -> pure Empty }
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo {}

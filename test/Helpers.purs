@@ -20,7 +20,7 @@ import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
-import Payload.Routable (class Routable)
+import Payload.Server.Routable (class Routable)
 import Payload.Server as Payload
 import Payload.Spec (Spec(Spec))
 import Test.Unit (Test, failure, success)

@@ -3,7 +3,7 @@ module Payload.Examples.Basic.Spec where
 import Data.List (List)
 import Foreign.Object (Object)
 import Node.HTTP as HTTP
-import Payload.Handlers (File)
+import Payload.Server.Handlers (File)
 import Payload.Spec (type (:), Spec(Spec), GET, Guards, Nil, POST, Routes)
 
 spec :: Spec {

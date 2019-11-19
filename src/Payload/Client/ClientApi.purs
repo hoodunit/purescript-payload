@@ -14,7 +14,7 @@ import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (RequestOptions, Options)
 import Payload.Client.Queryable (class Queryable, ClientFn, ClientFnWithOptions, request)
 import Payload.Headers as Headers
-import Payload.Routable (DefaultParentRoute)
+import Payload.Internal.Route (DefaultParentRoute)
 import Payload.Spec (Spec, Route(Route), Routes)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)

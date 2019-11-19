@@ -5,8 +5,8 @@ import Prelude
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Node.Stream as Stream
-import Payload.Internal.TypeErrors (type (<>), type (|>))
-import Payload.Response (ResponseBody(..))
+import Payload.TypeErrors (type (<>), type (|>))
+import Payload.ResponseTypes (ResponseBody(..))
 import Prim.TypeError (class Warn, Quote, Text)
 import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals)

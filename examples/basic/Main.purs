@@ -11,12 +11,12 @@ import Effect.Aff (Aff)
 import Foreign.Object (Object)
 import Node.HTTP as HTTP
 import Payload.Examples.Basic.Spec (AdminUser(..), Post, User)
-import Payload.Guards as Guards
-import Payload.Handlers (File(..))
-import Payload.Handlers as Handlers
 import Payload.Headers as Headers
-import Payload.Response (Failure(Forward))
-import Payload.Response as Response
+import Payload.ResponseTypes (Failure(Forward))
+import Payload.Server.Guards as Guards
+import Payload.Server.Handlers (File(..))
+import Payload.Server.Handlers as Handlers
+import Payload.Server.Response as Response
 
 getUsers :: { guards :: { adminUser :: AdminUser, request :: HTTP.Request }} -> Aff (Array User)
 getUsers { guards: { adminUser: AdminUser adminUser } } = pure [adminUser, { id: 1, name: "John Doe" }]
@@ -55,7 +55,7 @@ search :: { query :: { a :: Int, b :: Int, rest :: Object String } }
           -> Aff String
 search _ = pure "Search result"
 
-getAdminUser :: HTTP.Request -> Aff (Either Response.Failure AdminUser)
+getAdminUser :: HTTP.Request -> Aff (Either Failure AdminUser)
 getAdminUser req = do
   authTokenRes <- parseAuthToken req
   case authTokenRes of

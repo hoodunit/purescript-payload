@@ -11,20 +11,20 @@ import Payload.Examples.Movies.Test as MoviesExample
 import Payload.Test.Config (defaultConfig)
 import Payload.Test.Integration.Client.Methods as ClientMethodsTest
 import Payload.Test.Integration.Client.QueryParams as ClientQueryParams
-import Payload.Test.Integration.Guards as GuardsTest
-import Payload.Test.Integration.Methods as MethodsTest
-import Payload.Test.Integration.QueryParams as QueryParamsTest
-import Payload.Test.Integration.Status as StatusTest
-import Payload.Test.Unit.Cookies as CookiesTest
-import Payload.Test.Unit.Internal.GuardParsing as GuardParsingTest
-import Payload.Test.Unit.Internal.OmitEmpty as OmitEmptyTest
-import Payload.Test.Unit.Internal.Query as QueryTest
+import Payload.Test.Integration.Server.Guards as GuardsTest
+import Payload.Test.Integration.Server.Methods as MethodsTest
+import Payload.Test.Integration.Server.QueryParams as QueryParamsTest
+import Payload.Test.Integration.Server.Status as StatusTest
 import Payload.Test.Unit.Internal.QueryParsing as QueryParsingTest
-import Payload.Test.Unit.Internal.Trie as TrieTest
-import Payload.Test.Unit.Internal.Url as UrlTest
 import Payload.Test.Unit.Internal.UrlParsing as UrlParsingTest
-import Payload.Test.Unit.Params as ParamsTest
-import Payload.Test.Unit.Response as ResponseTest
+import Payload.Test.Unit.Server.Cookies as CookiesTest
+import Payload.Test.Unit.Server.Internal.GuardParsing as GuardParsingTest
+import Payload.Test.Unit.Server.Internal.OmitEmpty as OmitEmptyTest
+import Payload.Test.Unit.Server.Internal.Query as QueryTest
+import Payload.Test.Unit.Server.Internal.Trie as TrieTest
+import Payload.Test.Unit.Server.Internal.Url as UrlTest
+import Payload.Test.Unit.Server.Params as ParamsTest
+import Payload.Test.Unit.Server.Response as ResponseTest
 import Test.Unit (TestSuite, suite)
 import Test.Unit.Main (runTestWith)
 import Test.Unit.Output.Fancy as Fancy
@@ -32,11 +32,13 @@ import Test.Unit.Output.Fancy as Fancy
 tests :: TestSuite
 tests = do
   let cfg = defaultConfig
-  suite "Unit" do
+  suite "Unit - shared" do
     UrlParsingTest.tests
+    QueryParsingTest.tests
+
+  suite "Unit - Server" do
     UrlTest.tests
     QueryTest.tests
-    QueryParsingTest.tests
     ParamsTest.tests
     TrieTest.tests
     GuardParsingTest.tests

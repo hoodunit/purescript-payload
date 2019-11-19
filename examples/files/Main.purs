@@ -3,9 +3,9 @@ module Payload.Examples.Files.Main where
 import Data.Either (Either)
 import Data.List (List)
 import Effect.Aff (Aff)
-import Payload.Handlers (File)
-import Payload.Handlers as Handlers
-import Payload.Response (Failure)
+import Payload.Server.Handlers (File)
+import Payload.Server.Handlers as Handlers
+import Payload.ResponseTypes (Failure)
 import Payload.Spec (Spec(Spec), GET)
 
 spec :: Spec

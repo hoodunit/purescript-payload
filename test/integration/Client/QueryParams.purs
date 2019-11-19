@@ -7,7 +7,8 @@ import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Payload.Client.Client (mkClient)
-import Payload.Response as Response
+import Payload.ResponseTypes (Empty(..))
+import Payload.Server.Response as Response
 import Payload.Spec (DELETE, GET, POST, PUT, Spec(Spec), HEAD)
 import Payload.Test.Config (TestConfig)
 import Payload.Test.Helpers (withRoutes)
@@ -68,7 +69,7 @@ tests cfg = do
     test "HEAD succeeds" $ do
       let spec = Spec :: _ { foo :: HEAD "/foo?literal&key=<key>&<..rest>"
                                      { query :: { key :: Int, rest :: Object String }} }
-      let handlers = { foo: \{ query: { key, rest } } -> pure $ Response.Empty }
+      let handlers = { foo: \{ query: { key, rest } } -> pure $ Empty }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
         res <- client.foo { query: { key: 1, rest: Object.fromFoldable [Tuple "a" "a"] } }

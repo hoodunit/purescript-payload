@@ -30,15 +30,16 @@ import Effect.Exception (Error)
 import Node.HTTP as HTTP
 import Node.URL (URL)
 import Node.URL as Url
-import Payload.Internal.Request (RequestUrl)
-import Payload.Internal.ServerResponse (writeResponse)
-import Payload.Internal.Trie (Trie)
-import Payload.Internal.Trie as Trie
 import Payload.Internal.UrlParsing (Segment)
-import Payload.Internal.UrlString (urlToSegments)
-import Payload.Response (ResponseBody(..), internalError)
-import Payload.Response as Response
-import Payload.Routable (class Routable, HandlerEntry, Outcome(..), mkRouter)
+import Payload.ResponseTypes (ResponseBody(..))
+import Payload.Server.Internal.Request (RequestUrl)
+import Payload.Server.Internal.ServerResponse (writeResponse)
+import Payload.Server.Internal.Trie (Trie)
+import Payload.Server.Internal.Trie as Trie
+import Payload.Server.Internal.UrlString (urlToSegments)
+import Payload.Server.Response (internalError)
+import Payload.Server.Response as Response
+import Payload.Server.Routable (class Routable, HandlerEntry, Outcome(..), mkRouter)
 import Payload.Spec (Spec(Spec))
 import Record as Record
 

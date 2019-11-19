@@ -4,7 +4,7 @@ import Prelude
 
 import Data.List (List(..), (:))
 import Data.List as List
-import Payload.Internal.TypeErrors (class PrintArrow, type (<>), type (|>))
+import Payload.TypeErrors (class PrintArrow, type (<>), type (|>))
 import Prim.Symbol as Symbol
 import Prim.TypeError (class Fail, Text, kind Doc)
 import Type.Prelude (class IsSymbol, SProxy(..), reflectSymbol)
