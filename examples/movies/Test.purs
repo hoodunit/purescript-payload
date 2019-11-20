@@ -6,8 +6,8 @@ import Affjax.RequestHeader (RequestHeader(..))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Tuple (Tuple(..))
-import Payload.Client.Client (mkGuardedClient)
-import Payload.Client.Client as Client
+import Payload.Client (mkGuardedClient)
+import Payload.Client as Client
 import Payload.Server.Cookies as Cookies
 import Payload.Examples.Movies.Main (moviesApi, moviesApiSpec)
 import Payload.Headers as Headers

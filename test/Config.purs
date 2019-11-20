@@ -1,6 +1,6 @@
 module Payload.Test.Config where
 
-import Payload.Client.Client as Client
+import Payload.Client as Client
 
 type TestConfig =
   { clientOpts :: Client.Options }

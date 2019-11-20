@@ -6,8 +6,8 @@ import Affjax.RequestHeader (RequestHeader(..))
 import Data.Either (Either(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
-import Payload.Client.Client (mkClient, mkGuardedClient)
-import Payload.Client.Client as Client
+import Payload.Client (mkClient, mkGuardedClient)
+import Payload.Client as Client
 import Payload.Examples.Basic.Main (api)
 import Payload.Examples.Basic.Spec (spec)
 import Payload.Headers as Headers

@@ -1,4 +1,4 @@
-module Payload.Client.Client
+module Payload.Client
        ( mkClient
        , mkClient_
        , mkGuardedClient

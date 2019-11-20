@@ -6,8 +6,8 @@ import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Payload.Client.Client (mkGuardedClient)
-import Payload.Client.Client as Client
+import Payload.Client (mkGuardedClient)
+import Payload.Client as Client
 import Payload.Examples.Basic.Spec (spec)
 
 main :: Effect Unit

@@ -3,7 +3,7 @@ module Payload.Test.Integration.Client.Methods where
 import Prelude
 
 import Data.Either (Either(..))
-import Payload.Client.Client (mkClient)
+import Payload.Client (mkClient)
 import Payload.ResponseTypes (Empty(..))
 import Payload.Server.Response as Response
 import Payload.Spec (DELETE, GET, HEAD, POST, PUT, Routes, Spec(Spec))

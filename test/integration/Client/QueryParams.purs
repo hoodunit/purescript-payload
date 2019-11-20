@@ -6,7 +6,7 @@ import Data.Either (Either(..))
 import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Payload.Client.Client (mkClient)
+import Payload.Client (mkClient)
 import Payload.ResponseTypes (Empty(..))
 import Payload.Server.Response as Response
 import Payload.Spec (DELETE, GET, POST, PUT, Spec(Spec), HEAD)
