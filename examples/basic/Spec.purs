@@ -13,15 +13,15 @@ spec :: Spec {
   },
   routes :: {
     users :: Routes "/users" {
-      getUsersProfiles :: GET "/profiles" {
+      getProfiles :: GET "/profiles" {
         response :: Array String
       },
-      userById :: Routes "/<id>" {
+      byId :: Routes "/<id>" {
         params :: { id :: Int },
-        getUser :: GET "/" {
+        get :: GET "/" {
           response :: User
         },
-        getUserPost :: GET "/posts/<postId>" {
+        getPost :: GET "/posts/<postId>" {
           params :: { postId :: String },
           response :: Post
         }
@@ -29,11 +29,11 @@ spec :: Spec {
     },
     adminUsers :: Routes "/users" {
       guards :: Guards ("adminUser" : Nil),
-      getUsers :: GET "/" {
+      get :: GET "/" {
         guards :: Guards ("request" : Nil),
         response :: Array User
       },
-      createUser :: POST "/new" {
+      create :: POST "/new" {
         body :: User,
         response :: User
       }

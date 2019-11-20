@@ -38,25 +38,25 @@ tests cfg = do
   let authenticatedOpts = { headers: Headers.fromFoldable [ authHeader ] }
   suite "Example: basic" do
     test "GET /users (with secret)" $ withApi do
-      assertResp (client.adminUsers.getUsers_ authenticatedOpts {})
+      assertResp (client.adminUsers.get_ authenticatedOpts {})
         [{ id: 1, name: "John Admin" }, { id: 1, name: "John Doe" }]
     test "GET /users without secret should fall through to non-admin route" $ withApi do
       assertResp (client.getUsersNonAdmin { params: { name: "users" } })
         [{ id: 1, name: "John Doe" }]
     test "GET /users/<id>" $ withApi do
-      assertResp (client.users.userById.getUser { params: { id: 1 } })
+      assertResp (client.users.byId.get { params: { id: 1 } })
         { id: 1, name: "whodunnit" }
     test "GET /users/profile" $ withApi do
-      assertResp (client.users.getUsersProfiles {})
+      assertResp (client.users.getProfiles {})
         ["Profile1", "Profile2"]
     test "POST /users/new" $ withApi do
       assertResp
-        (client.adminUsers.createUser_ authenticatedOpts { body: { id: 5, name: "New user!" }})
+        (client.adminUsers.create_ authenticatedOpts { body: { id: 5, name: "New user!" }})
         { id: 5, name: "New user!" }
     test "POST /users/new fails without the secret" $ withApi do
-      assertFail (client.adminUsers.createUser { body: { id: 5, name: "New user!" }})
+      assertFail (client.adminUsers.create { body: { id: 5, name: "New user!" }})
     test "GET /users/<id>/posts/<postId>" $ withApi $ assertResp
-      (client.users.userById.getUserPost { params: { id: 1, postId: "1" } })
+      (client.users.byId.getPost { params: { id: 1, postId: "1" } })
       { id: "1", text: "Some post" }
     test "GET /pages/<id>" $ withApi $ assertResp
       (client.getPage { params: { id: "1" } })

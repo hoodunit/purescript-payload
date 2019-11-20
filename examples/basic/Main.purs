@@ -76,15 +76,15 @@ parseAuthToken req = do
 api = {
   handlers: {
     users: {
-       getUsersProfiles,
-       userById: {
-         getUser,
-         getUserPost
+       getProfiles: getUsersProfiles,
+       byId: {
+         get: getUser,
+         getPost: getUserPost
        }
     },
     adminUsers: {
-      getUsers,
-      createUser
+      get: getUsers,
+      create: createUser
     },
     getUsersNonAdmin,
     indexPage,

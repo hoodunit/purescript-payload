@@ -13,8 +13,9 @@ The basic idea: write one API spec. Write handlers as functions returning data. 
 * Request routing
 * Decoding URL parameters, query parameters, and request bodies into typed values
 * Encoding typed values into server responses
+* Client functions for calling the API
 
-It's like [OpenAPI/Swagger](https://swagger.io/) without the boilerplate and code generation. Unlike OpenAPI, if your handlers don't match your spec the code won't compile, so servers always stay in sync with the spec.
+It's like [OpenAPI/Swagger](https://swagger.io/) without the boilerplate and code generation. Unlike OpenAPI, if your handlers or clients don't match your spec the code won't compile, so servers and clients always stay in sync with the spec.
 
 Here is a complete Payload application:
 
@@ -69,6 +70,7 @@ This library is experimental, in flux, and will likely have breaking API changes
     * [Errors](#errors)
     * [Static files](#static-files)
   * [Guards](#guards)
+  * [Client](#client)
 * [Building](#building)
 
 ## Getting Started
@@ -343,6 +345,34 @@ main = do
 ```
 
 Guards can also be applied on parent routes in a hierarchical API spec. For an example of this see the [Movies API Example](./examples/movies/Main.purs).
+
+### Client
+
+Given an API spec, Payload can automatically derive client functions for calling the API. The client functions take typed values as parameters, encode them into an HTTP request, and then decode the response into typed response values.
+
+A client is created by passing the API spec to [mkClient](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Client#v:mkClient) or [mkGuardedClient](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Client#v:mkGuardedClient). The client is a record mirroring the shape of the server handler record, but with client functions instead of handlers. The client functions accept a record of API parameters identical to the one received by the server handler functions.
+
+```
+main :: Effect Unit
+main = launchAff_ do
+  let client = mkGuardedClient { baseUrl: "http://localhost:3000" } spec
+  existingUser <- client.users.byId.get {params: {id: 1}}
+  newUser <- client.adminUsers.create {body: {id: 2, name: "whodunnit"}}
+  liftEffect $ log $ "Existing: " <> show existingUser
+  liftEffect $ log $ "New: " <> show newUser
+
+```
+
+Client functions come in two variants, one with the same name as the client field and another with a `_` suffix that allows passing in options for e.g. adding headers. For example:
+
+```
+do
+  user1 <- client.users.byId.get {params: {id: 1}}
+  let options = (Client.defaultOpts { headers = myHeaders })
+  user2 <- client.users.byId.get_ options {params: {id: 1}}
+```
+
+See the [Movies example tests](./examples/movies/Test.purs) for examples of client API calls.
 
 ## Building
 

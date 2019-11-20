@@ -12,7 +12,8 @@ import Payload.Examples.Basic.Spec (spec)
 
 main :: Effect Unit
 main = launchAff_ do
-  let clientOpts = Client.defaultOpts { baseUrl = "http://localhost:3000" }
-  let client = mkGuardedClient clientOpts spec
-  users <- client.adminUsers.getUsers {}
-  liftEffect $ log (show users)
+  let client = mkGuardedClient { baseUrl: "http://localhost:3000" } spec
+  existingUser <- client.users.byId.get {params: {id: 1}}
+  newUser <- client.adminUsers.create {body: {id: 2, name: "whodunnit"}}
+  liftEffect $ log $ "Existing: " <> show existingUser
+  liftEffect $ log $ "New: " <> show newUser
