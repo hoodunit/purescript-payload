@@ -208,9 +208,9 @@ getMessage { params: { id, limit } } = pure
   [{ id: 1, text: "Hey there"}, { id: 2, text: "Limit " <> show limit }]
 ```
 
-Single URL parameter decoding can be extended by implementing the [DecodeParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Params#t:DecodeParam) type class.
+Single URL parameter decoding can be extended by implementing the [DecodeParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Params#t:DecodeParam) type class.
 
-Multi-matches must appear at the end of a URL and similarly given a type in the `params` field. The only supported type for multi-matches is `List String` unless the [DecodeSegments](https://pursuit.purescript.org/packages/purescript-payload/0.1.0/docs/Payload.Params#t:DecodeSegments) class is implemented. Example:
+Multi-matches must appear at the end of a URL and similarly given a type in the `params` field. The only supported type for multi-matches is `List String` unless the [DecodeSegments](https://pursuit.purescript.org/packages/purescript-payload/0.1.0/docs/Payload.Server.Params#t:DecodeSegments) class is implemented. Example:
 
 ```purescript
 -- Spec:
@@ -226,9 +226,9 @@ files { params: {path} } = Handlers.directory "test" path
 
 #### Request body
 
-When a request body is specified on an API route, the route will only be called if a request body can be decoded into the specified type via the [DecodeBody](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.DecodeBody) type class. If decoding fails, a 404 response is returned. Handlers will be called with a payload field named `body` containing the decoded body.
+When a request body is specified on an API route, the route will only be called if a request body can be decoded into the specified type via the [DecodeBody](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.DecodeBody) type class. If decoding fails, a 404 response is returned. Handlers will be called with a payload field named `body` containing the decoded body.
 
-Body decoding can be specified for custom types or overwritten by writing an instance of [DecodeBody](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.DecodeBody).
+Body decoding can be specified for custom types or overwritten by writing an instance of [DecodeBody](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.DecodeBody).
 
 Example endpoint with body:
 
@@ -274,23 +274,23 @@ A simple Payload handler is just a function that asynchronously returns a value,
 * Record (returns JSON)
 * `Json` (returns JSON)
 
-JSON is encoded via the [purescript-simple-json library](https://github.com/justinwoo/purescript-simple-json). Handlers can also return any other response body that implements [EncodeResponse](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:EncodeResponse).
+JSON is encoded via the [purescript-simple-json library](https://github.com/justinwoo/purescript-simple-json). Handlers can also return any other response body that implements [EncodeResponse](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Response#t:EncodeResponse).
 
-Payload validates at compile time that handler responses match the type specified in the API spec. Responses match the spec by either being exactly the type defined in the spec or by being convertable to that type via the [ToSpecResponse](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:ToSpecResponse) type class.
+Payload validates at compile time that handler responses match the type specified in the API spec. Responses match the spec by either being exactly the type defined in the spec or by being convertable to that type via the [ToSpecResponse](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Response#t:ToSpecResponse) type class.
 
 What other responses can be converted to spec responses?
 
 #### Modified status or headers
 
-To modify the status or headers, handlers can return a [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:Response), which is a wrapper around a record with `status`, `headers`, and `body` fields. There are various helpers in the [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:Response) module for creating and modifying responses.
+To modify the status or headers, handlers can return a [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.ResponseTypes#t:Response), which is a wrapper around a record with `status`, `headers`, and `body` fields. There are various helpers in the [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Response#t:Response) module for creating and modifying responses.
 
 #### Errors
 
-To return an error, handlers can return `Either error val`, where `error` can be any encodable value. If the encodable value is a [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Response#t:Response), it will be returned with the given status and headers, or by default with status 500 Internal Server Error for other error responses. Error responses are not represented in the API spec and do not need to match the spec.
+To return an error, handlers can return `Either error val`, where `error` can be any encodable value. If the encodable value is a [Response](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.ResponseTypes#t:Response), it will be returned with the given status and headers, or by default with status 500 Internal Server Error for other error responses. Error responses are not represented in the API spec and do not need to match the spec.
 
 #### Static files
 
-Static files can be served using the [file](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers#v:file) or [directory](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers#v:directory) helpers in the [Handlers module](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Handlers). The provided handlers will add appropriate MIME types to responses and protect against directory traversal attacks. See also [the example for serving static files](./examples/files/Main.purs).
+Static files can be served using the [file](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Handlers#v:file) or [directory](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Handlers#v:directory) helpers in the [Handlers module](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Handlers). The provided handlers will add appropriate MIME types to responses and protect against directory traversal attacks. See also [the example for serving static files](./examples/files/Main.purs).
 
 ### Guards
 
