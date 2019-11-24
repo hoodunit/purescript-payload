@@ -348,31 +348,33 @@ Guards can also be applied on parent routes in a hierarchical API spec. For an e
 
 ### Client
 
-Given an API spec, Payload can automatically derive client functions for calling the API. The client functions take typed values as parameters, encode them into an HTTP request, and then decode the response into typed response values.
+Given an API spec, Payload can automatically derive client functions for calling the API. The client functions take typed values as parameters, encode them into an HTTP request, and then decode the response into typed response values. If the response has a 2xx status code, it is treated as a successful API response and the client attempts to decode it into the type given in the spec. For other responses the client will return an error containing the full response.
 
 A client is created by passing the API spec to [mkClient](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Client#v:mkClient) or [mkGuardedClient](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Client#v:mkGuardedClient). The client is a record mirroring the shape of the server handler record, but with client functions instead of handlers. The client functions accept a record of API parameters identical to the one received by the server handler functions.
 
-```
+```purescript
 main :: Effect Unit
 main = launchAff_ do
   let client = mkGuardedClient { baseUrl: "http://localhost:3000" } spec
   existingUser <- client.users.byId.get {params: {id: 1}}
   newUser <- client.adminUsers.create {body: {id: 2, name: "whodunnit"}}
-  liftEffect $ log $ "Existing: " <> show existingUser
-  liftEffect $ log $ "New: " <> show newUser
+  liftEffect $ log $ "Existing ID: " <> show existingUser.id
+  liftEffect $ log $ "New ID: " <> show newUser.id
 
 ```
 
 Client functions come in two variants, one with the same name as the client field and another with a `_` suffix that allows passing in options for e.g. adding headers. For example:
 
-```
+```purescript
 do
   user1 <- client.users.byId.get {params: {id: 1}}
-  let options = (Client.defaultOpts { headers = myHeaders })
+  let options = Client.defaultOpts { headers = myHeaders }
   user2 <- client.users.byId.get_ options {params: {id: 1}}
 ```
 
-See the [Movies example tests](./examples/movies/Test.purs) for examples of client API calls.
+See the [Movies example tests](./examples/movies/Test.purs) for further examples of client API calls.
+
+The client library uses the [Affjax library](https://github.com/slamdata/purescript-affjax) under the hood. If you are using the client on Node.js, you will need to install the `xhr2` package.
 
 ## Building
 

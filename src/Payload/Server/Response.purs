@@ -239,183 +239,242 @@ else instance encodeResponseEmpty :: EncodeResponse Empty where
                    , headers: r.headers
                    , body: EmptyBody }
 
-
+-- | Status code: 100
 continue :: forall a. a -> Response a
 continue = status Status.continue
 
+-- | Status code: 101
 switchingProtocols :: forall a. a -> Response a
 switchingProtocols = status Status.switchingProtocols
 
+-- | Status code: 102
 processing :: forall a. a -> Response a
 processing = status Status.processing
 
+-- | Status code: 200
 ok :: forall a. a -> Response a
 ok = status Status.ok
 
+-- | Status code: 201
 created :: forall a. a -> Response a
 created = status Status.created
 
+-- | Status code: 202
 accepted :: forall a. a -> Response a
 accepted = status Status.accepted
 
+-- | Status code: 203
 nonAuthoritativeInformation :: forall a. a -> Response a
 nonAuthoritativeInformation = status Status.nonAuthoritativeInformation
 
+-- | Status code: 204
 noContent :: forall a. a -> Response a
 noContent = status Status.noContent
 
+-- | Status code: 205
 resetContent :: forall a. a -> Response a
 resetContent = status Status.resetContent
 
+-- | Status code: 206
 partialContent :: forall a. a -> Response a
 partialContent = status Status.partialContent
 
+-- | Status code: 207
 multiStatus :: forall a. a -> Response a
 multiStatus = status Status.multiStatus
 
+-- | Status code: 208
 alreadyReported :: forall a. a -> Response a
 alreadyReported = status Status.alreadyReported
 
+-- | Status code: 226
 imUsed :: forall a. a -> Response a
 imUsed = status Status.imUsed
 
+-- | Status code: 300
 multipleChoices :: forall a. a -> Response a
 multipleChoices = status Status.multipleChoices
 
+-- | Status code: 301
 movedPermanently :: forall a. a -> Response a
 movedPermanently = status Status.movedPermanently
 
+-- | Status code: 302
 found :: forall a. a -> Response a
 found = status Status.found
 
+-- | Status code: 303
 seeOther :: forall a. a -> Response a
 seeOther = status Status.seeOther
 
+-- | Status code: 304
 notModified :: forall a. a -> Response a
 notModified = status Status.notModified
 
+-- | Status code: 305
 useProxy :: forall a. a -> Response a
 useProxy = status Status.useProxy
 
+-- | Status code: 307
 temporaryRedirect :: forall a. a -> Response a
 temporaryRedirect = status Status.temporaryRedirect
 
+-- | Status code: 308
 permanentRedirect :: forall a. a -> Response a
 permanentRedirect = status Status.permanentRedirect
 
+-- | Status code: 400
 badRequest :: forall a. a -> Response a
 badRequest = status Status.badRequest
 
+-- | Status code: 401
 unauthorized :: forall a. a -> Response a
 unauthorized = status Status.unauthorized
 
+-- | Status code: 402
 paymentRequired :: forall a. a -> Response a
 paymentRequired = status Status.paymentRequired
 
+-- | Status code: 403
 forbidden :: forall a. a -> Response a
 forbidden = status Status.forbidden
 
+-- | Status code: 404
 notFound :: forall a. a -> Response a
 notFound = status Status.notFound
 
+-- | Status code: 405
 methodNotAllowed :: forall a. a -> Response a
 methodNotAllowed = status Status.methodNotAllowed
 
+-- | Status code: 406
 notAcceptable :: forall a. a -> Response a
 notAcceptable = status Status.notAcceptable
 
+-- | Status code: 407
 proxyAuthenticationRequired :: forall a. a -> Response a
 proxyAuthenticationRequired = status Status.proxyAuthenticationRequired
 
+-- | Status code: 408
 requestTimeout :: forall a. a -> Response a
 requestTimeout = status Status.requestTimeout
 
+-- | Status code: 409
 conflict :: forall a. a -> Response a
 conflict = status Status.conflict
 
+-- | Status code: 410
 gone :: forall a. a -> Response a
 gone = status Status.gone
 
+-- | Status code: 411
 lengthRequired :: forall a. a -> Response a
 lengthRequired = status Status.lengthRequired
 
+-- | Status code: 412
 preconditionFailed :: forall a. a -> Response a
 preconditionFailed = status Status.preconditionFailed
 
+-- | Status code: 413
 payloadTooLarge :: forall a. a -> Response a
 payloadTooLarge = status Status.payloadTooLarge
 
+-- | Status code: 414
 uriTooLong :: forall a. a -> Response a
 uriTooLong = status Status.uriTooLong
 
+-- | Status code: 415
 unsupportedMediaType :: forall a. a -> Response a
 unsupportedMediaType = status Status.unsupportedMediaType
 
+-- | Status code: 416
 rangeNotSatisfiable :: forall a. a -> Response a
 rangeNotSatisfiable = status Status.rangeNotSatisfiable
 
+-- | Status code: 417
 expectationFailed :: forall a. a -> Response a
 expectationFailed = status Status.expectationFailed
 
+-- | Status code: 418
 imATeapot :: forall a. a -> Response a
 imATeapot = status Status.imATeapot
 
+-- | Status code: 421
 misdirectedRequest :: forall a. a -> Response a
 misdirectedRequest = status Status.misdirectedRequest
 
+-- | Status code: 422
 unprocessableEntity :: forall a. a -> Response a
 unprocessableEntity = status Status.unprocessableEntity
 
+-- | Status code: 423
 locked :: forall a. a -> Response a
 locked = status Status.locked
 
+-- | Status code: 424
 failedDependency :: forall a. a -> Response a
 failedDependency = status Status.failedDependency
 
+-- | Status code: 426
 upgradeRequired :: forall a. a -> Response a
 upgradeRequired = status Status.upgradeRequired
 
+-- | Status code: 428
 preconditionRequired :: forall a. a -> Response a
 preconditionRequired = status Status.preconditionRequired
 
+-- | Status code: 429
 tooManyRequests :: forall a. a -> Response a
 tooManyRequests = status Status.tooManyRequests
 
+-- | Status code: 431
 requestHeaderFieldsTooLarge :: forall a. a -> Response a
 requestHeaderFieldsTooLarge = status Status.requestHeaderFieldsTooLarge
 
+-- | Status code: 451
 unavailableForLegalReasons :: forall a. a -> Response a
 unavailableForLegalReasons = status Status.unavailableForLegalReasons
 
+-- | Status code: 500
 internalError :: forall a. a -> Response a
 internalError = status Status.internalError
 
+-- | Status code: 501
 notImplemented :: forall a. a -> Response a
 notImplemented = status Status.notImplemented
 
+-- | Status code: 502
 badGateway :: forall a. a -> Response a
 badGateway = status Status.badGateway
 
+-- | Status code: 503
 serviceUnavailable :: forall a. a -> Response a
 serviceUnavailable = status Status.serviceUnavailable
 
+-- | Status code: 504
 gatewayTimeout :: forall a. a -> Response a
 gatewayTimeout = status Status.gatewayTimeout
 
+-- | Status code: 505
 httpVersionNotSupported :: forall a. a -> Response a
 httpVersionNotSupported = status Status.httpVersionNotSupported
 
+-- | Status code: 506
 variantAlsoNegotiates :: forall a. a -> Response a
 variantAlsoNegotiates = status Status.variantAlsoNegotiates
 
+-- | Status code: 507
 insufficientStorage :: forall a. a -> Response a
 insufficientStorage = status Status.insufficientStorage
 
+-- | Status code: 508
 loopDetected :: forall a. a -> Response a
 loopDetected = status Status.loopDetected
 
+-- | Status code: 510
 notExtended :: forall a. a -> Response a
 notExtended = status Status.notExtended
 
+-- | Status code: 511
 networkAuthenticationRequired :: forall a. a -> Response a
 networkAuthenticationRequired = status Status.networkAuthenticationRequired

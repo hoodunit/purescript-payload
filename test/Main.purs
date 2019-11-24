@@ -9,8 +9,10 @@ import Payload.Examples.Files.Test as FilesExample
 import Payload.Examples.Hello.Test as HelloExample
 import Payload.Examples.Movies.Test as MoviesExample
 import Payload.Test.Config (defaultConfig)
+import Payload.Test.Integration.Client.Errors as ClientErrorsTest
 import Payload.Test.Integration.Client.Methods as ClientMethodsTest
 import Payload.Test.Integration.Client.QueryParams as ClientQueryParams
+import Payload.Test.Integration.Client.Statuses as ClientStatuses
 import Payload.Test.Integration.Server.Guards as GuardsTest
 import Payload.Test.Integration.Server.Methods as MethodsTest
 import Payload.Test.Integration.Server.QueryParams as QueryParamsTest
@@ -53,8 +55,10 @@ tests = do
     StatusTest.tests
 
   suite "Client integration" do
+    ClientErrorsTest.tests cfg
     ClientMethodsTest.tests cfg
     ClientQueryParams.tests cfg
+    ClientStatuses.tests cfg
 
   suite "Examples" do
     HelloExample.tests

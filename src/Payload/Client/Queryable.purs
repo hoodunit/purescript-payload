@@ -6,6 +6,7 @@ import Affjax as AX
 import Affjax.RequestBody as RequestBody
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
+import Affjax.ResponseHeader (ResponseHeader(..))
 import Affjax.StatusCode (StatusCode(..))
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
@@ -15,14 +16,14 @@ import Data.String as String
 import Data.Symbol (SProxy(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
-import Payload.Client.DecodeResponse (class DecodeResponse, decodeResponse)
+import Payload.Client.DecodeResponse (class DecodeResponse, DecodeResponseError(..), decodeResponse)
 import Payload.Client.EncodeBody (class EncodeBody, encodeBody)
 import Payload.Client.Internal.Query (class EncodeQuery, encodeQuery)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (Options, RequestOptions)
 import Payload.Headers as Headers
 import Payload.Internal.Route (DefaultRouteSpec, Undefined)
-import Payload.ResponseTypes (ResponseBody(..))
+import Payload.ResponseTypes (Response(..), ResponseBody(..))
 import Payload.Spec (Route)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
@@ -33,8 +34,20 @@ import Type.Equality (class TypeEquals, to)
 import Type.Proxy (Proxy(..))
 import Type.RowList (class ListToRow, RLProxy(..))
 
-type ClientFnWithOptions payload res = RequestOptions -> ClientFn payload res
-type ClientFn payload res = payload -> Aff (Either String res)
+type ClientFnWithOptions payload body = RequestOptions -> ClientFn payload body
+type ClientFn payload body = payload -> Aff (ClientResponse body)
+type ClientResponse body = Either ClientError body
+data ClientError
+  = DecodeError { error :: DecodeResponseError, response :: Response String }
+  | StatusError { response :: Response String }
+
+instance showClientError :: Show ClientError where
+  show (DecodeError err) = "DecodeError: " <> show err
+  show (StatusError err) = "StatusError: " <> show err
+instance eqClientError :: Eq ClientError where
+  eq (DecodeError a) (DecodeError b) = a == b
+  eq (StatusError a) (StatusError b) = a == b
+  eq _ _ = false
 
 class Queryable
   route
@@ -234,14 +247,30 @@ else instance queryableDeleteRoute ::
     res <- AX.request req
     pure (decodeAffjaxResponse res)
 
-decodeAffjaxResponse :: forall res. DecodeResponse res =>
-                 (AX.Response (Either AX.ResponseFormatError String)) -> Either String res
-decodeAffjaxResponse res | res.status /= StatusCode 200 = Left $ "Received HTTP " <> show res.status <> "\n" <>
-  (either AX.printResponseFormatError identity res.body)
-decodeAffjaxResponse res = do
-  showingError res.body >>= (StringBody >>> decodeResponse)
+decodeAffjaxResponse :: forall body
+  . DecodeResponse body
+  => AX.Response (Either AX.ResponseFormatError String)
+  -> ClientResponse body
+decodeAffjaxResponse res@{ status: StatusCode s } | s >= 200 && s < 300 = do
+  case res.body of
+    Right bodyStr -> lmap (decodeError res) $ decodeResponse (StringBody bodyStr)
+    Left err -> Left (decodeError res (InternalDecodeError { message: AX.printResponseFormatError err }))
+decodeAffjaxResponse res = Left (StatusError { response: errorResponse res })
+
+decodeError :: AX.Response (Either AX.ResponseFormatError String) -> DecodeResponseError -> ClientError
+decodeError res error = DecodeError { error, response: errorResponse res }
+
+errorResponse :: AX.Response (Either AX.ResponseFormatError String)
+                 -> Response String
+errorResponse res = Response { status, headers, body }
   where
-    showingError = lmap ResponseFormat.printResponseFormatError
+    status = { code: unwrapStatus res.status, reason: res.statusText }
+    headers = Headers.fromFoldable (asHeaderTuple <$> res.headers)
+    body = either AX.printResponseFormatError identity res.body
+    unwrapStatus (StatusCode code) = code
+
+asHeaderTuple :: ResponseHeader -> Tuple String String
+asHeaderTuple (ResponseHeader name value) = Tuple name value
 
 class EncodeOptionalBody
   (body :: Type)
