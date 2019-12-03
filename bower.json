@@ -29,7 +29,7 @@
     "purescript-debug": "4.0.0",
     "purescript-node-fs": "5.0.0",
     "purescript-node-fs-aff": "6.0.0",
-    "purescript-affjax": "9.0.0",
+    "purescript-affjax": "10.0.0",
     "purescript-prelude": "4.1.1",
     "purescript-simple-json": "6.0.0",
     "purescript-stringutils": "0.0.8"

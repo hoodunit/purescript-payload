@@ -3,25 +3,23 @@ module Payload.Test.Helpers where
 import Prelude
 
 import Affjax as AX
-import Affjax.RequestBody as AX
 import Affjax.RequestBody as RequestBody
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.ResponseHeader (ResponseHeader(..))
 import Affjax.StatusCode (StatusCode(..))
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.Map (Map)
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
-import Effect.Aff (Aff)
+import Effect.Aff (Aff, error, throwError)
 import Effect.Aff as Aff
-import Effect.Class (liftEffect)
-import Effect.Console (log)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
-import Payload.Server.Routable (class Routable)
 import Payload.Server as Payload
+import Payload.Server.Routable (class Routable)
 import Payload.Spec (Spec(Spec))
 import Test.Unit (Test, failure, success)
 import Test.Unit.Assert as Assert
@@ -81,10 +79,10 @@ request host =
   , head: head host }
 
 get :: String -> String -> Aff ApiResponse
-get host path = decodeBody <$> AX.get ResponseFormat.string (host <> "/" <> path)
+get host path = AX.get ResponseFormat.string (host <> "/" <> path) >>= decodeResponse
 
 get_ :: String -> String -> Headers -> Aff ApiResponse
-get_ host path headers = decodeBody <$> AX.request req
+get_ host path headers = AX.request req >>= decodeResponse
   where
     req = AX.defaultRequest
             { method = Left GET
@@ -93,27 +91,33 @@ get_ host path headers = decodeBody <$> AX.request req
             , headers = (\(Tuple name val) -> RequestHeader name val) <$> Headers.toUnfoldable headers }
 
 post :: String -> String -> String -> Aff ApiResponse
-post host path reqBody = decodeBody <$> AX.post ResponseFormat.string (host <> path) body
+post host path reqBody = AX.post ResponseFormat.string (host <> path) (Just body) >>= decodeResponse
   where body = RequestBody.String reqBody
 
 put :: String -> String -> String -> Aff ApiResponse
-put host path reqBody = decodeBody <$> AX.put ResponseFormat.string (host <> "/" <> path) (RequestBody.String reqBody)
+put host path reqBody = do
+  result <- AX.put ResponseFormat.string (host <> "/" <> path) (Just $ RequestBody.String reqBody)
+  decodeResponse result
 
 delete :: String -> String -> Aff ApiResponse
-delete host path = decodeBody <$> AX.delete ResponseFormat.string (host <> "/" <> path)
+delete host path = AX.delete ResponseFormat.string (host <> "/" <> path) >>= decodeResponse
 
 head :: String -> String -> Aff ApiResponse
-head host path = decodeBody <$> AX.request req
+head host path = AX.request req >>= decodeResponse
   where
     req = AX.defaultRequest
       { method = Left HEAD
       , responseFormat = ResponseFormat.string
       , url = host <> "/" <> path }
 
-decodeBody :: AX.Response (Either AX.ResponseFormatError String) -> ApiResponse
+decodeResponse :: Either AX.Error (AX.Response String) -> Aff ApiResponse
+decodeResponse (Right res) = pure (decodeBody res)
+decodeResponse (Left err) = throwError (error $ AX.printError err)
+
+decodeBody :: AX.Response String -> ApiResponse
 decodeBody res =
   { status: unwrapStatusCode res.status
-  , body: either ResponseFormat.printResponseFormatError identity res.body
+  , body: res.body
   , headers: Map.fromFoldable $ unwrapHeader <$> res.headers }
   where
     unwrapHeader (ResponseHeader name value) = Tuple name value
