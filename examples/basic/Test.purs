@@ -12,7 +12,7 @@ import Payload.Examples.Basic.Main (api)
 import Payload.Examples.Basic.Spec (spec)
 import Payload.Headers as Headers
 import Payload.Test.Config (TestConfig)
-import Payload.Test.Helpers (withServer)
+import Payload.Test.Helpers (bodyEquals, withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
 
@@ -38,32 +38,31 @@ tests cfg = do
   let authenticatedOpts = { headers: Headers.fromFoldable [ authHeader ] }
   suite "Example: basic" do
     test "GET /users (with secret)" $ withApi do
-      assertResp (client.adminUsers.get_ authenticatedOpts {})
-        [{ id: 1, name: "John Admin" }, { id: 1, name: "John Doe" }]
+      res <- client.adminUsers.get_ authenticatedOpts {}
+      bodyEquals [{ id: 1, name: "John Admin" }, { id: 1, name: "John Doe" }] res
     test "GET /users without secret should fall through to non-admin route" $ withApi do
-      assertResp (client.getUsersNonAdmin { params: { name: "users" } })
-        [{ id: 1, name: "John Doe" }]
+      res <- client.getUsersNonAdmin { params: { name: "users" } }
+      bodyEquals [{ id: 1, name: "John Doe" }] res
     test "GET /users/<id>" $ withApi do
-      assertResp (client.users.byId.get { params: { id: 1 } })
-        { id: 1, name: "whodunnit" }
+      res <- client.users.byId.get { params: { id: 1 } }
+      bodyEquals { id: 1, name: "whodunnit" } res
     test "GET /users/profile" $ withApi do
-      assertResp (client.users.getProfiles {})
-        ["Profile1", "Profile2"]
+      res <- client.users.getProfiles {}
+      bodyEquals ["Profile1", "Profile2"] res
     test "POST /users/new" $ withApi do
-      assertResp
-        (client.adminUsers.create_ authenticatedOpts { body: { id: 5, name: "New user!" }})
-        { id: 5, name: "New user!" }
+      res <- client.adminUsers.create_ authenticatedOpts { body: { id: 5, name: "New user!" }}
+      bodyEquals { id: 5, name: "New user!" } res
     test "POST /users/new fails without the secret" $ withApi do
       assertFail (client.adminUsers.create { body: { id: 5, name: "New user!" }})
-    test "GET /users/<id>/posts/<postId>" $ withApi $ assertResp
-      (client.users.byId.getPost { params: { id: 1, postId: "1" } })
-      { id: "1", text: "Some post" }
-    test "GET /pages/<id>" $ withApi $ assertResp
-      (client.getPage { params: { id: "1" } })
-      "Page 1"
-    test "GET /pages/<id>/metadata" $ withApi $ assertResp
-      (client.getPageMetadata { params: { id: "1" }})
-      "Page metadata 1"
-    test "GET /hello%20there" $ withApi $ assertResp
-      (client.getHello {})
-      "Hello!"
+    test "GET /users/<id>/posts/<postId>" $ withApi $ do
+      res <- client.users.byId.getPost { params: { id: 1, postId: "1" } }
+      bodyEquals { id: "1", text: "Some post" } res
+    test "GET /pages/<id>" $ withApi $ do
+      res <- client.getPage { params: { id: "1" } }
+      bodyEquals "Page 1" res
+    test "GET /pages/<id>/metadata" $ withApi $ do
+      res <- client.getPageMetadata { params: { id: "1" }}
+      bodyEquals "Page metadata 1" res
+    test "GET /hello%20there" $ withApi $ do
+      res <- client.getHello {}
+      bodyEquals "Hello!" res

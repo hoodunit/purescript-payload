@@ -16,8 +16,10 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff, error, throwError)
 import Effect.Aff as Aff
+import Payload.Client.Queryable (ClientResponse)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
+import Payload.ResponseTypes (Response(..))
 import Payload.Server as Payload
 import Payload.Server.Routable (class Routable)
 import Payload.Spec (Spec(Spec))
@@ -128,6 +130,10 @@ unwrapStatusCode (StatusCode c) = c
 respMatches :: { status :: Int, body :: String } -> ApiResponse -> Test
 respMatches expected received =
   Assert.equal expected { status: received.status, body: received.body }
+
+bodyEquals :: forall body. Eq body => Show body => body -> ClientResponse body -> Aff Unit
+bodyEquals expected (Right (Response { body })) = Assert.equal expected body
+bodyEquals _ (Left err) = throwError (error $ "Expected body, received: " <> show err)
 
 assertRes :: forall a err. Show err => Eq a => Show a => Aff (Either err a) -> a -> Test
 assertRes req expected = do

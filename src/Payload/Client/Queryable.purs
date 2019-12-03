@@ -21,9 +21,10 @@ import Payload.Client.EncodeBody (class EncodeBody, encodeBody)
 import Payload.Client.Internal.Query (class EncodeQuery, encodeQuery)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (Options, RequestOptions)
+import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.Internal.Route (DefaultRouteSpec, Undefined)
-import Payload.ResponseTypes (Response(..), ResponseBody(..))
+import Payload.ResponseTypes (Response(..), ResponseBody(..), HttpStatus)
 import Payload.Spec (Route)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
@@ -36,7 +37,7 @@ import Type.RowList (class ListToRow, RLProxy(..))
 
 type ClientFnWithOptions payload body = RequestOptions -> ClientFn payload body
 type ClientFn payload body = payload -> Aff (ClientResponse body)
-type ClientResponse body = Either ClientError body
+type ClientResponse body = Either ClientError (Response body)
 data ClientError
   = DecodeError { error :: DecodeResponseError, response :: Response String }
   | StatusError { response :: Response String }
@@ -256,19 +257,31 @@ decodeAffjaxResponse :: forall body
   -> ClientResponse body
 decodeAffjaxResponse (Left err) = Left (RequestError { message: AX.printError err })
 decodeAffjaxResponse (Right res@{ status: StatusCode s }) | s >= 200 && s < 300 = do
-  lmap (decodeError res) $ decodeResponse (StringBody res.body)
-decodeAffjaxResponse (Right res) = Left (StatusError { response: errorResponse res })
+  case decodeResponse (StringBody res.body) of
+    Right decoded -> Right (bodyResponse res decoded)
+    Left err -> Left (decodeError res err)
+decodeAffjaxResponse (Right res) = Left (StatusError { response: asPayloadResponse res })
 
 decodeError :: AX.Response String -> DecodeResponseError -> ClientError
-decodeError res error = DecodeError { error, response: errorResponse res }
+decodeError res error = DecodeError { error, response: asPayloadResponse res }
 
-errorResponse :: AX.Response String
+bodyResponse :: forall a. AX.Response String -> a -> Response a
+bodyResponse res body = Response (Record.insert (SProxy :: _ "body") body rest)
+  where
+    rest = statusAndHeaders res
+
+asPayloadResponse :: AX.Response String
                  -> Response String
-errorResponse res = Response { status, headers, body }
+asPayloadResponse res = Response (Record.insert (SProxy :: _ "body") res.body rest)
+  where
+    rest = statusAndHeaders res
+
+statusAndHeaders :: forall a. AX.Response a
+                 -> { status :: HttpStatus, headers :: Headers }
+statusAndHeaders res = { status, headers }
   where
     status = { code: unwrapStatus res.status, reason: res.statusText }
     headers = Headers.fromFoldable (asHeaderTuple <$> res.headers)
-    body = res.body
     unwrapStatus (StatusCode code) = code
 
 asHeaderTuple :: ResponseHeader -> Tuple String String

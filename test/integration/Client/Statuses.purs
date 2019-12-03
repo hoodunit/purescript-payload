@@ -13,7 +13,7 @@ import Payload.Server.Response as Response
 import Payload.Server.Status as Status
 import Payload.Spec (GET, Spec(Spec))
 import Payload.Test.Config (TestConfig)
-import Payload.Test.Helpers (withRoutes)
+import Payload.Test.Helpers (bodyEquals, withRoutes)
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 
@@ -34,21 +34,14 @@ tests cfg = do
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
         res <- client.foo {}
-        Assert.equal (Right { id: 123 }) res
+        bodyEquals { id: 123 } res
     test "client decodes overridden 201 Created response as response type" $ do
       let spec = Spec :: _ { foo :: GET "/foo" { response :: { id :: Int } } }
       let handlers = { foo: \_ -> pure (Response.created {id: 123}) }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
         res <- client.foo {}
-        Assert.equal (Right { id: 123 }) res
-    -- test "client decodes overridden (302 Found) response as response type" $ do
-    --   let spec = Spec :: _ { foo :: GET "/foo" { response :: { id :: Int } } }
-    --   let handlers = { foo: \_ -> pure (Response.found {id: 123}) }
-    --   withRoutes spec handlers do
-    --     let client = mkClient cfg.clientOpts spec
-    --     res <- client.foo {}
-    --     Assert.equal (Right { id: 123 }) res
+        bodyEquals { id: 123 } res
     test "client returns overridden 400 Bad Request response as error" $ do
       let spec = Spec :: _ { foo :: GET "/foo" { response :: { id :: Int } } }
       let handlers = { foo: \_ -> pure (Response.badRequest {id: 123}) }

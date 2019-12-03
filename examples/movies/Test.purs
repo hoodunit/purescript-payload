@@ -8,12 +8,12 @@ import Data.Map as Map
 import Data.Tuple (Tuple(..))
 import Payload.Client (mkGuardedClient)
 import Payload.Client as Client
-import Payload.Server.Cookies as Cookies
 import Payload.Examples.Movies.Main (moviesApi, moviesApiSpec)
 import Payload.Headers as Headers
+import Payload.Server.Cookies as Cookies
 import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
 import Payload.Test.Config (TestConfig)
-import Payload.Test.Helpers (assertFail, assertRes, withServer)
+import Payload.Test.Helpers (assertFail, assertRes, bodyEquals, withServer)
 import Test.Unit (TestSuite, suite, test)
 
 cookieOpts :: Map String String -> Client.RequestOptions
@@ -33,8 +33,8 @@ tests cfg = do
     test "Sub-route succeeds if parent route guard succeeds (has API key)" $ do
       withApi do
         let opts = cookieOpts (Map.singleton "apiKey" "key")
-        assertRes (client.v1.movies.latest_ opts {})
-                 { id: 723, title: "The Godfather" }
+        res <- client.v1.movies.latest_ opts {}
+        bodyEquals { id: 723, title: "The Godfather" } res
     test "Sub-route fails if passes parent guard but not child guard (missing session key)" $ do
       withApi do
         let payload = { params: { movieId: 1 }, body: { value: 9.0 } }
@@ -43,6 +43,5 @@ tests cfg = do
     test "Sub-route succeeds if passes parent and child guards (has API and session keys)" $ do
       withApi do
         let opts = cookieOpts $ Map.fromFoldable [Tuple "apiKey" "key", Tuple "sessionId" "sessionId"]
-        assertRes (client.v1.movies.byId.rating.create_ opts
-                     { params: { movieId: 1 }, body: { value: 9.0 } })
-                   { statusCode: 1, statusMessage: "Created" }
+        res <- client.v1.movies.byId.rating.create_ opts { params: { movieId: 1 }, body: { value: 9.0 } }
+        bodyEquals { statusCode: 1, statusMessage: "Created" } res

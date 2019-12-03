@@ -3,12 +3,14 @@ module Payload.Test.Integration.Client.Methods where
 import Prelude
 
 import Data.Either (Either(..))
+import Effect.Aff (Aff, error, throwError)
 import Payload.Client (mkClient)
-import Payload.ResponseTypes (Empty(..))
+import Payload.Client.Queryable (ClientResponse)
+import Payload.ResponseTypes (Empty(..), Response(..))
 import Payload.Server.Response as Response
 import Payload.Spec (DELETE, GET, HEAD, POST, PUT, Routes, Spec(Spec))
 import Payload.Test.Config (TestConfig)
-import Payload.Test.Helpers (withRoutes)
+import Payload.Test.Helpers (bodyEquals, withRoutes)
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
   
@@ -23,7 +25,7 @@ tests cfg = do
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo {}
-          Assert.equal res (Right "Response")
+          bodyEquals "Response" res
       test "GET decodes Int response" $ do
         let spec = Spec :: _ { foo :: GET "/foo"
                                        { response :: { foo :: Int } } }
@@ -31,7 +33,7 @@ tests cfg = do
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo {}
-          Assert.equal (Right { foo: 12 }) res
+          bodyEquals { foo: 12 } res
       test "GET succeeds with URL params" $ do
         let spec = Spec :: _ { foo :: GET "/foo/<id>/<thing>"
                                        { params :: { id :: Int, thing :: String }
@@ -40,7 +42,7 @@ tests cfg = do
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo { params: { id: 1, thing: "hey" } }
-          Assert.equal res (Right "ID 1, hey")
+          bodyEquals "ID 1, hey" res
 
     suite "POST" do
       test "POST succeeds" $ do
@@ -51,7 +53,7 @@ tests cfg = do
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo { body: { message: "Hi there" } }
-          Assert.equal res (Right "Received 'Hi there'")
+          bodyEquals "Received 'Hi there'" res
       test "POST succeeds with empty body route" $ do
         let spec = Spec :: _ { foo :: POST "/foo"
                                        { body :: String
@@ -60,7 +62,7 @@ tests cfg = do
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo { body: "" }
-          Assert.equal res (Right "fooEmpty")
+          bodyEquals "fooEmpty" res
 
     suite "HEAD" do
       test "HEAD succeeds" $ do
@@ -69,7 +71,7 @@ tests cfg = do
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo {}
-          Assert.equal (Right "") res
+          bodyEquals "" res
 
     suite "PUT" do
       test "PUT succeeds without body" $ do
@@ -78,14 +80,14 @@ tests cfg = do
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo {}
-          Assert.equal (Right "Put") res
+          bodyEquals "Put" res
       test "PUT succeeds with body" $ do
         let spec = Spec :: _ { foo :: PUT "/foo" { body :: String, response :: String } }
         let handlers = { foo: \{ body } -> pure body }
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo { body: "Put!" }
-          Assert.equal (Right "Put!") res
+          bodyEquals "Put!" res
 
     suite "DELETE" do
       test "DELETE succeeds without body" $ do
@@ -94,32 +96,32 @@ tests cfg = do
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo {}
-          Assert.equal (Right "Delete") res
+          bodyEquals "Delete" res
       test "DELETE succeeds with String body" $ do
         let spec = Spec :: _ { foo :: DELETE "/foo" { body :: String, response :: String } }
         let handlers = { foo: \{body} -> pure body }
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo { body: "body" }
-          Assert.equal (Right "body") res
+          bodyEquals "body" res
       test "DELETE succeeds with body if defined in spec" $ do
         let spec = Spec :: _ { foo :: DELETE "/foo" { body :: Array Int, response :: String } }
         let handlers = { foo: \{ body } -> pure (show body) }
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo { body: [1] }
-          Assert.equal (Right "[1]") res
+          bodyEquals "[1]" res
       test "DELETE succeeds with params" $ do
         let spec = Spec :: _ { foo :: DELETE "/foo/<id>" { params :: { id :: Int }, response :: String } }
         let handlers = { foo: \{params: {id}} -> pure $ "Delete " <> show id }
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo { params: { id: 1 } }
-          Assert.equal (Right "Delete 1") res
+          bodyEquals "Delete 1" res
       test "DELETE succeeds with nested route" $ do
         let spec = Spec :: _ { v1 :: Routes "/v1" { foo :: DELETE "/foo" { body :: Array Int, response :: String } } }
         let handlers = { v1: { foo: ((\{body} -> pure (show body) )) } }
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec
           res <- client.v1.foo { body: [1] }
-          Assert.equal (Right "[1]") res
+          bodyEquals "[1]" res
