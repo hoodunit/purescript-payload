@@ -2,20 +2,21 @@
   "private": true,
   "scripts": {
     "clean": "rimraf output && rimraf .pulp-cache",
-    "build": "pulp build -- --censor-lib --strict",
-    "build:watch": "pulp --watch build -- --censor-lib --strict",
+    "build": "spago build",
+    "build:watch": "spago build --watch",
     "build:client:basic": "pulp --watch browserify --main Payload.Examples.Basic.Client --to output/examples/basicClient.js -- --censor-lib --strict",
-    "docs:local": "pulp docs -- --format html",
+    "docs:local": "spago docs",
     "publish:version": "pulp version",
     "publish:push": "pulp publish",
-    "test": "pulp --watch test --include examples --main Payload.Test.Main -- --censor-lib --strict --verbose-errors"
+    "test": "spago test --watch --main Payload.Test.Main"
   },
   "devDependencies": {
     "bower": "1.8.8",
     "pulp": "13.0.0",
-    "purescript": "^0.13.4",
+    "purescript": "^0.13.5",
     "purescript-psa": "0.7.3",
     "rimraf": "2.5.4",
+    "spago": "^0.12.1",
     "xhr2": "git:ssh://git@github.com:hoodunit/node-xhr2.git#6f65a6557706842b7284191f15ec9afaba270909"
   }
 }
