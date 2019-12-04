@@ -19,4 +19,5 @@
     ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs", "examples/**/*.purs" ]
+, license = "Apache-2.0"
 }
