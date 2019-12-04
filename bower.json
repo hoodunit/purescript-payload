@@ -1,0 +1,34 @@
+{
+    "name": "purescript-payload",
+    "license": [
+        "Apache-2.0"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/hoodunit/purescript-payload"
+    },
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "output"
+    ],
+    "dependencies": {
+        "purescript-aff": "^v5.1.2",
+        "purescript-affjax": "^v10.0.0",
+        "purescript-console": "^v4.2.0",
+        "purescript-debug": "^v4.0.0",
+        "purescript-effect": "^v2.0.1",
+        "purescript-foreign-generic": "^v10.0.0",
+        "purescript-node-fs": "^v5.0.1",
+        "purescript-node-fs-aff": "^v6.0.0",
+        "purescript-node-http": "^v5.0.2",
+        "purescript-prelude": "^v4.1.1",
+        "purescript-psci-support": "^v4.0.0",
+        "purescript-record": "^v2.0.1",
+        "purescript-simple-json": "^v7.0.0",
+        "purescript-stringutils": "^v0.0.10",
+        "purescript-test-unit": "^v15.0.0",
+        "purescript-typelevel-prelude": "^v5.0.1"
+    }
+}
