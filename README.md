@@ -172,7 +172,7 @@ moviesApiSpec = Spec
 
 [Guards](#guards) and [URL paths and parameters](#url-parameters) specified in parent routes are merged and passed to child route handlers at compile time, so that at run time the handlers will receive those values as part of their incoming request payload. 
 
-See the [Spec module](https://pursuit.purescript.org/packages/purescript-payload/0.1.0/docs/Payload.Spec) for the full set of supported spec keywords and the [Movies example](./examples/movies/Main.purs) for a larger example with hierarchical routes.
+See the [Spec module](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Spec) for the full set of supported spec keywords and the [Movies example](./examples/movies/Main.purs) for a larger example with hierarchical routes.
 
 ### Requests
 
@@ -212,7 +212,7 @@ getMessage { params: { id, limit } } = pure
 
 Single URL parameter decoding can be extended by implementing the [DecodeParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Params#t:DecodeParam) type class.
 
-Multi-matches must appear at the end of a URL and similarly given a type in the `params` field. The only supported type for multi-matches is `List String` unless the [DecodeSegments](https://pursuit.purescript.org/packages/purescript-payload/0.1.0/docs/Payload.Server.Params#t:DecodeSegments) class is implemented. Example:
+Multi-matches must appear at the end of a URL and similarly given a type in the `params` field. The only supported type for multi-matches is `List String` unless the [DecodeSegments](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Params#t:DecodeSegments) class is implemented. Example:
 
 ```purescript
 -- Spec:
@@ -261,9 +261,9 @@ search :: { query :: { a :: Int, b :: Int, rest :: Object String } }
 search _ = pure "Search result"
 ```
 
-For query literals, the handler will only be called if the literal exists somewhere in the query string. For key matches, the query parameter must be decodable via the [DecodeQueryParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.QueryParams#t:DecodeQueryParam) type class. Query param decoding can also be extended via this type class.
+For query literals, the handler will only be called if the literal exists somewhere in the query string. For key matches, the query parameter must be decodable via the [DecodeQueryParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.QueryParams#t:DecodeQueryParam) type class. Query param decoding can also be extended via this type class.
 
-See the [query integration test](./test/integration/Query.purs) for further examples.
+See the [query integration test](./test/integration/Server.purs) for further examples.
 
 ### Responses
 
