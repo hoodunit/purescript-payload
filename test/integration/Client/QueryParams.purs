@@ -3,6 +3,7 @@ module Payload.Test.Integration.Client.QueryParams where
 import Prelude
 
 import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
@@ -35,6 +36,28 @@ tests cfg = do
         let client = mkClient cfg.clientOpts spec
         res <- client.foo { query: { secret: "something" } }
         bodyEquals "something" res
+    test "succeeds with optional query key provided" $ do
+      let spec = Spec :: _ { foo :: GET "/foo?secret=<secret>"
+                                     { query :: { secret :: Maybe String }
+                                     , response :: String } }
+      let handlers = { foo: \{ query: { secret } } -> case secret of
+                                                           Just s -> pure s
+                                                           Nothing -> pure "no secret" }
+      withRoutes spec handlers do
+        let client = mkClient cfg.clientOpts spec
+        res <- client.foo { query: { secret: Just "something" } }
+        bodyEquals "something" res
+    test "succeeds with optional query key omitted" $ do
+      let spec = Spec :: _ { foo :: GET "/foo?secret=<secret>"
+                                     { query :: { secret :: Maybe String }
+                                     , response :: String } }
+      let handlers = { foo: \{ query: { secret } } -> case secret of
+                                                           Just s -> pure s
+                                                           Nothing -> pure "no secret" }
+      withRoutes spec handlers do
+        let client = mkClient cfg.clientOpts spec
+        res <- client.foo { query: { secret: Nothing } }
+        bodyEquals "no secret" res
     test "succeeds with multimatch" $ do
       let spec = Spec :: _ { foo :: GET "/foo?<..any>"
                                      { query :: { any :: Object String }

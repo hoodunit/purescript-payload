@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Array as Array
 import Data.List (List(..), (:))
+import Data.Maybe (Maybe(..))
 import Data.String as String
 import Payload.Client.QueryParams (class EncodeQueryParam, class EncodeQueryParamMulti, encodeQueryParam, encodeQueryParamMulti)
 import Payload.Internal.QueryParsing (Lit, Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
@@ -57,21 +58,23 @@ instance encodeQueryListConsKey ::
   ) => EncodeQueryList
          (QueryCons (Key queryKey ourKey) rest)
          query where
-  encodeQueryList _ query = queryKey : rest
+  encodeQueryList _ query =
+    case encodeQueryParam val of
+      Just encoded -> (label <> "=" <> encoded) : rest
+      Nothing -> rest
     where
       label = reflectSymbol (SProxy :: SProxy queryKey) 
       val = Record.get (SProxy :: SProxy ourKey) query
-      encoded = encodeQueryParam val
       queryRest = Record.delete (SProxy :: SProxy ourKey) query
-      queryKey = label <> "=" <> encodeQueryParam val
-      rest = encodeQueryList (QueryListProxy :: _ rest)
-                             queryRest
+      rest = encodeQueryList (QueryListProxy :: _ rest) queryRest
 
 instance encodeQueryListConsMulti ::
   ( IsSymbol ourKey
   , Row.Cons ourKey valType () query
   , EncodeQueryParamMulti valType
   ) => EncodeQueryList (QueryCons (Multi ourKey) QueryNil) query where
-  encodeQueryList _ query = encodeQueryParamMulti queryObj : Nil
+  encodeQueryList _ query = case encodeQueryParamMulti queryObj of
+    Just encoded -> encoded : Nil
+    Nothing -> Nil
     where
       queryObj = Record.get (SProxy :: _ ourKey) query

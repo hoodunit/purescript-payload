@@ -3,6 +3,7 @@ module Payload.Test.Integration.Server.QueryParams where
 import Prelude
 
 import Data.List (List)
+import Data.Maybe (Maybe(..))
 import Foreign.Object (Object)
 import Payload.Spec (GET, POST, Spec(..))
 import Payload.Test.Helpers (respMatches, withRoutes)
@@ -86,6 +87,34 @@ tests = do
         withRoutes spec handlers do
           res <- get "/search?limit=asdf"
           respMatches { status: 404, body: "" } res
+      test "GET /search fails with missing required limit key" $ do
+        let spec = Spec :: _ { search :: GET "/search?limit=<limit>"
+                                { query :: { limit :: Int }
+                                , response :: String }}
+        let handlers = { search: \_ -> pure $ "Search result" }
+        withRoutes spec handlers do
+          res <- get "/search"
+          respMatches { status: 404, body: "" } res
+      test "GET /search?limit=asdf succeeds with provided optional limit key" $ do
+        let spec = Spec :: _ { search :: GET "/search?limit=<limit>"
+                                { query :: { limit :: Maybe Int }
+                                , response :: String }}
+        let handlers = { search: \{query: {limit}} -> case limit of
+                                                        Just l -> pure $ "Limit " <> show l
+                                                        Nothing -> pure "No limit" }
+        withRoutes spec handlers do
+          res <- get "/search?limit=20"
+          respMatches { status: 200, body: "Limit 20" } res
+      test "GET /search?limit=asdf succeeds with missing optional limit key" $ do
+        let spec = Spec :: _ { search :: GET "/search?limit=<limit>"
+                                { query :: { limit :: Maybe Int }
+                                , response :: String }}
+        let handlers = { search: \{query: {limit}} -> case limit of
+                                                        Just l -> pure $ "Limit " <> show l
+                                                        Nothing -> pure "No limit" }
+        withRoutes spec handlers do
+          res <- get "/search"
+          respMatches { status: 200, body: "No limit" } res
       test "POST /profile?id=3&foo=asdf succeeds" $ do
         let spec = Spec :: _ { profile :: POST "/profile?id=<id>&foo=<foo>"
                                 { query :: { id :: Int, foo :: String }

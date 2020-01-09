@@ -61,13 +61,11 @@ instance matchQueryConsKey ::
   , DecodeQueryParam valType
   ) => MatchQuery (QueryCons (Key queryKey ourKey) rest) params from to where
   matchQuery _ queryType query queryObj =
-    case Object.lookup queryKey queryObj of
-      Nothing -> Left $ "Could not find query parameter with key '" <> queryKey <> "'"
-      Just paramVal -> case decodeQueryParam paramVal of
-        Left errors -> Left $ show errors
-        Right decoded -> let newParams = Record.insert (SProxy :: SProxy ourKey) decoded query
-                             newQueryObj = Object.delete queryKey queryObj
-                         in matchQuery (QueryListProxy :: _ rest) queryType newParams newQueryObj
+    case decodeQueryParam queryObj queryKey of
+      Left errors -> Left $ show errors
+      Right decoded -> let newParams = Record.insert (SProxy :: SProxy ourKey) decoded query
+                           newQueryObj = Object.delete queryKey queryObj
+                       in matchQuery (QueryListProxy :: _ rest) queryType newParams newQueryObj
     where
       queryKey = reflectSymbol (SProxy :: SProxy queryKey)
 

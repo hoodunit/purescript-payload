@@ -263,7 +263,20 @@ search _ = pure "Search result"
 
 For query literals, the handler will only be called if the literal exists somewhere in the query string. For key matches, the query parameter must be decodable via the [DecodeQueryParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.QueryParams#t:DecodeQueryParam) type class. Query param decoding can also be extended via this type class.
 
-See the [query integration test](./test/integration/Server.purs) for further examples.
+Optional query parameters can be given by specifying the query key with `Maybe`. For example:
+
+```purescript
+search :: GET "/search?foo=<foo>"
+  { query :: { foo :: Maybe Int }
+  , response :: String }
+
+search :: { query :: { foo :: Maybe Int } }
+          -> Aff String
+search {query: {foo: Just foo}} = pure $ "Got foo: " <> show foo
+search {query: {foo: Nothing}} = pure "No foo"
+```
+
+See the [server integration test](./test/integration/Server/Query.purs) and [client integration test](./test/integration/Client/QueryParams.purs) for further examples.
 
 ### Responses
 
