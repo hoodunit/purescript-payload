@@ -49,17 +49,19 @@ tests = do
     suite "Multi-match" do
       test "decoding multi-match" do
         Assert.equal
-          (Right {all: Object.fromFoldable [ Tuple "foo" "blah", Tuple "limit" "12", Tuple "a" "b" ]})
+          (Right {all: Object.fromFoldable [ Tuple "foo" ["blah"]
+                                           , Tuple "limit" ["12"]
+                                           , Tuple "a" ["b"] ]})
             (Query.decodeQuery
               (SProxy :: SProxy "/search?<..all>")
-              (Proxy :: Proxy { all :: Object String })
+              (Proxy :: Proxy { all :: Object (Array String) })
               "foo=blah&limit=12&a=b")
       test "removes other matches from multi-matched result" do
         Assert.equal
           (Right { foo: "blah"
                  , bar: "bar"
-                 , all: Object.fromFoldable [ Tuple "limit" "12", Tuple "a" "b" ]})
+                 , all: Object.fromFoldable [ Tuple "limit" ["12"], Tuple "a" ["b"] ]})
             (Query.decodeQuery
               (SProxy :: SProxy "/search?foo=<foo>&bar=<bar>&<..all>")
-              (Proxy :: Proxy { foo :: String, bar :: String, all :: Object String })
+              (Proxy :: Proxy { foo :: String, bar :: String, all :: Object (Array String) })
               "foo=blah&limit=12&a=b&bar=bar")

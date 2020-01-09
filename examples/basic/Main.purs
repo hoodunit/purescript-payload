@@ -51,7 +51,7 @@ getPageMetadata { params: {id} } = pure $ "Page metadata " <> id
 getHello :: {} -> Aff String
 getHello _ = pure "Hello!"
 
-search :: { query :: { a :: Int, b :: Int, rest :: Object String } }
+search :: { query :: { a :: Int, b :: Int, rest :: Object (Array String) } }
           -> Aff String
 search _ = pure "Search result"
 

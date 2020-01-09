@@ -171,9 +171,27 @@ tests = do
     suite "multi-match (e.g. foo=<myFoo>)" do
       test "GET /search?<..all> multimatch grabs all query parameters" $ do
         let spec = Spec :: _ { search :: GET "/search?<..all>"
-                                { query :: { all :: Object String }
+                                { query :: { all :: Object (Array String) }
                                 , response :: String }}
         let handlers = { search: \_ -> pure $ "Search result" }
         withRoutes spec handlers do
           res <- get "/search?limit=3"
           respMatches { status: 200, body: "Search result" } res
+
+    suite "other checks" do
+      test "GET /search?a=asdf&b=asdf&c=asdf ignores extra parameters (a and c)" $ do
+        let spec = Spec :: _ { search :: GET "/search?b=<b>"
+                                { query :: { b :: String }
+                                , response :: String }}
+        let handlers = { search: \_ -> pure $ "Search result" }
+        withRoutes spec handlers do
+          res <- get "/search?a=asdf&b=asdf&c=asdf"
+          respMatches { status: 200, body: "Search result" } res
+      test "GET /search?a=foo1&a=foo2 fails if given two duplicate params where one was specified" $ do
+        let spec = Spec :: _ { search :: GET "/search?a=<a>"
+                                { query :: { a :: String }
+                                , response :: String }}
+        let handlers = { search: \{query: {a}} -> pure a }
+        withRoutes spec handlers do
+          res <- get "/search?a=foo1&a=foo2"
+          respMatches { status: 404, body: "" } res

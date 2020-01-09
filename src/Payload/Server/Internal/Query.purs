@@ -4,10 +4,9 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Foreign.Object (Object)
 import Foreign.Object as Object
-import Payload.Internal.QueryParsing (kind QueryPart, Lit, Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
-import Payload.Server.Internal.Querystring.Qs as Qs
+import Payload.Internal.QueryParsing (Lit, Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
+import Payload.Server.Internal.Querystring (ParsedQuery, querystringParse)
 import Payload.Server.QueryParams (class DecodeQueryParam, class DecodeQueryParamMulti, decodeQueryParam, decodeQueryParamMulti)
 import Prim.Row as Row
 import Record as Record
@@ -24,13 +23,13 @@ instance decodeQueryAny ::
   ) => DecodeQuery queryUrlSpec query where
   decodeQuery _ queryType queryStr = matchQuery (QueryListProxy :: _ queryParts) queryType {} parsedQuery
     where
-      parsedQuery = Qs.parse queryStr
+      parsedQuery = querystringParse queryStr
 
 class MatchQuery (queryParts :: QueryList) query from to | queryParts -> from to where
   matchQuery :: QueryListProxy queryParts
                 -> Proxy (Record query)
                 -> Record from
-                -> Object String
+                -> ParsedQuery
                 -> Either String (Record to)
 
 instance matchQueryNil ::
@@ -76,7 +75,9 @@ instance matchQueryConsLit ::
   matchQuery _ queryType query queryObj =
     case Object.lookup literal queryObj of
       Nothing -> Left $ "Could not find query parameter literal with name '" <> literal <> "'"
-      Just "" -> matchQuery (QueryListProxy :: _ rest) queryType query queryObj
-      Just paramVal -> Left $ "Expected query parameter literal '" <> literal <> "' but received '" <> literal <> "=" <> paramVal
+      Just [""] -> let newQueryObj = Object.delete literal queryObj
+                   in matchQuery (QueryListProxy :: _ rest) queryType query newQueryObj
+      Just [paramVal] -> Left $ "Expected query parameter literal '" <> literal <> "' but received '" <> literal <> "=" <> paramVal
+      Just arr -> Left $ "Expected single query parameter literal '" <> literal <> "' but received array '" <> show arr <> "'"
     where
       literal = reflectSymbol (SProxy :: SProxy lit)

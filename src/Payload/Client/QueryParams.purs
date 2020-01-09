@@ -29,8 +29,11 @@ instance encodeQueryParamMaybe :: EncodeQueryParam a => EncodeQueryParam (Maybe 
 class EncodeQueryParamMulti a where
   encodeQueryParamMulti :: a -> Maybe String
 
-instance encodeQueryParamMultiObjectString :: EncodeQueryParamMulti (Object String) where
-  encodeQueryParamMulti o = Just (String.joinWith "&" (encodeEntry <$> Object.toUnfoldable o))
+instance encodeQueryParamMultiObjectArrayString :: EncodeQueryParamMulti (Object (Array String)) where
+  encodeQueryParamMulti o = Just (String.joinWith "&" (encodeArray <$> Object.toUnfoldable o))
     where
-      encodeEntry :: forall v. Show v => Tuple String v -> String
-      encodeEntry (Tuple k v) = k <> "=" <> show v
+      encodeArray :: Tuple String (Array String) -> String
+      encodeArray (Tuple k vals) = String.joinWith "&" (encodeVal k <$> vals)
+
+      encodeVal :: String -> String -> String
+      encodeVal key val = key <> "=" <> val

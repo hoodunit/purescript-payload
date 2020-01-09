@@ -253,10 +253,10 @@ Payload supports three different types of query parameters: literals, keys, and 
 ```purescript
 -- Spec:
 search :: GET "/search?a=<a>&foo&b=<b>&<..rest>"
-  { query :: { a :: Int, b :: Int, rest :: Object String }
+  { query :: { a :: Int, b :: Int, rest :: Object (Array String) }
   , response :: String }
 
-search :: { query :: { a :: Int, b :: Int, rest :: Object String } }
+search :: { query :: { a :: Int, b :: Int, rest :: Object (Array String) } }
           -> Aff String
 search _ = pure "Search result"
 ```
