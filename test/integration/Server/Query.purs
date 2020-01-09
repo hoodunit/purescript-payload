@@ -142,6 +142,30 @@ tests = do
         withRoutes spec handlers do
           res <- post "/profile?id=3.0&foo=asdf" ""
           respMatches { status: 404, body: "" } res
+      test "GET /search?query=asdf succeeds with some String" $ do
+        let spec = Spec :: _ { search :: GET "/search?query=<searchQuery>"
+                                { query :: { searchQuery :: String }
+                                , response :: String }}
+        let handlers = { search: \{query: {searchQuery}} -> pure searchQuery }
+        withRoutes spec handlers do
+          res <- get "/search?query=asdf"
+          respMatches { status: 200, body: "asdf" } res
+      test "GET /search?query= succeeds with empty String" $ do
+        let spec = Spec :: _ { search :: GET "/search?query=<searchQuery>"
+                                { query :: { searchQuery :: String }
+                                , response :: String }}
+        let handlers = { search: \{query: {searchQuery}} -> pure searchQuery }
+        withRoutes spec handlers do
+          res <- get "/search?query="
+          respMatches { status: 200, body: "" } res
+      test "GET /search?query succeeds with missing String" $ do
+        let spec = Spec :: _ { search :: GET "/search?query=<searchQuery>"
+                                { query :: { searchQuery :: String }
+                                , response :: String }}
+        let handlers = { search: \{query: {searchQuery}} -> pure searchQuery }
+        withRoutes spec handlers do
+          res <- get "/search?query"
+          respMatches { status: 200, body: "" } res
 
 
     suite "multi-match (e.g. foo=<myFoo>)" do

@@ -2,12 +2,12 @@ module Payload.Examples.ClientGitHub.Main where
 
 import Prelude
 
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Payload.Client (defaultOpts, mkGuardedClient)
+import Payload.Client (ClientResponse, defaultOpts, mkGuardedClient)
 import Payload.Client.Options (LogLevel(..))
 import Payload.Debug (showDebug)
 import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
@@ -17,7 +17,8 @@ githubApiSpec :: Spec {
   },
   routes :: {
     repos :: Routes "/repositories" {
-      list :: GET "/" {
+      list :: GET "/?since=<since>" {
+         query :: { since :: Maybe Int },
          response :: Array Repository
       }
     }
@@ -49,7 +50,6 @@ main = do
   let opts = defaultOpts { baseUrl = "https://api.github.com", logLevel = LogNormal }
   let client = mkGuardedClient opts githubApiSpec
   launchAff_ $ do
-    repos <- client.repos.list {}
+    (repos :: ClientResponse (Array Repository)) <- client.repos.list {query: {since: Nothing}}
     liftEffect $ log (showDebug repos)
     liftEffect $ log "Done running GitHub client example"
-  pure unit
