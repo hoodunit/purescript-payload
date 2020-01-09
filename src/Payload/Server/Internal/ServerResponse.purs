@@ -9,14 +9,15 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
+import Effect.Console (log)
 import Node.Encoding (Encoding(..))
 import Node.Encoding as Encoding
 import Node.HTTP as HTTP
 import Node.Stream as Stream
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
-import Payload.Server.Response (internalError)
 import Payload.ResponseTypes (RawResponse, Response(..), ResponseBody(..), UnsafeStream)
+import Payload.Server.Response (internalError)
 import Type.Equality (to)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -26,7 +27,9 @@ sendResponse res serverResult = Aff.runAff_ onComplete do
     Right serverRes -> writeResponse res serverRes
     Left err -> writeResponse res err
   where
-    onComplete (Left errors) = writeResponse res (internalError $ StringBody $ show errors)
+    onComplete (Left errors) = do
+      log $ "Error sending response:\n  Server response:\n" <> show serverResult <> "\n\n  Error(s): " <> show errors
+      writeResponse res (internalError (StringBody "Error sending server response"))
     onComplete (Right _) = pure unit
 
 writeResponse :: HTTP.Response -> RawResponse -> Effect Unit
