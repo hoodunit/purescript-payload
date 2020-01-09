@@ -3,7 +3,10 @@ module Payload.Client.Options where
 import Payload.Headers (Headers)
 
 type Options =
-  { baseUrl :: String }
+  { baseUrl :: String
+  , logLevel :: LogLevel }
+
+data LogLevel = LogNormal | LogDebug
 
 type RequestOptions =
   { headers :: Headers }
@@ -11,4 +14,5 @@ type RequestOptions =
 defaultOpts :: Options
 defaultOpts =
   { baseUrl: ""
+  , logLevel: LogNormal
   }

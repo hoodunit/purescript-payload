@@ -10,17 +10,19 @@ import Affjax.ResponseHeader (ResponseHeader(..))
 import Affjax.StatusCode (StatusCode(..))
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
-import Data.HTTP.Method (Method(..))
+import Data.HTTP.Method (CustomMethod, Method(..), unCustomMethod)
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.Symbol (SProxy(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
+import Effect.Console (log)
 import Payload.Client.DecodeResponse (class DecodeResponse, DecodeResponseError, decodeResponse)
 import Payload.Client.EncodeBody (class EncodeBody, encodeBody)
 import Payload.Client.Internal.Query (class EncodeQuery, encodeQuery)
 import Payload.Client.Internal.Url as PayloadUrl
-import Payload.Client.Options (Options, RequestOptions)
+import Payload.Client.Options (LogLevel(..), Options, RequestOptions)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.Internal.Route (DefaultRouteSpec, Undefined)
@@ -93,13 +95,7 @@ instance queryableGetRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    let defaultReq = AX.defaultRequest
-          { method = Left GET
-          , url = url
-          , responseFormat = ResponseFormat.string }
-    let req = applyReqOpts reqOpts defaultReq
-    res <- AX.request req
-    pure (decodeAffjaxResponse res)
+    makeRequest {method: GET, url, body: Nothing, opts, reqOpts}
 else instance queryablePostRoute ::
        ( Row.Union route DefaultRouteSpec mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
@@ -133,14 +129,7 @@ else instance queryablePostRoute ::
     let url = urlPath <> urlQuery
     let (body :: body) = Record.get (SProxy :: SProxy "body") (to payload)
     let encodedBody = RequestBody.String (encodeBody body)
-    let defaultReq = AX.defaultRequest
-          { method = Left POST
-          , url = url
-          , content = Just encodedBody
-          , responseFormat = ResponseFormat.string }
-    let req = applyReqOpts reqOpts defaultReq
-    res <- AX.request req
-    pure (decodeAffjaxResponse res)
+    makeRequest {method: POST, url, body: Just encodedBody, opts, reqOpts}
 else instance queryableHeadRoute ::
        ( Row.Lacks "body" route
        , Row.Lacks "response" route
@@ -167,13 +156,7 @@ else instance queryableHeadRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    let defaultReq = AX.defaultRequest
-          { method = Left HEAD
-          , url = url
-          , responseFormat = ResponseFormat.string }
-    let req = applyReqOpts reqOpts defaultReq
-    res <- AX.request req
-    pure (decodeAffjaxResponse res)
+    makeRequest {method: HEAD, url, body: Nothing, opts, reqOpts}
 else instance queryablePutRoute ::
        ( Row.Union route DefaultRouteSpec mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
@@ -203,14 +186,7 @@ else instance queryablePutRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    let defaultReq = AX.defaultRequest
-          { method = Left PUT
-          , url = url
-          , content = body
-          , responseFormat = ResponseFormat.string }
-    let req = applyReqOpts reqOpts defaultReq
-    res <- AX.request req
-    pure (decodeAffjaxResponse res)
+    makeRequest {method: PUT, url, body, opts, reqOpts}
 else instance queryableDeleteRoute ::
        ( Row.Union route DefaultRouteSpec mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
@@ -242,14 +218,87 @@ else instance queryableDeleteRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    let defaultReq = AX.defaultRequest
-          { method = Left DELETE
-          , url = url
-          , content = body
-          , responseFormat = ResponseFormat.string }
-    let req = applyReqOpts reqOpts defaultReq
-    res <- AX.request req
-    pure (decodeAffjaxResponse res)
+    makeRequest {method: DELETE, url, body, opts, reqOpts}
+
+type Request =
+  { method :: Method
+  , url :: String
+  , body :: Maybe RequestBody.RequestBody
+  , opts :: Options
+  , reqOpts :: RequestOptions }
+
+makeRequest :: forall body. DecodeResponse body => Request -> Aff (ClientResponse body)
+makeRequest {method, url, body, opts, reqOpts} = do
+  case opts.logLevel of
+    LogDebug -> liftEffect (log (printRequest req))
+    _ -> pure unit
+  res <- AX.request req
+  case opts.logLevel of
+    LogDebug -> liftEffect (log (printResponse res))
+    _ -> pure unit
+  pure (decodeAffjaxResponse res)
+  where
+    req = applyReqOpts reqOpts defaultReq
+    defaultReq = AX.defaultRequest
+      { method = Left method
+      , url = url
+      , content = body
+      , responseFormat = ResponseFormat.string }
+
+printRequest :: AX.Request String -> String
+printRequest {method, url, headers, content} =
+  "DEBUG Request:\n" <>
+  "--------------------------------\n" <>
+  printMethod method <> " " <> url <> "\n" <>
+  printHeaders headers <>
+  printContent content <>
+  "--------------------------------\n"
+  where
+    printMethod :: Either Method CustomMethod -> String
+    printMethod (Left m) = show m
+    printMethod (Right m) = unCustomMethod m
+
+    printHeaders :: Array RequestHeader -> String
+    printHeaders [] = ""
+    printHeaders hdrs = headersStr <> "\n"
+       where
+         headersStr = String.joinWith "  \n" (printHeader <$> hdrs)
+
+    printHeader :: RequestHeader -> String
+    printHeader (Accept mediaType) = "accept " <> show mediaType
+    printHeader (ContentType mediaType) = "content-type " <> show mediaType
+    printHeader (RequestHeader key val) = key <> " " <> val
+
+    printContent :: Maybe RequestBody.RequestBody -> String
+    printContent (Just (RequestBody.String s)) = s <> "\n"
+    printContent (Just _) = "(non-String body)\n"
+    printContent Nothing = ""
+
+printResponse :: Either AX.Error (AX.Response String) -> String
+printResponse (Left error) =
+  "DEBUG Response:\n" <>
+  "--------------------------------\n" <>
+  AX.printError error <>
+  "--------------------------------\n"
+printResponse (Right {status, statusText, headers, body}) =
+  "DEBUG Response:\n" <>
+  "--------------------------------\n" <>
+  "Status: " <> printStatus status <> " " <> show statusText <> "\n" <>
+  "Headers:\n" <> printHeaders headers <> "\n" <>
+  "Body:\n" <> body <> "\n" <>
+  "--------------------------------\n"
+  where
+    printStatus :: StatusCode -> String
+    printStatus (StatusCode code) = show code
+    
+    printHeaders :: Array ResponseHeader -> String
+    printHeaders [] = ""
+    printHeaders hdrs = headersStr <> "\n"
+       where
+         headersStr = String.joinWith "  \n" (printHeader <$> hdrs)
+
+    printHeader :: ResponseHeader -> String
+    printHeader (ResponseHeader field val) = field <> " " <> val
 
 decodeAffjaxResponse :: forall body
   . DecodeResponse body
