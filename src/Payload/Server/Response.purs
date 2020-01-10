@@ -191,8 +191,9 @@ else instance toSpecResponseFail ::
   ) => ToSpecResponse docRoute a b where
   toSpecResponse res = unsafeCoerce res
 
--- | Types that can be encoded as response bodies and appear directly
--- | in API spec definitions.
+-- | Any types that can appear in a server response body and show up in the API
+-- | spec under the "body" field must implement EncodeResponse. This is also
+-- | a good place to add a Content-Type header for the encoded response.
 class EncodeResponse r where
   encodeResponse :: Response r -> Result RawResponse
 instance encodeResponseResponseBody :: EncodeResponse ResponseBody where
