@@ -13,6 +13,7 @@ import Payload.Test.Integration.Client.Errors as ClientErrorsTest
 import Payload.Test.Integration.Client.Methods as ClientMethodsTest
 import Payload.Test.Integration.Client.QueryParams as ClientQueryParams
 import Payload.Test.Integration.Client.Statuses as ClientStatuses
+import Payload.Test.Integration.Client.ContentTypes as ClientContentTypes
 import Payload.Test.Integration.Server.Guards as GuardsTest
 import Payload.Test.Integration.Server.Methods as MethodsTest
 import Payload.Test.Integration.Server.QueryParams as QueryParamsTest
@@ -59,6 +60,7 @@ tests = do
     ClientMethodsTest.tests cfg
     ClientQueryParams.tests cfg
     ClientStatuses.tests cfg
+    ClientContentTypes.tests cfg
 
   suite "Examples" do
     HelloExample.tests

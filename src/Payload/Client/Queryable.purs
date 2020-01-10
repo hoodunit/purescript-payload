@@ -8,10 +8,10 @@ import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.ResponseHeader (ResponseHeader(..))
 import Affjax.StatusCode (StatusCode(..))
-import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (CustomMethod, Method(..), unCustomMethod)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
+import Data.MediaType (MediaType(..))
 import Data.String as String
 import Data.Symbol (SProxy(..))
 import Data.Tuple (Tuple(..))
@@ -23,6 +23,7 @@ import Payload.Client.EncodeBody (class EncodeBody, encodeBody)
 import Payload.Client.Internal.Query (class EncodeQuery, encodeQuery)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (LogLevel(..), Options, RequestOptions)
+import Payload.ContentType (class HasContentType, getContentType)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.Internal.Route (DefaultRouteSpec, Undefined)
@@ -95,7 +96,7 @@ instance queryableGetRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    makeRequest {method: GET, url, body: Nothing, opts, reqOpts}
+    makeRequest {method: GET, url, body: Nothing, headers: [], opts, reqOpts}
 else instance queryablePostRoute ::
        ( Row.Union route DefaultRouteSpec mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
@@ -115,6 +116,7 @@ else instance queryablePostRoute ::
        , EncodeUrlWithParams fullPath fullParamsList payload
        , EncodeOptionalQuery fullPath query payload
        , DecodeResponse res
+       , HasContentType body
        , EncodeBody body
        )
     => Queryable (Route "POST" path (Record route)) basePath baseParams (Record payload) res where
@@ -129,7 +131,8 @@ else instance queryablePostRoute ::
     let url = urlPath <> urlQuery
     let (body :: body) = Record.get (SProxy :: SProxy "body") (to payload)
     let encodedBody = RequestBody.String (encodeBody body)
-    makeRequest {method: POST, url, body: Just encodedBody, opts, reqOpts}
+    let headers = [ContentType (MediaType (getContentType (Proxy :: _ body)))]
+    makeRequest {method: POST, url, body: Just encodedBody, headers, opts, reqOpts}
 else instance queryableHeadRoute ::
        ( Row.Lacks "body" route
        , Row.Lacks "response" route
@@ -156,7 +159,7 @@ else instance queryableHeadRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    makeRequest {method: HEAD, url, body: Nothing, opts, reqOpts}
+    makeRequest {method: HEAD, url, body: Nothing, headers: [], opts, reqOpts}
 else instance queryablePutRoute ::
        ( Row.Union route DefaultRouteSpec mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
@@ -173,6 +176,7 @@ else instance queryablePutRoute ::
        , EncodeUrlWithParams fullPath fullParamsList payload
        , EncodeOptionalQuery fullPath query payload
        , EncodeOptionalBody body payload
+       , HasContentType body
        , DecodeResponse res
        )
     => Queryable (Route "PUT" path (Record route)) basePath baseParams (Record payload) res where
@@ -186,7 +190,8 @@ else instance queryablePutRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    makeRequest {method: PUT, url, body, opts, reqOpts}
+    let headers = maybe [] (\_ -> [ContentType (MediaType (getContentType (Proxy :: _ body)))]) body
+    makeRequest {method: PUT, url, body, headers, opts, reqOpts}
 else instance queryableDeleteRoute ::
        ( Row.Union route DefaultRouteSpec mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
@@ -206,6 +211,7 @@ else instance queryableDeleteRoute ::
        , EncodeUrlWithParams fullPath fullParamsList payload
        , EncodeOptionalQuery fullPath query payload
        , EncodeOptionalBody body payload
+       , HasContentType body
        )
     => Queryable (Route "DELETE" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts reqOpts payload = do
@@ -218,17 +224,19 @@ else instance queryableDeleteRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    makeRequest {method: DELETE, url, body, opts, reqOpts}
+    let headers = maybe [] (\_ -> [ContentType (MediaType (getContentType (Proxy :: _ body)))]) body
+    makeRequest {method: DELETE, url, body, headers, opts, reqOpts}
 
 type Request =
   { method :: Method
   , url :: String
   , body :: Maybe RequestBody.RequestBody
+  , headers :: Array RequestHeader
   , opts :: Options
   , reqOpts :: RequestOptions }
 
 makeRequest :: forall body. DecodeResponse body => Request -> Aff (ClientResponse body)
-makeRequest {method, url, body, opts, reqOpts} = do
+makeRequest {method, url, body, headers, opts, reqOpts} = do
   case opts.logLevel of
     LogDebug -> liftEffect (log (printRequest req))
     _ -> pure unit
@@ -243,7 +251,9 @@ makeRequest {method, url, body, opts, reqOpts} = do
       { method = Left method
       , url = url
       , content = body
-      , responseFormat = ResponseFormat.string }
+      , responseFormat = ResponseFormat.string
+      , headers = AX.defaultRequest.headers <> headers
+      }
 
 printRequest :: AX.Request String -> String
 printRequest {method, url, headers, content} =

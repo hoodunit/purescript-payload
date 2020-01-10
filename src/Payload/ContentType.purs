@@ -1,6 +1,29 @@
-module Payload.Server.ContentType where
+module Payload.ContentType where
 
 import Prelude
+
+import Effect.Exception.Unsafe (unsafeThrow)
+import Payload.Internal.Route (Undefined)
+import Payload.ResponseTypes (Json)
+import Type.Proxy (Proxy)
+
+class HasContentType a where
+  getContentType :: Proxy a -> String
+
+instance hasContentTypeUndefined :: HasContentType Undefined where
+  getContentType _ = unsafeThrow "Attempted to get a content type for type Undefined. This is probably a bug in the library."
+
+instance hasContentTypeString :: HasContentType String where
+  getContentType _ = plain
+
+instance hasContentTypeJson :: HasContentType (Json a) where
+  getContentType _ = json
+
+instance hasContentTypeRecord :: HasContentType (Record r) where
+  getContentType _ = json
+
+instance hasContentTypeArray :: HasContentType (Array r) where
+  getContentType _ = json
 
 type ContentType = String
 

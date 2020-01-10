@@ -2,9 +2,10 @@ module Payload.Client.EncodeBody where
 
 import Prelude
 
+import Payload.ContentType (class HasContentType)
 import Simple.JSON as SimpleJson
 
-class EncodeBody body where
+class (HasContentType body) <= EncodeBody body where
   encodeBody :: body -> String
 
 instance encodeBodyString :: EncodeBody String where
