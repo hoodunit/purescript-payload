@@ -123,29 +123,29 @@ updateHeaders f (Response res) = Response (res { headers = f res.headers })
 -- | can either return that type directly or return another type from
 -- | which that type can be produced (e.g. a full response with different
 -- | headers or a different status code).
-class ToSpecResponse (route :: Symbol) a b where
-  toSpecResponse :: SProxy route -> a -> Result (Response b)
+class ToSpecResponse (docRoute :: Symbol) a b where
+  toSpecResponse :: SProxy docRoute -> a -> Result (Response b)
 
 instance toSpecResponseEitherFailureVal
   :: EncodeResponse a
-  => ToSpecResponse route (Either Failure a) a where
+  => ToSpecResponse docRoute (Either Failure a) a where
   toSpecResponse _ (Left err) = throwError err
   toSpecResponse _ (Right res) = pure (ok res)
 else instance toSpecResponseEitherFailureResponse
   :: EncodeResponse a
-  => ToSpecResponse route (Either Failure (Response a)) a where
+  => ToSpecResponse docRoute (Either Failure (Response a)) a where
   toSpecResponse _ (Left err) = throwError err
   toSpecResponse _ (Right res) = pure res
 else instance toSpecResponseEitherResponseVal
   :: EncodeResponse err
-  => ToSpecResponse route (Either (Response err) a) a where
+  => ToSpecResponse docRoute (Either (Response err) a) a where
   toSpecResponse _ (Left res) = do
     raw <- encodeResponse res
     throwError (Error raw) 
   toSpecResponse _ (Right res) = pure (ok res)
 else instance toSpecResponseEitherResponseResponse
   :: EncodeResponse err
-  => ToSpecResponse route (Either (Response err) (Response a)) a where
+  => ToSpecResponse docRoute (Either (Response err) (Response a)) a where
   toSpecResponse _ (Left res) = do
     raw <- encodeResponse res
     throwError (Error raw) 
@@ -153,7 +153,7 @@ else instance toSpecResponseEitherResponseResponse
 else instance toSpecResponseEitherValVal ::
   ( EncodeResponse a
   , EncodeResponse err
-  ) => ToSpecResponse route (Either err a) a where
+  ) => ToSpecResponse docRoute (Either err a) a where
   toSpecResponse _ (Left res) = do
     raw <- encodeResponse (internalError res)
     throwError (Error raw) 
@@ -161,18 +161,18 @@ else instance toSpecResponseEitherValVal ::
 else instance toSpecResponseEitherValResponse ::
   ( EncodeResponse a
   , EncodeResponse err
-  ) => ToSpecResponse route (Either err (Response a)) a where
+  ) => ToSpecResponse docRoute (Either err (Response a)) a where
   toSpecResponse _ (Left res) = do
     raw <- encodeResponse (internalError res)
     throwError (Error raw) 
   toSpecResponse _ (Right res) = pure res
 else instance toSpecResponseResponse
   :: EncodeResponse a
-  => ToSpecResponse route (Response a) a where
+  => ToSpecResponse docRoute (Response a) a where
   toSpecResponse _ res = pure res
 else instance toSpecResponseIdentity
   :: EncodeResponse a
-  => ToSpecResponse route a a where
+  => ToSpecResponse docRoute a a where
   toSpecResponse _ res = pure (ok res)
 else instance toSpecResponseFail ::
   ( Fail (Text "Could not match or convert handler response type to spec response type."
