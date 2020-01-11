@@ -18,6 +18,7 @@ import Payload.Test.Integration.Server.Guards as GuardsTest
 import Payload.Test.Integration.Server.Methods as MethodsTest
 import Payload.Test.Integration.Server.QueryParams as QueryParamsTest
 import Payload.Test.Integration.Server.Status as StatusTest
+import Payload.Test.Unit.Client.QueryParams as ClientQueryParamsTest
 import Payload.Test.Unit.Internal.QueryParsing as QueryParsingTest
 import Payload.Test.Unit.Internal.UrlParsing as UrlParsingTest
 import Payload.Test.Unit.Server.Cookies as CookiesTest
@@ -35,7 +36,7 @@ import Test.Unit.Output.Fancy as Fancy
 tests :: TestSuite
 tests = do
   let cfg = defaultConfig
-  suite "Unit - shared" do
+  suite "Unit - Shared" do
     UrlParsingTest.tests
     QueryParsingTest.tests
 
@@ -48,6 +49,9 @@ tests = do
     OmitEmptyTest.tests
     CookiesTest.tests
     ResponseTest.tests
+
+  suite "Unit - Client" do
+    ClientQueryParamsTest.tests
 
   suite "Server integration" do
     MethodsTest.tests
