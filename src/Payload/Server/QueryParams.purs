@@ -50,6 +50,8 @@ instance decodeQueryParamMaybe :: DecodeQueryParam a => DecodeQueryParam (Maybe 
   decodeQueryParam queryObj queryKey =
     case Object.lookup queryKey queryObj of
       Nothing -> Right Nothing
+      Just [] -> Right Nothing
+      Just [""] -> Right Nothing
       Just _ -> Just <$> decodeQueryParam queryObj queryKey
 
 class DecodeQueryParamMulti a where

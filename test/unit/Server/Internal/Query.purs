@@ -3,6 +3,7 @@ module Payload.Test.Unit.Server.Internal.Query where
 import Prelude
 
 import Data.Either (Either(..), isLeft)
+import Data.Maybe (Maybe(..))
 import Data.Symbol (SProxy(..))
 import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
@@ -45,6 +46,27 @@ tests = do
               (SProxy :: SProxy "/search?limit=<limit>")
               (Proxy :: Proxy { limit :: Int })
               "foo=blah&limit=12&a=b")
+      test "decoding Maybe Int parses Int when Int is given" do
+        Assert.equal
+          (Right {query: Just 1})
+            (Query.decodeQuery
+              (SProxy :: SProxy "/search?query=<query>")
+              (Proxy :: Proxy { query :: Maybe Int })
+              "query=1")
+      test "decoding Maybe Int returns Nothing when query value is empty" do
+        Assert.equal
+          (Right {query: Nothing})
+            (Query.decodeQuery
+              (SProxy :: SProxy "/search?query=<query>")
+              (Proxy :: Proxy { query :: Maybe Int })
+              "query=")
+      test "decoding Maybe Int returns Nothing when query value is omitted" do
+        Assert.equal
+          (Right {query: Nothing})
+            (Query.decodeQuery
+              (SProxy :: SProxy "/search?query=<query>")
+              (Proxy :: Proxy { query :: Maybe Int })
+              "")
 
     suite "Multi-match" do
       test "decoding multi-match" do
