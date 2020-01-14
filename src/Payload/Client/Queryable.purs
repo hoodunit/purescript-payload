@@ -232,7 +232,6 @@ makeRequest {method, url, body, headers, opts, reqOpts} = do
     _ -> pure unit
   pure (decodeAffjaxResponse res)
   where
-    req = applyReqOpts reqOpts defaultReq
     defaultReq = AX.defaultRequest
       { method = Left method
       , url = url
@@ -240,6 +239,7 @@ makeRequest {method, url, body, headers, opts, reqOpts} = do
       , responseFormat = ResponseFormat.string
       , headers = AX.defaultRequest.headers <> headers
       }
+    req = appendHeaders (opts.extraHeaders <> reqOpts.headers) defaultReq
 
 printRequest :: AX.Request String -> String
 printRequest {method, url, headers, content} =
@@ -406,8 +406,8 @@ stripTrailingSlash s = case String.stripSuffix (String.Pattern "/") s of
   Just stripped -> stripped
   Nothing -> s
 
-applyReqOpts :: forall a. RequestOptions -> AX.Request a -> AX.Request a
-applyReqOpts { headers } req = req { headers = newHeaders }
+appendHeaders :: forall a. Headers -> AX.Request a -> AX.Request a
+appendHeaders headers req = req { headers = newHeaders }
   where
     newHeaders = req.headers <> (asAxHeader <$> Headers.toUnfoldable headers)
 
