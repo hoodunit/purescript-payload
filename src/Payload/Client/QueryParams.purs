@@ -9,11 +9,10 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Global (encodeURIComponent)
+import Payload.Client.Internal.EncodeUri (encodeUri)
 
 class EncodeQueryParam a where
   encodeQueryParam :: a -> Maybe String
@@ -22,7 +21,7 @@ instance encodeQueryParamInt :: EncodeQueryParam Int where
   encodeQueryParam val = Just (show val)
 
 instance encodeQueryParamString :: EncodeQueryParam String where
-  encodeQueryParam s = encodeURIComponent s
+  encodeQueryParam s = Just (encodeUri s)
 
 instance encodeQueryParamMaybe :: EncodeQueryParam a => EncodeQueryParam (Maybe a) where
   encodeQueryParam (Just val) = encodeQueryParam val
@@ -32,17 +31,13 @@ class EncodeQueryParamMulti a where
   encodeQueryParamMulti :: a -> Maybe String
 
 instance encodeQueryParamMultiObjectArrayString :: EncodeQueryParamMulti (Object (Array String)) where
-  encodeQueryParamMulti o = case sequence (encodeArray <$> Object.toUnfoldable o) of
-    Just encodedArrays -> Just (String.joinWith "&" encodedArrays)
-    Nothing -> Nothing
+  encodeQueryParamMulti o = Just (joinParams (encodeArray <$> Object.toUnfoldable o))
     where
-      encodeArray :: Tuple String (Array String) -> Maybe String
-      encodeArray (Tuple k vals) =
-        case sequence (encodeVal k <$> vals) of
-          Just encodedVals -> Just (String.joinWith "&" encodedVals)
-          Nothing -> Nothing
+      joinParams :: Array String -> String
+      joinParams = String.joinWith "&"
+      
+      encodeArray :: Tuple String (Array String) -> String
+      encodeArray (Tuple k vals) = joinParams (encodeVal k <$> vals)
 
-      encodeVal :: String -> String -> Maybe String
-      encodeVal key val = case Tuple (encodeURIComponent key) (encodeURIComponent val) of
-        Tuple (Just encodedKey) (Just encodedVal) -> Just $ encodedKey <> "=" <> encodedVal
-        _ -> Nothing
+      encodeVal :: String -> String -> String
+      encodeVal key val = encodeUri key <> "=" <> encodeUri val
