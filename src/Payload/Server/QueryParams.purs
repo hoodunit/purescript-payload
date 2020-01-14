@@ -46,6 +46,17 @@ instance decodeQueryParamString :: DecodeQueryParam String where
     where
       decodeErr values msg = Left (QueryDecodeError {key: queryKey, values, message: msg, queryObj})
 
+instance decodeQueryParamBoolean :: DecodeQueryParam Boolean where
+  decodeQueryParam queryObj queryKey =
+    case Object.lookup queryKey queryObj of
+      Nothing -> Left (QueryParamNotFound {key: queryKey, queryObj})
+      Just [] -> decodeErr [] $ "Expected single value but received empty Array"
+      Just ["false"] -> Right false
+      Just ["true"] -> Right true
+      Just arr -> decodeErr arr $ "Expected single value but received multiple: " <> show arr
+    where
+      decodeErr values msg = Left (QueryDecodeError {key: queryKey, values, message: msg, queryObj})
+
 instance decodeQueryParamMaybe :: DecodeQueryParam a => DecodeQueryParam (Maybe a) where
   decodeQueryParam queryObj queryKey =
     case Object.lookup queryKey queryObj of

@@ -17,14 +17,14 @@ tests :: TestSuite
 tests = do
   suite "Query parameter decoding" do
     suite "Single match" do
-      test "decoding int succeeds for valid int" do
+      test "Int: decoding succeeds for valid int" do
         Assert.equal
           (Right {limit: 12})
             (Query.decodeQuery
               (SProxy :: SProxy "/search?limit=<limit>")
               (Proxy :: Proxy { limit :: Int })
               "limit=12")
-      test "decoding int fails for invalid int" do
+      test "Int: decoding fails for invalid int" do
         Assert.equal
           true
           (isLeft
@@ -32,13 +32,55 @@ tests = do
               (SProxy :: SProxy "/search?limit=<limit>")
               (Proxy :: Proxy { limit :: Int })
               "limit=asdf"))
-      test "decoding string succeeds" do
+      test "String: decoding succeeds" do
         Assert.equal
           (Right {query: "whatever"})
             (Query.decodeQuery
               (SProxy :: SProxy "/search?query=<query>")
               (Proxy :: Proxy { query :: String })
               "query=whatever")
+      test "Boolean: \"true\" decodes to true" do
+        Assert.equal
+          (Right {query: true})
+            (Query.decodeQuery
+              (SProxy :: SProxy "/search?query=<query>")
+              (Proxy :: Proxy { query :: Boolean })
+              "query=true")
+      test "Boolean: \"false\" decodes to false" do
+        Assert.equal
+          (Right {query: false})
+            (Query.decodeQuery
+              (SProxy :: SProxy "/search?query=<query>")
+              (Proxy :: Proxy { query :: Boolean })
+              "query=false")
+      test "Boolean: \"\" fails to decode" do
+        Assert.equal
+          true
+          (isLeft (Query.decodeQuery
+            (SProxy :: SProxy "/search?query=<query>")
+            (Proxy :: Proxy { query :: Boolean })
+            "query="))
+      test "Maybe: decoding Maybe Int parses Int when Int is given" do
+        Assert.equal
+          (Right {query: Just 1})
+            (Query.decodeQuery
+              (SProxy :: SProxy "/search?query=<query>")
+              (Proxy :: Proxy { query :: Maybe Int })
+              "query=1")
+      test "Maybe: decoding Maybe Int returns Nothing when query value is empty" do
+        Assert.equal
+          (Right {query: Nothing})
+            (Query.decodeQuery
+              (SProxy :: SProxy "/search?query=<query>")
+              (Proxy :: Proxy { query :: Maybe Int })
+              "query=")
+      test "Maybe: decoding Maybe Int returns Nothing when query value is omitted" do
+        Assert.equal
+          (Right {query: Nothing})
+            (Query.decodeQuery
+              (SProxy :: SProxy "/search?query=<query>")
+              (Proxy :: Proxy { query :: Maybe Int })
+              "")
       test "extra parameters are ignored" do
         Assert.equal
           (Right {limit: 12})
@@ -46,27 +88,6 @@ tests = do
               (SProxy :: SProxy "/search?limit=<limit>")
               (Proxy :: Proxy { limit :: Int })
               "foo=blah&limit=12&a=b")
-      test "decoding Maybe Int parses Int when Int is given" do
-        Assert.equal
-          (Right {query: Just 1})
-            (Query.decodeQuery
-              (SProxy :: SProxy "/search?query=<query>")
-              (Proxy :: Proxy { query :: Maybe Int })
-              "query=1")
-      test "decoding Maybe Int returns Nothing when query value is empty" do
-        Assert.equal
-          (Right {query: Nothing})
-            (Query.decodeQuery
-              (SProxy :: SProxy "/search?query=<query>")
-              (Proxy :: Proxy { query :: Maybe Int })
-              "query=")
-      test "decoding Maybe Int returns Nothing when query value is omitted" do
-        Assert.equal
-          (Right {query: Nothing})
-            (Query.decodeQuery
-              (SProxy :: SProxy "/search?query=<query>")
-              (Proxy :: Proxy { query :: Maybe Int })
-              "")
 
     suite "Multi-match" do
       test "decoding multi-match" do

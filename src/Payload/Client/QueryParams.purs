@@ -23,6 +23,10 @@ instance encodeQueryParamInt :: EncodeQueryParam Int where
 instance encodeQueryParamString :: EncodeQueryParam String where
   encodeQueryParam s = Just (encodeUri s)
 
+instance encodeQueryParamBoolean :: EncodeQueryParam Boolean where
+  encodeQueryParam true = Just "true"
+  encodeQueryParam false = Just "false"
+
 instance encodeQueryParamMaybe :: EncodeQueryParam a => EncodeQueryParam (Maybe a) where
   encodeQueryParam (Just val) = encodeQueryParam val
   encodeQueryParam Nothing = Nothing
