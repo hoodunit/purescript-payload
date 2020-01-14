@@ -9,7 +9,7 @@ module Payload.Client
 
 import Payload.Client.ClientApi (class ClientApi, mkClientApi)
 import Payload.Client.Options (RequestOptions, Options, defaultOpts)
-import Payload.Client.Response (ClientResponse, ClientError(DecodeError, StatusError, RequestError))
+import Payload.Client.Response (ClientResponse, ClientError(DecodeError, StatusError, RequestError), unwrapResponse, unwrapBody)
 import Payload.Spec (Spec(..))
 
 mkClient :: forall routesSpec client

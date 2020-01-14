@@ -15,6 +15,11 @@ newtype Response r = Response
   , headers :: Headers
   , body :: r }
 
+type ResponseContent r =
+  { status :: HttpStatus
+  , headers :: Headers
+  , body :: r }
+
 type HttpStatus = { code :: Int, reason :: String }
 
 derive instance newtypeResponse :: Newtype (Response a) _
