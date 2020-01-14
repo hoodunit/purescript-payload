@@ -23,6 +23,7 @@ import Payload.Client.EncodeBody (class EncodeBody, encodeBody)
 import Payload.Client.Internal.Query (class EncodeQuery, encodeQuery)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (LogLevel(..), Options, RequestOptions)
+import Payload.Client.Response (ClientError(..), ClientResponse)
 import Payload.ContentType (class HasContentType, getContentType)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
@@ -40,21 +41,6 @@ import Type.RowList (class ListToRow, RLProxy(..))
 
 type ClientFnWithOptions payload body = RequestOptions -> ClientFn payload body
 type ClientFn payload body = payload -> Aff (ClientResponse body)
-type ClientResponse body = Either ClientError (Response body)
-data ClientError
-  = DecodeError { error :: DecodeResponseError, response :: Response String }
-  | StatusError { response :: Response String }
-  | RequestError { message :: String }
-
-instance showClientError :: Show ClientError where
-  show (DecodeError err) = "DecodeError: " <> show err
-  show (StatusError err) = "StatusError: " <> show err
-  show (RequestError err) = "RequestError: " <> show err
-instance eqClientError :: Eq ClientError where
-  eq (DecodeError a) (DecodeError b) = a == b
-  eq (StatusError a) (StatusError b) = a == b
-  eq (RequestError a) (RequestError b) = a == b
-  eq _ _ = false
 
 class Queryable
   route

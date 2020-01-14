@@ -2,17 +2,12 @@ module Payload.Test.Integration.Client.Methods where
 
 import Prelude
 
-import Data.Either (Either(..))
-import Effect.Aff (Aff, error, throwError)
 import Payload.Client (mkClient)
-import Payload.Client.Queryable (ClientResponse)
-import Payload.ResponseTypes (Empty(..), Response(..))
-import Payload.Server.Response as Response
+import Payload.ResponseTypes (Empty(..))
 import Payload.Spec (DELETE, GET, HEAD, POST, PUT, Routes, Spec(Spec))
 import Payload.Test.Config (TestConfig)
 import Payload.Test.Helpers (bodyEquals, withRoutes)
 import Test.Unit (TestSuite, suite, test)
-import Test.Unit.Assert as Assert
   
 tests :: TestConfig -> TestSuite
 tests cfg = do

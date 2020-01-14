@@ -5,8 +5,7 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff, error, throwError)
-import Payload.Client (mkClient)
-import Payload.Client.Queryable (ClientError(..), ClientResponse)
+import Payload.Client (ClientError(..), mkClient)
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Response(..))
 import Payload.Server.Response as Response

@@ -3,14 +3,9 @@ module Payload.Test.Integration.Client.Statuses where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Newtype (unwrap)
 import Effect.Aff (Aff, error, throwError)
-import Payload.Client (mkClient)
-import Payload.Client.Queryable (ClientError(..), ClientResponse)
-import Payload.Headers as Headers
-import Payload.ResponseTypes (Response(..))
+import Payload.Client (ClientError(..), ClientResponse, mkClient)
 import Payload.Server.Response as Response
-import Payload.Server.Status as Status
 import Payload.Spec (GET, Spec(Spec))
 import Payload.Test.Config (TestConfig)
 import Payload.Test.Helpers (bodyEquals, withRoutes)

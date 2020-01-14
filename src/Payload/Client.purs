@@ -4,12 +4,12 @@ module Payload.Client
        , mkGuardedClient
        , mkGuardedClient_
        , module Payload.Client.Options
-       , module QueryableExports
+       , module Payload.Client.Response
        ) where
 
 import Payload.Client.ClientApi (class ClientApi, mkClientApi)
 import Payload.Client.Options (RequestOptions, Options, defaultOpts)
-import Payload.Client.Queryable (ClientResponse, ClientError) as QueryableExports
+import Payload.Client.Response (ClientResponse, ClientError(DecodeError, StatusError, RequestError))
 import Payload.Spec (Spec(..))
 
 mkClient :: forall routesSpec client

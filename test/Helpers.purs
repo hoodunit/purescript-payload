@@ -16,7 +16,7 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff, error, throwError)
 import Effect.Aff as Aff
-import Payload.Client.Queryable (ClientResponse)
+import Payload.Client.Response (ClientResponse)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Response(..))
