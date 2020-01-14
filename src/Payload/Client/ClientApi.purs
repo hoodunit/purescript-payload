@@ -10,6 +10,7 @@ import Prelude
 import Data.Either (Either)
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect.Aff (Aff)
+import Payload.Client.Internal.Url (class EncodeUrl)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (RequestOptions, Options)
 import Payload.Client.Queryable (class Queryable, ClientFn, ClientFnWithOptions, request)
@@ -103,6 +104,10 @@ instance clientApiListConsRoutes ::
   ( IsSymbol parentName
   , IsSymbol basePath
   , IsSymbol path
+
+  -- Extra check to fail earlier and get more sensible errors for
+  -- invalid parent route URL specs
+  , EncodeUrl path childParams
 
   -- Parse out child routes from parent params
   , Row.Union parentSpec DefaultParentRoute mergedSpec

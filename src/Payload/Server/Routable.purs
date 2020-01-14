@@ -185,6 +185,10 @@ instance routableListConsRoutes ::
   ( IsSymbol parentName
   , IsSymbol basePath
   , IsSymbol path
+  
+  -- Extra check to fail earlier and get more sensible errors for
+  -- invalid parent route URL specs
+  , PayloadUrl.DecodeUrl path parentParams
 
   -- Parse out child routes from parent params
   , Row.Union parentSpec DefaultParentRoute mergedSpec
@@ -194,9 +198,6 @@ instance routableListConsRoutes ::
       {params :: Record parentParams, guards :: Guards parentGuards | childRoutes}
   , Row.Union baseParams parentParams childParams
   , GuardParsing.Append baseGuards parentGuards childGuards
-  
-  -- Extra check: fail here already if they don't match
-  , PayloadUrl.DecodeUrl path parentParams
 
   , Row.Cons parentName (Record childHandlers) handlers' handlers 
 
