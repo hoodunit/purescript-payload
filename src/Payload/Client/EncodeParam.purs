@@ -5,6 +5,9 @@ module Payload.Client.EncodeParam
 
 import Prelude
 
+import Data.Maybe (Maybe(..))
+import Payload.Client.Internal.EncodeUri (encodeUri)
+
 class EncodeParam a where
   encodeParam :: a -> String
 
@@ -12,4 +15,4 @@ instance encodeParamInt :: EncodeParam Int where
   encodeParam = show
 
 instance encodeParamString :: EncodeParam String where
-  encodeParam s = s
+  encodeParam = encodeUri

@@ -19,6 +19,7 @@ import Payload.Test.Integration.Server.Methods as MethodsTest
 import Payload.Test.Integration.Server.QueryParams as QueryParamsTest
 import Payload.Test.Integration.Server.Status as StatusTest
 import Payload.Test.Unit.Client.QueryParams as ClientQueryParamsTest
+import Payload.Test.Unit.Client.EncodeParam as ClientEncodeParamTest
 import Payload.Test.Unit.Internal.QueryParsing as QueryParsingTest
 import Payload.Test.Unit.Internal.UrlParsing as UrlParsingTest
 import Payload.Test.Unit.Server.Cookies as CookiesTest
@@ -52,6 +53,7 @@ tests = do
 
   suite "Unit - Client" do
     ClientQueryParamsTest.tests
+    ClientEncodeParamTest.tests
 
   suite "Server integration" do
     MethodsTest.tests
