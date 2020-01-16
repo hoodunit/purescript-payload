@@ -279,7 +279,7 @@ printResponse (Left error) =
 printResponse (Right {status, statusText, headers, body}) =
   "DEBUG Response:\n" <>
   "--------------------------------\n" <>
-  "Status: " <> printStatus status <> " " <> show statusText <> "\n" <>
+  "Status: " <> printStatus status <> " " <> statusText <> "\n" <>
   "Headers:\n" <> printHeaders headers <> "\n" <>
   "Body:\n" <> body <> "\n" <>
   "--------------------------------\n"
