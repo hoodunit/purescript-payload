@@ -8,8 +8,8 @@ import Data.Tuple (Tuple(..))
 import Payload.Headers (Headers, toUnfoldable)
 import Payload.ResponseTypes (Response(..))
 
-foreign import showDebugRecordImpl :: forall a. Record a -> String
-foreign import showDebugArrayImpl :: forall a. Array a -> String
+foreign import jsonStringify :: forall a. a -> String
+foreign import formatJsonString :: String -> String
 
 class ShowDebug a where
   showDebug :: a -> String
@@ -28,8 +28,8 @@ else instance showDebugEither :: (ShowDebug a, ShowDebug b) => ShowDebug (Either
   showDebug (Right a) = "(Right " <> showDebug a <> ")"
   showDebug (Left a) = "(Left " <> showDebug a <> ")"
 else instance showDebugArray :: ShowDebug (Array a) where
-  showDebug r = showDebugArrayImpl r
+  showDebug r = jsonStringify r
 else instance showDebugRecord :: ShowDebug (Record a) where
-  showDebug r = showDebugRecordImpl r
+  showDebug r = jsonStringify r
 else instance showDebugDefault :: Show a => ShowDebug a where
   showDebug = show

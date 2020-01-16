@@ -8,11 +8,13 @@ import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.ResponseHeader (ResponseHeader(..))
 import Affjax.StatusCode (StatusCode(..))
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.HTTP.Method (CustomMethod, Method(..), unCustomMethod)
 import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType (MediaType(..))
 import Data.String as String
+import Data.String.Utils as String
 import Data.Symbol (SProxy(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
@@ -25,6 +27,7 @@ import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (LogLevel(..), Options, RequestOptions)
 import Payload.Client.Response (ClientError(..), ClientResponse)
 import Payload.ContentType (class HasContentType, getContentType)
+import Payload.Debug (formatJsonString)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.Internal.Route (DefaultRouteSpec, Undefined)
@@ -281,7 +284,7 @@ printResponse (Right {status, statusText, headers, body}) =
   "--------------------------------\n" <>
   "Status: " <> printStatus status <> " " <> statusText <> "\n" <>
   "Headers:\n" <> printHeaders headers <> "\n" <>
-  "Body:\n" <> body <> "\n" <>
+  "Body:\n" <> printBody body <> "\n" <>
   "--------------------------------\n"
   where
     printStatus :: StatusCode -> String
@@ -289,12 +292,23 @@ printResponse (Right {status, statusText, headers, body}) =
     
     printHeaders :: Array ResponseHeader -> String
     printHeaders [] = ""
-    printHeaders hdrs = headersStr <> "\n"
-       where
-         headersStr = String.joinWith "  \n" (printHeader <$> hdrs)
+    printHeaders hdrs = (String.joinWith "  \n" (printHeader <$> hdrs)) <> "\n"
+
+    contentIsJson = maybe false (String.startsWith "application/json") $ lookupHeader "content-type" headers
 
     printHeader :: ResponseHeader -> String
     printHeader (ResponseHeader field val) = field <> " " <> val
+
+    printBody :: String -> String
+    printBody b | contentIsJson = formatJsonString b
+                | otherwise = b
+
+lookupHeader :: String -> Array ResponseHeader -> Maybe String
+lookupHeader key headers = Array.findMap matchingHeaderVal headers
+  where
+    matchingHeaderVal :: ResponseHeader -> Maybe String
+    matchingHeaderVal (ResponseHeader k val) | k == "content-type" = Just val
+                                             | otherwise = Nothing
 
 decodeAffjaxResponse :: forall body
   . DecodeResponse body
