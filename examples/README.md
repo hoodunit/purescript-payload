@@ -6,3 +6,4 @@ Examples of using Payload in different situations. All of these examples are com
 * [basic](./basic): A larger example showing hierarchical routes
 * [files](./files): Serving files
 * [movies](./movies): A larger example based on the [Movie Database API](https://developers.themoviedb.org)
+* [GitHub client](./client-github): Example client for the GitHub API
