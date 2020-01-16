@@ -38,7 +38,7 @@ tests cfg = do
   let withApi = withServer spec api
   let client = mkGuardedClient cfg.clientOpts spec
   let authHeader = Tuple "Authorization" "Token secret"
-  let authenticatedOpts = { headers: Headers.fromFoldable [ authHeader ] }
+  let authenticatedOpts = { extraHeaders: Headers.fromFoldable [ authHeader ] }
   suite "Example: basic" do
     test "GET /users (with secret)" $ withApi do
       users <- unwrapBody $ client.adminUsers.get_ authenticatedOpts {}

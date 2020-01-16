@@ -6,11 +6,11 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Payload.Client (mkGuardedClient)
-import Payload.ContentType as ContentType
+import Payload.Client.Options (defaultReqOpts)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.Server.Guards as Guards
-import Payload.Spec (type (:), GET, Guards(..), HEAD, Nil, POST, PUT, Spec(..), DELETE)
+import Payload.Spec (type (:), GET, Guards(..), Nil, Spec(..))
 import Payload.Test.Config (TestConfig)
 import Payload.Test.Helpers (bodyEquals, withServer)
 import Test.Unit (TestSuite, suite, test)
@@ -54,5 +54,6 @@ tests cfg = do
         let opts = cfg.clientOpts { extraHeaders = Headers.fromFoldable [Tuple "Accept" "some content type"] }
         withServer spec api do
           let client = mkGuardedClient opts spec
-          res <- client.foo_ { headers: Headers.fromFoldable [Tuple "Accept" "overridden value"] } {}
+          let reqOpts = defaultReqOpts { extraHeaders = Headers.fromFoldable [Tuple "Accept" "overridden value"] }
+          res <- client.foo_ reqOpts {}
           bodyEquals "overridden value" res

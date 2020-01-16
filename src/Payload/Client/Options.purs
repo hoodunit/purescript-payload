@@ -11,12 +11,16 @@ type Options =
 
 data LogLevel = LogNormal | LogDebug
 
-type RequestOptions =
-  { headers :: Headers }
-
 defaultOpts :: Options
 defaultOpts =
   { baseUrl: ""
   , logLevel: LogNormal
   , extraHeaders: Headers.empty
   }
+
+type RequestOptions =
+  { extraHeaders :: Headers }
+
+defaultReqOpts :: RequestOptions
+defaultReqOpts =
+  { extraHeaders: Headers.empty }

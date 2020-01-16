@@ -239,7 +239,7 @@ makeRequest {method, url, body, headers, opts, reqOpts} = do
       , responseFormat = ResponseFormat.string
       , headers = AX.defaultRequest.headers <> headers
       }
-    req = appendHeaders (opts.extraHeaders <> reqOpts.headers) defaultReq
+    req = appendHeaders (opts.extraHeaders <> reqOpts.extraHeaders) defaultReq
 
 printRequest :: AX.Request String -> String
 printRequest {method, url, headers, content} =

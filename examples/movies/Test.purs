@@ -17,7 +17,7 @@ import Payload.Test.Helpers (assertFail, assertRes, bodyEquals, withServer)
 import Test.Unit (TestSuite, suite, test)
 
 cookieOpts :: Map String String -> Client.RequestOptions
-cookieOpts cookies = { headers: Headers.fromFoldable [cookieHeader] }
+cookieOpts cookies = { extraHeaders: Headers.fromFoldable [cookieHeader] }
   where
     cookieHeader = case Cookies.cookieHeader cookies of
                      Tuple field value -> Tuple field value

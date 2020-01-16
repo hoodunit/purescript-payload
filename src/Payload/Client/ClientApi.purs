@@ -89,7 +89,7 @@ instance clientApiListCons ::
              (SProxy :: _ basePath)
              (Proxy :: _ (Record baseParams))
       doRequest :: ClientFn payload res
-      doRequest = doRequestWithOptions { headers: Headers.empty }
+      doRequest = doRequestWithOptions { extraHeaders: Headers.empty }
 
       doRequestWithOptions :: ClientFnWithOptions payload res
       doRequestWithOptions reqOpts payload =
