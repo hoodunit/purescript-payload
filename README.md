@@ -6,7 +6,7 @@
   </img>
 </a>
 
-Payload is an HTTP server library for PureScript inspired by [Rust's Rocket](https://rocket.rs/) and [Haskell's Servant](https://haskell-servant.readthedocs.io/en/stable/).
+Payload is an HTTP server and client library for PureScript inspired by [Rust's Rocket](https://rocket.rs/) and [Haskell's Servant](https://haskell-servant.readthedocs.io/en/stable/).
 
 The basic idea: write one API spec. Write handlers as functions returning data. Get for free:
 
@@ -95,7 +95,9 @@ Then read on for examples and docs.
 
 ### Overview
 
-Here is a simple spec:
+The main idea of Payload is that you write a type-level API spec for an API telling what endpoints the API supports and the types of their request and response parameters, and Payload uses this spec to derive functionality like request routing and encoding/decoding requests on both servers and clients. Payload can be used for writing server libraries or full stack PureScript applications, but it can also be used in front end or client applications for consuming external APIs.
+
+Here is a simple spec for an HTTP API:
 
 ```purescript
 spec :: Spec {
@@ -114,7 +116,7 @@ type User =
 
 `GET "/users/<id>"` says we have a `GET` endpoint with a URL parameter named `id`. The type of `id` is defined below it as an `Int`. The endpoint returns a `User`, with type as defined below.
 
-To run a Payload server, you provide a spec and a record of handlers corresponding to each endpoint defined in the API spec. The above example can be run like so:
+To run a Payload server that complies with this spec, you simply provide the spec and a record of handlers corresponding to each endpoint defined in the API spec to [`Payload.launch`](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server#v:launch) (or another function in [`Payload.Server`](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server)). A server for the above API spec can be run like so:
 
 ```purescript
 api = { getUser: getUser }
@@ -126,6 +128,8 @@ main = Payload.launch spec api
 ```
 
 Payload will helpfully fail to compile if an endpoint was defined in the spec but no corresponding handler was provided when starting the server. A handler is just an asynchronous function taking in a Record of the request parameters defined in the spec: in this case just a `params` field with the `id` param of type `Int`. URL parameters, query parameters, and bodies defined in the spec are automatically decoded into typed values and merged into the fields `params`, `query`, and `body`, respectively, of the handler payload. The returned `User` value is also automatically encoded to JSON.
+
+You can also use a spec to derive a Payload client for calling the API. See the [client docs](#client) for more information about Payload clients.
 
 Specs can also be hierarchical:
 
@@ -361,7 +365,7 @@ Guards can also be applied on parent routes in a hierarchical API spec. For an e
 
 ### Client
 
-Given an API spec, Payload can automatically derive client functions for calling the API. The client functions take typed values as parameters, encode them into an HTTP request, and then decode the response into typed response values. If the response has a 2xx status code, it is treated as a successful API response and the client attempts to decode it into the type given in the spec. For other responses the client will return an error containing the full response.
+Given an API spec, Payload can automatically derive a type-safe client for calling the API. As Payload servers require an API spec, this means that e.g. full stack Payload applications automatically have client functions for calling the API. But Payload API clients are not limited to Payload applications. Clients can also be created for other external APIs by simply writing an API spec for the parts of the API that the application uses and then deriving a client using Payload.
 
 A client is created by passing the API spec to [mkClient](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Client#v:mkClient) or [mkGuardedClient](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Client#v:mkGuardedClient). The client is a record mirroring the shape of the server handler record, but with client functions instead of handlers. The client functions accept a record of API parameters identical to the one received by the server handler functions.
 
@@ -385,7 +389,9 @@ do
   user2 <- client.users.byId.get_ options {params: {id: 1}}
 ```
 
-See the [Movies example tests](./examples/movies/Test.purs) for further examples of client API calls.
+The client functions take typed values as parameters, encode them into an HTTP request, and then decode the response into typed response values. If the response has a 2xx status code, it is treated as a successful API response and the client attempts to decode it into the type given in the spec. For other responses the client will return an error containing the full response.
+
+See the [Movies example tests](./examples/movies/Test.purs) for further examples of client API calls and the [GitHub API example](./examples/client-github) for an example of calling an external API.
 
 The client library uses the [Affjax library](https://github.com/slamdata/purescript-affjax) under the hood. If you are using the client on Node.js, you will need to install the `xhr2` package.
 
