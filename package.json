@@ -6,6 +6,7 @@
     "build:watch": "spago build --watch",
     "build:client:basic": "pulp --watch browserify --main Payload.Examples.Basic.Client --to output/examples/basicClient.js -- --censor-lib --strict",
     "docs:local": "spago docs",
+    "example:movies": "spago run --main Payload.Examples.Movies.Main",
     "example:github": "spago run --main Payload.Examples.ClientGitHub.Main",
     "publish:version": "spago bump-version",
     "publish:push": "pulp publish",

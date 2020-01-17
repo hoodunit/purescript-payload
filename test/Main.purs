@@ -15,6 +15,7 @@ import Payload.Test.Integration.Client.Options as ClientOptionsTest
 import Payload.Test.Integration.Client.QueryParams as ClientQueryParams
 import Payload.Test.Integration.Client.Statuses as ClientStatuses
 import Payload.Test.Integration.Client.ContentTypes as ClientContentTypes
+import Payload.Test.Integration.OpenApi.OpenApiSpec as OpenApiSpecTest
 import Payload.Test.Integration.Server.Guards as GuardsTest
 import Payload.Test.Integration.Server.Methods as MethodsTest
 import Payload.Test.Integration.Server.QueryParams as QueryParamsTest
@@ -75,6 +76,9 @@ tests = do
     BasicExample.tests cfg
     FilesExample.tests
     MoviesExample.tests cfg
+
+  suite "OpenAPI integration" do
+    OpenApiSpecTest.tests
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do

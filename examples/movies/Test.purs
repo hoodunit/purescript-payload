@@ -8,8 +8,9 @@ import Data.Map as Map
 import Data.Tuple (Tuple(..))
 import Payload.Client (mkGuardedClient)
 import Payload.Client as Client
-import Payload.Examples.Movies.Main (moviesApi, moviesApiSpec)
+import Payload.Examples.Movies.Main (createRating, createSession, deleteRating, deleteSession, docs, getApiKey, getMovie, getSessionId, latestMovie, moviesApiSpec, newToken, openApi, popularMovies)
 import Payload.Headers as Headers
+import Payload.OpenApi (mkOpenApiSpec_)
 import Payload.Server.Cookies as Cookies
 import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
 import Payload.Test.Config (TestConfig)
@@ -24,6 +25,39 @@ cookieOpts cookies = { extraHeaders: Headers.fromFoldable [cookieHeader] }
   
 tests :: TestConfig -> TestSuite
 tests cfg = do
+  let openApiSpec = mkOpenApiSpec_ moviesApiSpec
+  let moviesApi = {
+    handlers: {
+      v1: {
+      auth: {
+          token: {
+            new: newToken
+          },
+          session: {
+            create: createSession,
+            delete: deleteSession
+          }
+        },
+        movies: {
+          latest: latestMovie,
+          popular: popularMovies,
+          byId: {
+            get: getMovie,
+            rating: {
+              create: createRating,
+              delete: deleteRating
+            }
+          }
+        }
+      },
+      docs,
+      openApi: openApi openApiSpec
+    },
+    guards: {
+      apiKey: getApiKey,
+      sessionId: getSessionId
+    }
+  }
   let client = mkGuardedClient cfg.clientOpts moviesApiSpec
   let withApi = withServer moviesApiSpec moviesApi
   suite "Example: movies API" do

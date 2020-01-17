@@ -4,9 +4,20 @@ import Prelude
 
 import Data.Either (Either, note)
 import Data.Map as Map
+import Data.Tuple (Tuple(..))
+import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Aff as Aff
 import Node.HTTP as HTTP
+import Payload.ContentType as ContentType
+import Payload.Headers as Headers
+import Payload.OpenApi (mkOpenApiSpec_, toJson)
+import Payload.OpenApi.OpenApiTypes (OpenApi)
+import Payload.ResponseTypes (Response(..))
+import Payload.Server as Payload
 import Payload.Server.Cookies (requestCookies)
+import Payload.Server.Handlers (File(..))
+import Payload.Server.Response as Response
 import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
 
 -- Example API based on The Movie Database API at
@@ -61,6 +72,12 @@ moviesApiSpec :: Spec {
            }
          }
       }
+    },
+    docs :: GET "/docs" {
+      response :: String
+    },
+    openApi :: GET "/openapi.json" {
+      response :: String
     }
   }
 }
@@ -95,37 +112,6 @@ type RatingValue =
 type ApiKey = String
 type SessionId = String
 data Path (s :: Symbol) = Path
-
-moviesApi = {
-  handlers: {
-    v1: {
-      auth: {
-        token: {
-          new: newToken
-        },
-        session: {
-          create: createSession,
-          delete: deleteSession
-        }
-      },
-      movies: {
-        latest: latestMovie,
-        popular: popularMovies,
-        byId: {
-          get: getMovie,
-          rating: {
-            create: createRating,
-            delete: deleteRating
-          }
-        }
-      }
-    }
-  },
-  guards: {
-    apiKey: getApiKey,
-    sessionId: getSessionId
-  }
-}
 
 newToken :: forall r. { | r} -> Aff RequestTokenResponse
 newToken _ = pure { success: true, expiresAt: "date", requestToken: "328dsdweoi" }
@@ -169,3 +155,75 @@ getSessionId :: HTTP.Request -> Aff (Either String SessionId)
 getSessionId req = do
   let cookies = requestCookies req
   pure $ note "No cookie" $ Map.lookup "sessionId" cookies
+
+reDocPage :: String
+reDocPage = """<!DOCTYPE html>
+<html>
+  <head>
+    <title>ReDoc</title>
+    <!-- needed for adaptive design -->
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
+
+    <!--
+    ReDoc doesn't change outer page styles
+    -->
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <redoc spec-url='/openapi.json'></redoc>
+    <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"> </script>
+  </body>
+</html>"""
+
+docs :: {} -> Aff (Response String)
+docs _ = pure (Response.ok reDocPage
+         # Response.setHeaders (Headers.fromFoldable [Tuple "content-type" "text/html"]))
+
+openApi :: OpenApi -> {} -> Aff (Response String)
+openApi openApiSpec _ = do
+  pure (Response.ok (toJson openApiSpec)
+         # Response.setHeaders (Headers.fromFoldable [Tuple "content-type" ContentType.json]))
+
+main :: Effect Unit
+main = Aff.launchAff_ $ do
+  let openApiSpec = mkOpenApiSpec_ moviesApiSpec
+  let moviesApi = {
+    handlers: {
+      v1: {
+      auth: {
+          token: {
+            new: newToken
+          },
+          session: {
+            create: createSession,
+            delete: deleteSession
+          }
+        },
+        movies: {
+          latest: latestMovie,
+          popular: popularMovies,
+          byId: {
+            get: getMovie,
+            rating: {
+              create: createRating,
+              delete: deleteRating
+            }
+          }
+        }
+      },
+      docs,
+      openApi: openApi openApiSpec
+    },
+    guards: {
+      apiKey: getApiKey,
+      sessionId: getSessionId
+    }
+  }
+  Payload.startGuarded_ moviesApiSpec moviesApi
