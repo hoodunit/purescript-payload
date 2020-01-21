@@ -405,13 +405,7 @@ npm install
 npx --no-install bower update --force-latest
 ```
 
-Build library:
-
-```
-npm run build
-```
-
-Run tests:
+Build library and run tests:
 
 ```
 npm test
