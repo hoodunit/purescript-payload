@@ -226,4 +226,4 @@ main = Aff.launchAff_ $ do
       sessionId: getSessionId
     }
   }
-  Payload.startGuarded_ moviesApiSpec moviesApi
+  Payload.startGuarded (Payload.defaultOpts { port = 3002 }) moviesApiSpec moviesApi
