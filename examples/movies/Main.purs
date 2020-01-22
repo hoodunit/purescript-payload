@@ -195,34 +195,8 @@ getSessionId req = do
   let cookies = requestCookies req
   pure $ note "No cookie" $ Map.lookup "sessionId" cookies
 
-reDocPage :: String
-reDocPage = """<!DOCTYPE html>
-<html>
-  <head>
-    <title>ReDoc</title>
-    <!-- needed for adaptive design -->
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
-
-    <!--
-    ReDoc doesn't change outer page styles
-    -->
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-      }
-    </style>
-  </head>
-  <body>
-    <redoc spec-url='/openapi.json'></redoc>
-    <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"> </script>
-  </body>
-</html>"""
-
 docs :: {} -> Aff (Response String)
-docs _ = pure (Response.ok reDocPage
+docs _ = pure (Response.ok (Docs.htmlPage "/openapi.json")
          # Response.setHeaders (Headers.fromFoldable [Tuple "content-type" "text/html"]))
 
 openApi :: OpenApiSpec -> {} -> Aff (Response String)
