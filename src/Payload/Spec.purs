@@ -69,8 +69,10 @@ type DELETE = Route "DELETE"
 data Routes (path :: Symbol) routesSpec = Routes
 
 -- | Type-level list of guard names that will be run before calling
--- | a route or child routes.
+-- | a route or child routes. A wrapper around Symbol lists.
 data Guards (g :: SList) = Guards
+
+-- | Type-level list of strings (symbols)
 data Tags (s :: SList) = Tags
 
 foreign import kind SList
