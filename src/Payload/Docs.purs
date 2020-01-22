@@ -1,12 +1,13 @@
-module Payload.OpenApi where
+module Payload.Docs where
 
 import Prelude
 
 import Data.Maybe (Maybe(..))
-import Payload.OpenApi.OpenApiSpec (class OpenApiSpec)
-import Payload.OpenApi.OpenApiSpec as OpenApiSpec
-import Payload.OpenApi.OpenApiTypes as OpenApi
-import Payload.Spec (Spec(..))
+import Payload.Docs.DocumentedApi (class DocumentedApi)
+import Payload.Docs.DocumentedApi as DocumentedApi
+import Payload.Docs.OpenApi (OpenApiSpec)
+import Payload.Docs.OpenApi as OpenApi
+import Payload.Spec (Spec)
 import Simple.JSON as SimpleJSON
 
 type Options =
@@ -19,16 +20,16 @@ defaultOpts =
   , info: OpenApi.defaultInfo }
 
 mkOpenApiSpec :: forall routesSpec r
-                 . OpenApiSpec routesSpec
+                 . DocumentedApi routesSpec
                  => Options
                  -> Spec { routes :: routesSpec | r }
-                 -> OpenApi.OpenApi
+                 -> OpenApiSpec
 mkOpenApiSpec opts spec = routesOpenApiSpec
                             { servers = servers
                             , info = opts.info }
   where
-    routesOpenApiSpec :: OpenApi.OpenApi
-    routesOpenApiSpec = OpenApiSpec.mkOpenApiSpec spec
+    routesOpenApiSpec :: OpenApiSpec
+    routesOpenApiSpec = DocumentedApi.mkOpenApiSpec spec
 
     servers :: Array OpenApi.Server
     servers = case opts.baseUrl of
@@ -36,10 +37,10 @@ mkOpenApiSpec opts spec = routesOpenApiSpec
       Nothing -> []
 
 mkOpenApiSpec_ :: forall routesSpec r
-                  . OpenApiSpec routesSpec
+                  . DocumentedApi routesSpec
                   => Spec { routes :: routesSpec | r }
-                  -> OpenApi.OpenApi
+                  -> OpenApiSpec
 mkOpenApiSpec_ = mkOpenApiSpec defaultOpts
 
-toJson :: OpenApi.OpenApi -> String
+toJson :: OpenApiSpec -> String
 toJson openApiSpec = SimpleJSON.writeJSON openApiSpec

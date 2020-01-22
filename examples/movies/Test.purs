@@ -2,20 +2,19 @@ module Payload.Examples.Movies.Test where
 
 import Prelude
 
-import Affjax.RequestHeader (RequestHeader(..))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Tuple (Tuple(..))
-import Payload.Client (mkGuardedClient)
+import Payload.Client (mkGuardedClient, unwrapBody)
 import Payload.Client as Client
+import Payload.Docs as Docs
 import Payload.Examples.Movies.Main (createRating, createSession, deleteRating, deleteSession, docs, getApiKey, getMovie, getSessionId, latestMovie, moviesApiSpec, newToken, openApi, popularMovies)
 import Payload.Headers as Headers
-import Payload.OpenApi (mkOpenApiSpec_)
 import Payload.Server.Cookies as Cookies
-import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
 import Payload.Test.Config (TestConfig)
-import Payload.Test.Helpers (assertFail, assertRes, bodyEquals, withServer)
+import Payload.Test.Helpers (assertFail, bodyEquals, withServer)
 import Test.Unit (TestSuite, suite, test)
+import Test.Unit.Assert as Assert
 
 cookieOpts :: Map String String -> Client.RequestOptions
 cookieOpts cookies = { extraHeaders: Headers.fromFoldable [cookieHeader] }
@@ -25,7 +24,7 @@ cookieOpts cookies = { extraHeaders: Headers.fromFoldable [cookieHeader] }
   
 tests :: TestConfig -> TestSuite
 tests cfg = do
-  let openApiSpec = mkOpenApiSpec_ moviesApiSpec
+  let openApiSpec = Docs.mkOpenApiSpec_ moviesApiSpec
   let moviesApi = {
     handlers: {
       v1: {
@@ -67,8 +66,8 @@ tests cfg = do
     test "Sub-route succeeds if parent route guard succeeds (has API key)" $ do
       withApi do
         let opts = cookieOpts (Map.singleton "apiKey" "key")
-        res <- client.v1.movies.latest_ opts {}
-        bodyEquals { id: 723, title: "The Godfather" } res
+        body <- unwrapBody $ client.v1.movies.latest_ opts {}
+        Assert.equal { id: 723, title: "The Godfather" } body
     test "Sub-route fails if passes parent guard but not child guard (missing session key)" $ do
       withApi do
         let payload = { params: { movieId: 1 }, body: { value: 9.0 } }

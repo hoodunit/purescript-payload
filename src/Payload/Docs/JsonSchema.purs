@@ -1,4 +1,4 @@
-module Payload.OpenApi.JsonSchema where
+module Payload.Docs.JsonSchema where
 
 import Prelude
 

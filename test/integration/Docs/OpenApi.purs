@@ -1,4 +1,4 @@
-module Payload.Test.Integration.OpenApi.OpenApiSpec where
+module Payload.Test.Integration.Docs.OpenApi where
 
 import Prelude
 
@@ -6,8 +6,7 @@ import Data.Maybe (Maybe(..))
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Payload.Debug (formatJsonString, showDebug)
-import Payload.OpenApi (mkOpenApiSpec, toJson)
-import Payload.OpenApi as OpenApiSpec
+import Payload.Docs as Docs
 import Payload.Spec (DELETE, GET, HEAD, POST, PUT, Routes(..), Spec(Spec))
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
@@ -80,7 +79,7 @@ tests :: TestSuite
 tests = do
   suite "OpenAPI" do
     test "can generate OpenAPI spec" $ do
-      let opts = OpenApiSpec.defaultOpts { baseUrl = Just "https://api.github.com" }
-      let openApiSpec = mkOpenApiSpec opts apiSpec
-      liftEffect (log $ "\n\n" <> formatJsonString (toJson openApiSpec) <> "\n")
-      Assert.equal "fail" (toJson openApiSpec)
+      let opts = Docs.defaultOpts { baseUrl = Just "https://api.github.com" }
+      let openApiSpec = Docs.mkOpenApiSpec opts apiSpec
+      liftEffect (log $ "\n\n" <> formatJsonString (Docs.toJson openApiSpec) <> "\n")
+      Assert.equal "fail" (Docs.toJson openApiSpec)

@@ -1,4 +1,4 @@
-module Payload.OpenApi.OpenApiSpec where
+module Payload.Docs.DocumentedApi where
 
 import Prelude
 
@@ -6,9 +6,9 @@ import Data.Symbol (class IsSymbol, SProxy(..))
 import Foreign.Object as Object
 import Payload.Client.Internal.Url (class EncodeUrl)
 import Payload.Internal.Route (DefaultParentRoute)
-import Payload.OpenApi.OpenApiEndpoint (class OpenApiEndpoint, mkEndpointOpenApi)
-import Payload.OpenApi.OpenApiTypes (OpenApi, emptyOpenApi)
-import Payload.OpenApi.OpenApiTypes as OpenApi
+import Payload.Docs.DocumentedEndpoint (class DocumentedEndpoint, mkEndpointOpenApi)
+import Payload.Docs.OpenApi (OpenApiSpec, emptyOpenApi)
+import Payload.Docs.OpenApi as OpenApi
 import Payload.Spec (Spec, Route(Route), Routes)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
@@ -18,19 +18,19 @@ import Type.Data.RowList (RLProxy(..))
 import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
 
-class OpenApiSpec routesSpec where
-  mkOpenApiSpec :: forall r. Spec { routes :: routesSpec | r } -> OpenApi
+class DocumentedApi routesSpec where
+  mkOpenApiSpec :: forall r. Spec { routes :: routesSpec | r } -> OpenApiSpec
 
 instance openApiSpecRecord ::
   ( RowToList routesSpec routesSpecList
-  , OpenApiSpecList routesSpecList "" ()
-  ) => OpenApiSpec (Record routesSpec) where
+  , DocumentedApiList routesSpecList "" ()
+  ) => DocumentedApi (Record routesSpec) where
   mkOpenApiSpec routesSpec = mkOpenApiSpecList
                            (RLProxy :: _ routesSpecList)
                            (SProxy :: _ "")
                            (Proxy :: _ {})
 
-class OpenApiSpecList
+class DocumentedApiList
   (routesSpecList :: RowList)
   (basePath :: Symbol)
   (baseParams :: # Type)
@@ -39,9 +39,9 @@ class OpenApiSpecList
       RLProxy routesSpecList
       -> SProxy basePath
       -> Proxy (Record baseParams)
-      -> OpenApi
+      -> OpenApiSpec
 
-instance openApiSpecListNil :: OpenApiSpecList RowList.Nil basePath baseParams where
+instance openApiSpecListNil :: DocumentedApiList RowList.Nil basePath baseParams where
   mkOpenApiSpecList _ _ _ = emptyOpenApi
 
 instance openApiSpecListConsRoute ::
@@ -49,9 +49,9 @@ instance openApiSpecListConsRoute ::
   , IsSymbol method
   , IsSymbol path
   , IsSymbol basePath
-  , OpenApiEndpoint (Route method path routeSpec) basePath baseParams payload res
-  , OpenApiSpecList remRoutes basePath baseParams
-  ) => OpenApiSpecList
+  , DocumentedEndpoint (Route method path routeSpec) basePath baseParams payload res
+  , DocumentedApiList remRoutes basePath baseParams
+  ) => DocumentedApiList
          (RowList.Cons routeName (Route method path routeSpec) remRoutes)
          basePath
          baseParams where
@@ -85,10 +85,10 @@ instance openApiSpecListConsRoutes ::
   -- Recurse through child routes
   , RowToList childRoutes childRoutesList
   , Symbol.Append basePath path childBasePath
-  , OpenApiSpecList childRoutesList childBasePath childParams
+  , DocumentedApiList childRoutesList childBasePath childParams
 
-  , OpenApiSpecList remRoutes basePath baseParams
-  ) => OpenApiSpecList
+  , DocumentedApiList remRoutes basePath baseParams
+  ) => DocumentedApiList
          (RowList.Cons parentName (Routes path (Record parentSpec)) remRoutes)
          basePath
          baseParams where

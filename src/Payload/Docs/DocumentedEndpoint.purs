@@ -1,4 +1,4 @@
-module Payload.OpenApi.OpenApiEndpoint where
+module Payload.Docs.DocumentedEndpoint where
 
 import Prelude
 
@@ -16,8 +16,8 @@ import Foreign.Object as Object
 import Payload.Client.Queryable (class EncodeOptionalQuery, class EncodeUrlWithParams)
 import Payload.ContentType (class HasContentType, getContentType)
 import Payload.Internal.Route (DefaultRouteSpec, Undefined(..))
-import Payload.OpenApi.JsonSchema (JsonSchema(JsonSchema), JsonSchemaType(..), emptyJsonSchema, jsonSchema)
-import Payload.OpenApi.OpenApiTypes (MediaTypeObject, OpenApi, Operation, Param, ParamLocation(..), PathItem, Response, emptyOpenApi, emptyPathItem, mkOperation)
+import Payload.Docs.JsonSchema (JsonSchema(JsonSchema), JsonSchemaType(..), emptyJsonSchema, jsonSchema)
+import Payload.Docs.OpenApi (MediaTypeObject, OpenApiSpec, Operation, Param, ParamLocation(..), PathItem, Response, emptyOpenApi, emptyPathItem, mkOperation)
 import Payload.Spec (class IsSymbolList, Route, Tags(..), reflectSymbolList)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
@@ -28,7 +28,7 @@ import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
 import Type.RowList (RLProxy(..))
 
-class OpenApiEndpoint
+class DocumentedEndpoint
   route
   (basePath :: Symbol)
   (baseParams :: # Type)
@@ -38,7 +38,7 @@ class OpenApiEndpoint
   mkEndpointOpenApi :: route
              -> SProxy basePath
              -> Proxy (Record baseParams)
-             -> OpenApi
+             -> OpenApiSpec
 
 instance openApiEndpointRoute ::
        ( Row.Union route DefaultRouteSpec mergedRoute
@@ -74,7 +74,7 @@ instance openApiEndpointRoute ::
        , ToJsonSchemaRowList fullParamsList
        , ToJsonSchemaQueryParams query
        )
-    => OpenApiEndpoint (Route method path (Record route)) basePath baseParams (Record payload) res where
+    => DocumentedEndpoint (Route method path (Record route)) basePath baseParams (Record payload) res where
   mkEndpointOpenApi _ _ _ = emptyOpenApi { paths = paths }
     where
       paths :: Object PathItem

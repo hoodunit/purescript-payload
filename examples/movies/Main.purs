@@ -12,9 +12,8 @@ import Effect.Aff as Aff
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
-import Payload.OpenApi (mkOpenApiSpec, mkOpenApiSpec_, toJson)
-import Payload.OpenApi as OpenApi
-import Payload.OpenApi.OpenApiTypes (OpenApi)
+import Payload.Docs as Docs
+import Payload.Docs.OpenApi (OpenApiSpec)
 import Payload.ResponseTypes (Response(..))
 import Payload.Server as Payload
 import Payload.Server.Cookies (requestCookies)
@@ -226,15 +225,15 @@ docs :: {} -> Aff (Response String)
 docs _ = pure (Response.ok reDocPage
          # Response.setHeaders (Headers.fromFoldable [Tuple "content-type" "text/html"]))
 
-openApi :: OpenApi -> {} -> Aff (Response String)
+openApi :: OpenApiSpec -> {} -> Aff (Response String)
 openApi openApiSpec _ = do
-  pure (Response.ok (toJson openApiSpec)
+  pure (Response.ok (Docs.toJson openApiSpec)
          # Response.setHeaders (Headers.fromFoldable [Tuple "content-type" ContentType.json]))
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do
   let serverInfo = { title: "The Movie Database API", version: "0.1.0" }
-  let openApiSpec = mkOpenApiSpec (OpenApi.defaultOpts { info = serverInfo }) moviesApiSpec
+  let openApiSpec = Docs.mkOpenApiSpec (Docs.defaultOpts { info = serverInfo }) moviesApiSpec
   let moviesApi = {
     handlers: {
       v1: {

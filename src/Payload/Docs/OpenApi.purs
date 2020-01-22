@@ -1,15 +1,14 @@
-module Payload.OpenApi.OpenApiTypes where
+module Payload.Docs.OpenApi where
 
 import Prelude
 
 import Data.Maybe (Maybe(..))
-import Data.Symbol (SProxy(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Payload.OpenApi.JsonSchema (JsonSchema(JsonSchema))
+import Payload.Docs.JsonSchema (JsonSchema)
 import Simple.JSON (class WriteForeign, writeImpl)
 
-type OpenApi =
+type OpenApiSpec =
   { openapi :: String
   , info :: Info
   , paths :: Object PathItem
@@ -52,10 +51,6 @@ type Response =
   { description :: String
   , headers :: Object String
   , content :: Object MediaTypeObject }
-    
-type OpenApiSchema =
-  { "$ref" :: Maybe String
-  , "type" :: Maybe String }
 
 type Param = 
   { name :: String
@@ -81,7 +76,7 @@ type Server =
   { url :: String
   , description :: Maybe String }
 
-emptyOpenApi :: OpenApi
+emptyOpenApi :: OpenApiSpec
 emptyOpenApi =
   { openapi: "3.0.2"
   , info: defaultInfo
@@ -114,7 +109,7 @@ mkOperation responses =
   , requestBody: Nothing
   , responses }
 
-union :: OpenApi -> OpenApi -> OpenApi
+union :: OpenApiSpec -> OpenApiSpec -> OpenApiSpec
 union api1 api2 = { paths: Object.union api2.paths api1.paths
                   , openapi: api2.openapi
                   , info: api2.info
