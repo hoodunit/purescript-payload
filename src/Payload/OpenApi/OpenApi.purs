@@ -90,7 +90,7 @@ emptyOpenApi =
   }
 
 defaultInfo :: Info
-defaultInfo = { title: "Payload Server API", version: "0.0.0" }
+defaultInfo = { title: "Payload Live API Documentation", version: "0.0.0" }
 
 emptyPathItem :: PathItem
 emptyPathItem =
