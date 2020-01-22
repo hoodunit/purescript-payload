@@ -33,6 +33,7 @@ type PathItem =
 
 type Operation =
   { summary :: Maybe String
+  , description :: Maybe String
   , operationId :: Maybe String
   , parameters :: Array Param
   , requestBody :: Maybe RequestBody
@@ -82,10 +83,13 @@ type Server =
 emptyOpenApi :: OpenApi
 emptyOpenApi =
   { openapi: "3.0.2"
-  , info: { title: "Payload OpenAPI", version: "0.0.0" }
+  , info: defaultInfo
   , paths: Object.empty
   , servers: []
   }
+
+defaultInfo :: Info
+defaultInfo = { title: "Payload Server API", version: "0.0.0" }
 
 emptyPathItem :: PathItem
 emptyPathItem =
@@ -102,6 +106,7 @@ emptyPathItem =
 mkOperation :: Object Response -> Operation
 mkOperation responses =
   { summary: Nothing
+  , description: Nothing
   , operationId: Nothing
   , parameters: []
   , requestBody: Nothing

@@ -5,6 +5,7 @@ module Payload.Internal.Route
        , Undefined(Undefined)
        ) where
 
+import Data.Symbol (SProxy(..))
 import Payload.ResponseTypes (Empty(..))
 import Payload.Spec (GNil, Guards(..))
 
@@ -13,14 +14,18 @@ type DefaultServerRouteSpec =
   , query :: {}
   , body :: Undefined
   , guards :: Guards GNil
-  , response :: Empty )
+  , response :: Empty
+  , summary :: SProxy ""
+  , description :: SProxy "")
 
 type DefaultRouteSpec =
   ( params :: {}
   , query :: Undefined
   , body :: Undefined
   , guards :: Guards GNil
-  , response :: Empty )
+  , response :: Empty
+  , summary :: SProxy ""
+  , description :: SProxy "")
 
 data Undefined = Undefined
 

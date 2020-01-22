@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Either (Either, note)
 import Data.Map as Map
+import Data.Symbol (SProxy(..))
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -11,7 +12,8 @@ import Effect.Aff as Aff
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
 import Payload.Headers as Headers
-import Payload.OpenApi (mkOpenApiSpec_, toJson)
+import Payload.OpenApi (mkOpenApiSpec, mkOpenApiSpec_, toJson)
+import Payload.OpenApi as OpenApi
 import Payload.OpenApi.OpenApiTypes (OpenApi)
 import Payload.ResponseTypes (Response(..))
 import Payload.Server as Payload
@@ -34,15 +36,23 @@ moviesApiSpec :: Spec {
        auth :: Routes "/authentication" {
          token :: Routes "/token" {
            new :: GET "/new" {
+             summary :: SProxy "Create Request Token",
+             description :: SProxy "Create a temporary request token that can be used to validate a TMDb user login. \
+                                   \More details about how this works can be found here.",
              response :: RequestTokenResponse
            }
          },
          session :: Routes "/session" {
            create :: POST "/new" {
+             summary :: SProxy "Create Session",
+             description :: SProxy "You can use this method to create a fully valid session ID once a user has \
+                                   \validated the request token. More information about how this works can be found here.",
              body :: { requestToken :: String },
              response :: SessionIdResponse
            },
            delete :: DELETE "/" {
+             summary :: SProxy "Delete Session",
+             description :: SProxy "If you would like to delete (or \"logout\") from a session, call this method with a valid session ID.",
              body :: { sessionId :: String },
              response :: StatusResponse
            }
@@ -50,23 +60,37 @@ moviesApiSpec :: Spec {
        },
        movies :: Routes "/movies" {
          latest :: GET "/latest" {
+           summary :: SProxy "Delete Session",
+           description :: SProxy "If you would like to delete (or \"logout\") from a session,\
+                                 \ call this method with a valid session ID.",
            response :: Movie
          },
          popular :: GET "/popular" {
+           summary :: SProxy "Get Popular",
+           description :: SProxy "Get a list of the current popular movies on TMDb. This list updates daily.",
            response :: { results :: Array Movie }
          },
          byId :: Routes "/<movieId>" {
            params :: { movieId :: Int },
            get :: GET "/" {
+             summary :: SProxy "Get Details",
+             description :: SProxy "Get the primary information about a movie.\n\n\
+                                   \Supports append_to_response. Read more about this here.",
              response :: Movie
            },
            rating :: Routes "/rating" {
              guards :: Guards ("sessionId" : Nil),
              create :: POST "/rating" {
+               summary :: SProxy "Rate Movie",
+               description :: SProxy "Rate a movie.\n\n\
+                                     \A valid session or guest session ID is required. You can read more about how this works here.",
                body :: RatingValue,
                response :: StatusCodeResponse
              },
              delete :: DELETE "/rating" {
+               summary :: SProxy "Delete Rating",
+               description :: SProxy "Remove your rating for a movie.\n\n\
+                                     \A valid session or guest session ID is required. You can read more about how this works here.",
                response :: StatusCodeResponse
              }
            }
@@ -74,9 +98,15 @@ moviesApiSpec :: Spec {
       }
     },
     docs :: GET "/docs" {
+      summary :: SProxy "API Documentation",
+      description :: SProxy "View API documentation page. API documentation is generated at run-time based on the server spec,\
+                            \ so docs are always in sync with the code.",
       response :: String
     },
     openApi :: GET "/openapi.json" {
+      summary :: SProxy "OpenAPI JSON",
+      description :: SProxy "The documentation page is generated from an OpenAPI spec derived at compile-time from \
+                            \the server code, so that both are always in sync with the server code.",
       response :: String
     }
   }
@@ -193,7 +223,8 @@ openApi openApiSpec _ = do
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do
-  let openApiSpec = mkOpenApiSpec_ moviesApiSpec
+  let serverInfo = { title: "The Movie Database API", version: "0.1.0" }
+  let openApiSpec = mkOpenApiSpec (OpenApi.defaultOpts { info = serverInfo }) moviesApiSpec
   let moviesApi = {
     handlers: {
       v1: {

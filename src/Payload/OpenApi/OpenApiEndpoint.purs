@@ -2,6 +2,7 @@ module Payload.OpenApi.OpenApiEndpoint where
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Data.Array as Array
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (Pattern(..), Replacement(..))
@@ -45,12 +46,16 @@ instance openApiEndpointRoute ::
            , params :: Record params
            , query :: query
            , body :: body
+           , summary :: SProxy summary
+           , description :: SProxy description
            | r }
        , Row.Union baseParams params fullUrlParams
        , Symbol.Append basePath path fullPath
        , IsSymbol method
        , IsSymbol path
        , IsSymbol fullPath
+       , IsSymbol summary
+       , IsSymbol description
        , TypeEquals (Record payload)
            { body :: body
            | rest }
@@ -72,16 +77,25 @@ instance openApiEndpointRoute ::
 
       path :: String
       path = toOpenApiPath (reflectSymbol (SProxy :: _ fullPath))
-      
+
+      summary :: Maybe String
+      summary = case reflectSymbol (SProxy :: _ summary) of
+        "" -> Nothing
+        s -> Just s
+
+      description :: Maybe String
+      description = case reflectSymbol (SProxy :: _ description) of
+        "" -> Nothing
+        s -> Just s
+
       pathItem :: PathItem
       pathItem = (methodPathItem (reflectSymbol (SProxy :: _ method)) operation)
-        { summary = Just (reflectSymbol (SProxy :: _ fullPath))
-        , description = Just (reflectSymbol (SProxy :: _ fullPath))}
 
       operation :: Operation
       operation = (mkOperation responses)
         { parameters = parameters
-        , summary = Just (reflectSymbol (SProxy :: _ fullPath)) }
+        , summary = summary <|> Just path
+        , description = description <|> Just path }
 
       parameters :: Array Param
       parameters = urlParams <> queryParams
