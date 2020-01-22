@@ -6,23 +6,23 @@ import Data.List (List(..), (:))
 import Data.List as List
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Payload.TypeErrors (class PrintArrow, type (<>), type (|>))
-import Payload.Spec (GCons, GNil, Guards(..), kind GuardList)
+import Payload.Spec (SCons, SNil, Guards(Guards), kind SList)
 import Prim.Symbol as Symbol
 import Prim.TypeError (class Fail, Text, kind Doc)
 
-foreign import data GuardParseFail :: GuardList
+foreign import data GuardParseFail :: SList
 
 data GuardTypes types = GuardTypes
 
-class Append (left :: GuardList) (right :: GuardList) (both :: GuardList) | left right -> both
+class Append (left :: SList) (right :: SList) (both :: SList) | left right -> both
 
-instance appendGuardLeftNil :: Append GNil right right
+instance appendGuardLeftNil :: Append SNil right right
 instance appendGuards ::
-  ( Append rest (GCons s right) both
-  ) => Append (GCons s rest) right both
+  ( Append rest (SCons s right) both
+  ) => Append (SCons s rest) right both
 
-class ParseGuardList (string :: Symbol) (parts :: GuardList) | string -> parts
-instance aNilParse :: ParseGuardList "" GNil
+class ParseGuardList (string :: Symbol) (parts :: SList) | string -> parts
+instance aNilParse :: ParseGuardList "" SNil
 else instance bConsParse ::
   ( Symbol.Cons h t string
   , Match string h t "" "start" fl
@@ -34,7 +34,7 @@ class Match
   (tail :: Symbol)
   (acc :: Symbol)
   (mode :: Symbol)
-  (out :: GuardList)
+  (out :: SList)
   | head tail acc mode -> out
 
 instance startBracket ::
@@ -44,8 +44,8 @@ instance startBracket ::
 else instance failNoBracketAtStart ::
   ( ParseError u xs (Text "Missing [ - guard list must start with [") doc
   ) => Match u x xs acc "start" GuardParseFail
-else instance endEmptyGuardsAtBracket :: Match u "]" "" "" "guard" GNil
-else instance endGuardsAtBracket :: Match u "]" "" acc "guard" (GCons acc GNil)
+else instance endEmptyGuardsAtBracket :: Match u "]" "" "" "guard" SNil
+else instance endGuardsAtBracket :: Match u "]" "" acc "guard" (SCons acc SNil)
 else instance failEndWithoutBracket ::
   ( ParseError u "" (Text "Guard list must end with ]") doc
   ) => Match u x "" acc "guard" GuardParseFail
@@ -54,11 +54,11 @@ else instance failAnythingAfterBracket ::
   ) => Match u "]" xs acc "guard" GuardParseFail
 else instance failEndEmptyGuardAtComma ::
   ( ParseError u xs (Text "Guard names cannot be empty") doc
-  ) => Match u "," xs "" "guard" (GCons acc rest)
+  ) => Match u "," xs "" "guard" (SCons acc rest)
 else instance endGuardAtComma ::
   ( Symbol.Cons y ys xs
   , Match u y ys "" "space" rest
-  ) => Match u "," xs acc "guard" (GCons acc rest)
+  ) => Match u "," xs acc "guard" (SCons acc rest)
 else instance skipSpace ::
   ( Symbol.Cons y ys xs
   , Match u y ys "" "guard" rest
@@ -105,16 +105,16 @@ toList :: forall guardsStr guards
   => SProxy guardsStr -> List String
 toList _ = List.reverse $ toGuardList (Guards :: _ guards) Nil
 
-class ToGuardList (guardList :: GuardList) where
+class ToGuardList (guardList :: SList) where
   toGuardList :: Guards guardList -> List String -> List String
 
-instance toGuardListNil :: ToGuardList GNil where
+instance toGuardListNil :: ToGuardList SNil where
   toGuardList _ acc = acc
 
 instance toGuardListCons ::
   ( IsSymbol name
   , ToGuardList rest
-  ) => ToGuardList (GCons name rest) where
+  ) => ToGuardList (SCons name rest) where
   toGuardList _ names = toGuardList (Guards :: _ rest) (name : names)
     where
       name = reflectSymbol (SProxy :: SProxy name)

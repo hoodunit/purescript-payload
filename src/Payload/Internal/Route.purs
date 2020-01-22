@@ -7,29 +7,31 @@ module Payload.Internal.Route
 
 import Data.Symbol (SProxy(..))
 import Payload.ResponseTypes (Empty(..))
-import Payload.Spec (GNil, Guards(..))
+import Payload.Spec (Guards(Guards), Tags(Tags), Nil)
 
 type DefaultServerRouteSpec =
   ( params :: {}
   , query :: {}
   , body :: Undefined
-  , guards :: Guards GNil
+  , guards :: Guards Nil
   , response :: Empty
   , summary :: SProxy ""
-  , description :: SProxy "")
+  , description :: SProxy ""
+  , tags :: Tags Nil)
 
 type DefaultRouteSpec =
   ( params :: {}
   , query :: Undefined
   , body :: Undefined
-  , guards :: Guards GNil
+  , guards :: Guards Nil
   , response :: Empty
   , summary :: SProxy ""
-  , description :: SProxy "")
+  , description :: SProxy ""
+  , tags :: Tags Nil)
 
 data Undefined = Undefined
 
-type DefaultParentRoute = ( params :: {}, guards :: Guards GNil )
+type DefaultParentRoute = ( params :: {}, guards :: Guards Nil )
 defaultParent :: Record DefaultParentRoute
 defaultParent =
-  { params: {}, guards: Guards :: _ GNil }
+  { params: {}, guards: Guards :: _ Nil }

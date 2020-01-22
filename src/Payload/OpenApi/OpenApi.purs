@@ -34,6 +34,7 @@ type PathItem =
 type Operation =
   { summary :: Maybe String
   , description :: Maybe String
+  , tags :: Array String
   , operationId :: Maybe String
   , parameters :: Array Param
   , requestBody :: Maybe RequestBody
@@ -107,6 +108,7 @@ mkOperation :: Object Response -> Operation
 mkOperation responses =
   { summary: Nothing
   , description: Nothing
+  , tags: []
   , operationId: Nothing
   , parameters: []
   , requestBody: Nothing

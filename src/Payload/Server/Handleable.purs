@@ -33,7 +33,7 @@ import Payload.Server.Internal.Query as PayloadQuery
 import Payload.Server.Internal.Request (RequestUrl)
 import Payload.Server.Internal.Url as PayloadUrl
 import Payload.Server.Response as Resp
-import Payload.Spec (Guards(..), Route, kind GuardList)
+import Payload.Spec (Guards(..), Route, kind SList)
 import Prim.Row as Row
 import Prim.Symbol as Symbol
 import Type.Equality (class TypeEquals, to)
@@ -46,7 +46,7 @@ class Handleable
   handler
   (basePath :: Symbol)
   (baseParams :: # Type)
-  (baseGuards :: GuardList)
+  (baseGuards :: SList)
   (guardsSpec :: # Type)
   guards | route -> handler where
   handle :: SProxy basePath

@@ -10,12 +10,19 @@ module Payload.Spec
        , DELETE
        , Routes(Routes)
        , Guards(Guards)
-       , kind GuardList
-       , GNil
-       , GCons
+       , Tags(Tags)
+       , kind SList
+       , SNil
+       , SCons
        , type (:)
        , Nil
+       , class IsSymbolList
+       , reflectSymbolList
        ) where
+
+import Data.List (List, (:))
+import Data.List as List
+import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 
 -- | Wrapper for writing type-level specs
 data Spec apiSpec = Spec
@@ -63,11 +70,26 @@ data Routes (path :: Symbol) routesSpec = Routes
 
 -- | Type-level list of guard names that will be run before calling
 -- | a route or child routes.
-data Guards (g :: GuardList) = Guards
+data Guards (g :: SList) = Guards
+data Tags (s :: SList) = Tags
 
-foreign import kind GuardList
-foreign import data GNil :: GuardList
-foreign import data GCons :: Symbol -> GuardList -> GuardList
+foreign import kind SList
+foreign import data SNil :: SList
+foreign import data SCons :: Symbol -> SList -> SList
 
-infixr 1 type GCons as :
-type Nil = GNil
+infixr 1 type SCons as :
+type Nil = SNil
+
+class IsSymbolList (symbolList :: SList) where
+  reflectSymbolList :: Tags symbolList -> List String
+
+instance isSymbolListNil :: IsSymbolList SNil where
+  reflectSymbolList _ = List.Nil
+
+instance isSymbolListCons ::
+  ( IsSymbol tag
+  , IsSymbolList rest
+  ) => IsSymbolList (SCons tag rest) where
+  reflectSymbolList _ = tag : reflectSymbolList (Tags :: _ rest)
+    where
+      tag = reflectSymbol (SProxy :: _ tag)

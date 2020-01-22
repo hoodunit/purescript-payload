@@ -20,7 +20,7 @@ import Payload.Server as Payload
 import Payload.Server.Cookies (requestCookies)
 import Payload.Server.Handlers (File(..))
 import Payload.Server.Response as Response
-import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
+import Payload.Spec (type (:), DELETE, GET, Guards(..), Nil, POST, Route, Routes, Spec(Spec), Tags(..))
 
 -- Example API based on The Movie Database API at
 -- https://developers.themoviedb.org
@@ -39,6 +39,7 @@ moviesApiSpec :: Spec {
              summary :: SProxy "Create Request Token",
              description :: SProxy "Create a temporary request token that can be used to validate a TMDb user login. \
                                    \More details about how this works can be found here.",
+             tags :: Tags ("Authentication" : Nil),
              response :: RequestTokenResponse
            }
          },
@@ -47,12 +48,14 @@ moviesApiSpec :: Spec {
              summary :: SProxy "Create Session",
              description :: SProxy "You can use this method to create a fully valid session ID once a user has \
                                    \validated the request token. More information about how this works can be found here.",
+             tags :: Tags ("Session" : Nil),
              body :: { requestToken :: String },
              response :: SessionIdResponse
            },
            delete :: DELETE "/" {
              summary :: SProxy "Delete Session",
              description :: SProxy "If you would like to delete (or \"logout\") from a session, call this method with a valid session ID.",
+             tags :: Tags ("Session" : Nil),
              body :: { sessionId :: String },
              response :: StatusResponse
            }
@@ -63,11 +66,13 @@ moviesApiSpec :: Spec {
            summary :: SProxy "Delete Session",
            description :: SProxy "If you would like to delete (or \"logout\") from a session,\
                                  \ call this method with a valid session ID.",
+           tags :: Tags ("Movies" : Nil),
            response :: Movie
          },
          popular :: GET "/popular" {
            summary :: SProxy "Get Popular",
            description :: SProxy "Get a list of the current popular movies on TMDb. This list updates daily.",
+           tags :: Tags ("Movies" : Nil),
            response :: { results :: Array Movie }
          },
          byId :: Routes "/<movieId>" {
@@ -76,6 +81,7 @@ moviesApiSpec :: Spec {
              summary :: SProxy "Get Details",
              description :: SProxy "Get the primary information about a movie.\n\n\
                                    \Supports append_to_response. Read more about this here.",
+             tags :: Tags ("Movies" : Nil),
              response :: Movie
            },
            rating :: Routes "/rating" {
@@ -84,6 +90,7 @@ moviesApiSpec :: Spec {
                summary :: SProxy "Rate Movie",
                description :: SProxy "Rate a movie.\n\n\
                                      \A valid session or guest session ID is required. You can read more about how this works here.",
+               tags :: Tags ("Movies" : Nil),
                body :: RatingValue,
                response :: StatusCodeResponse
              },
@@ -91,6 +98,7 @@ moviesApiSpec :: Spec {
                summary :: SProxy "Delete Rating",
                description :: SProxy "Remove your rating for a movie.\n\n\
                                      \A valid session or guest session ID is required. You can read more about how this works here.",
+               tags :: Tags ("Movies" : Nil),
                response :: StatusCodeResponse
              }
            }
@@ -101,12 +109,14 @@ moviesApiSpec :: Spec {
       summary :: SProxy "API Documentation",
       description :: SProxy "View API documentation page. API documentation is generated at run-time based on the server spec,\
                             \ so docs are always in sync with the code.",
+      tags :: Tags ("Documentation" : Nil),
       response :: String
     },
     openApi :: GET "/openapi.json" {
       summary :: SProxy "OpenAPI JSON",
       description :: SProxy "The documentation page is generated from an OpenAPI spec derived at compile-time from \
                             \the server code, so that both are always in sync with the server code.",
+      tags :: Tags ("Documentation" : Nil),
       response :: String
     }
   }

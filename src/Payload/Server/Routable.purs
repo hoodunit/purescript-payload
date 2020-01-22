@@ -33,7 +33,7 @@ import Payload.Server.Internal.Trie (Trie)
 import Payload.Server.Internal.Trie as Trie
 import Payload.Server.Internal.Url as PayloadUrl
 import Payload.Server.Response as Resp
-import Payload.Spec (kind GuardList, Spec, GNil, Guards(Guards), Route(Route), Routes(..))
+import Payload.Spec (kind SList, Spec, SNil, Guards(Guards), Route(Route), Routes(..))
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList
@@ -63,14 +63,14 @@ class Routable routesSpec guardsSpec handlers guards |
 
 instance routableRecord ::
   ( RowToList routesSpec routesSpecList
-  , RoutableList routesSpecList "" () GNil guardsSpec (Record handlers) (Record guards)
+  , RoutableList routesSpecList "" () SNil guardsSpec (Record handlers) (Record guards)
   ) => Routable (Record routesSpec) (Record guardsSpec) (Record handlers) (Record guards) where
   mkRouter _ { handlers, guards } =
     mkRouterList
       (RLProxy :: RLProxy routesSpecList)
       (SProxy :: _ "")
       (Proxy :: _ {})
-      (Guards :: _ GNil)
+      (Guards :: _ SNil)
       (Proxy :: _ (Record guardsSpec))
       handlers
       guards
@@ -80,7 +80,7 @@ class RoutableList
       (routesSpecList :: RowList)
       (basePath :: Symbol)
       (baseParams :: # Type)
-      (baseGuards :: GuardList)
+      (baseGuards :: SList)
       (guardsSpec :: # Type)
       handlers
       guards

@@ -4,6 +4,8 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array as Array
+import Data.List as List
+import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as String
@@ -16,7 +18,7 @@ import Payload.ContentType (class HasContentType, getContentType)
 import Payload.Internal.Route (DefaultRouteSpec, Undefined(..))
 import Payload.OpenApi.JsonSchema (JsonSchema(JsonSchema), JsonSchemaType(..), emptyJsonSchema, jsonSchema)
 import Payload.OpenApi.OpenApiTypes (MediaTypeObject, OpenApi, Operation, Param, ParamLocation(..), PathItem, Response, emptyOpenApi, emptyPathItem, mkOperation)
-import Payload.Spec (Route)
+import Payload.Spec (class IsSymbolList, Route, Tags(..), reflectSymbolList)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList
@@ -48,6 +50,7 @@ instance openApiEndpointRoute ::
            , body :: body
            , summary :: SProxy summary
            , description :: SProxy description
+           , tags :: Tags tags
            | r }
        , Row.Union baseParams params fullUrlParams
        , Symbol.Append basePath path fullPath
@@ -56,6 +59,8 @@ instance openApiEndpointRoute ::
        , IsSymbol fullPath
        , IsSymbol summary
        , IsSymbol description
+       , IsSymbol basePath
+       , IsSymbolList tags
        , TypeEquals (Record payload)
            { body :: body
            | rest }
@@ -88,6 +93,11 @@ instance openApiEndpointRoute ::
         "" -> Nothing
         s -> Just s
 
+      tags :: Maybe (Array String)
+      tags = case reflectSymbolList (Tags :: _ tags) of
+               List.Nil -> Nothing
+               tagsList -> Just (List.toUnfoldable tagsList)
+
       pathItem :: PathItem
       pathItem = (methodPathItem (reflectSymbol (SProxy :: _ method)) operation)
 
@@ -95,7 +105,8 @@ instance openApiEndpointRoute ::
       operation = (mkOperation responses)
         { parameters = parameters
         , summary = summary <|> Just path
-        , description = description <|> Just path }
+        , description = description <|> Just path
+        , tags = fromMaybe [reflectSymbol (SProxy :: _ basePath)] tags }
 
       parameters :: Array Param
       parameters = urlParams <> queryParams

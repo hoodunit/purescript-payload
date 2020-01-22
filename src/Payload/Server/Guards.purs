@@ -27,7 +27,7 @@ import Payload.Server.Cookies as Cookies
 import Payload.Server.Internal.GuardParsing (GuardTypes(..))
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Resp
-import Payload.Spec (GCons, GNil, Guards(..), kind GuardList)
+import Payload.Spec (SCons, SNil, Guards(Guards), kind SList)
 import Prim.Row as Row
 import Record as Record
 import Type.Equality (to)
@@ -78,7 +78,7 @@ cookies req = pure (Cookies.requestCookies req)
 type GuardFn a = HTTP.Request -> Aff a
 
 class RunGuards
-  (guardNames :: GuardList)
+  (guardNames :: SList)
   (guardsSpec :: # Type)
   (allGuards :: # Type)
   (results :: # Type)
@@ -90,7 +90,7 @@ class RunGuards
                -> HTTP.Request
                -> Result (Record routeGuardSpec)
 
-instance runGuardsNil :: RunGuards GNil guardsSpec allGuards routeGuardSpec routeGuardSpec where
+instance runGuardsNil :: RunGuards SNil guardsSpec allGuards routeGuardSpec routeGuardSpec where
   runGuards _ _ allGuards results req = pure results
 
 instance runGuardsCons ::
@@ -101,7 +101,7 @@ instance runGuardsCons ::
   , Row.Lacks name results
   , ToGuardVal guardRes guardVal
   , RunGuards rest guardsSpec allGuards newResults routeGuardSpec
-  ) => RunGuards (GCons name rest) guardsSpec allGuards results routeGuardSpec where
+  ) => RunGuards (SCons name rest) guardsSpec allGuards results routeGuardSpec where
   runGuards _ _ allGuards results req = do
     let (guardHandler :: GuardFn guardRes) = Record.get (SProxy :: SProxy name) (to allGuards)
     (guardHandlerResult :: guardRes) <- lift $ guardHandler req
