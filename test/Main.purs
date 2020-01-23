@@ -57,13 +57,13 @@ tests = do
     ClientQueryParamsTest.tests
     ClientEncodeParamTest.tests
 
-  suite "Server integration" do
+  suite "Integration - Server" do
     MethodsTest.tests
     QueryParamsTest.tests
     GuardsTest.tests
     StatusTest.tests
 
-  suite "Client integration" do
+  suite "Integration - Client" do
     ClientErrorsTest.tests cfg
     ClientMethodsTest.tests cfg
     ClientOptionsTest.tests cfg
@@ -71,7 +71,7 @@ tests = do
     ClientStatuses.tests cfg
     ClientContentTypes.tests cfg
 
-  suite "OpenAPI integration" do
+  suite "Integration - Docs (OpenAPI) " do
     OpenApiTest.tests
 
   suite "Examples" do
