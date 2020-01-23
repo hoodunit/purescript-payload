@@ -62,9 +62,8 @@ moviesApiSpec :: Spec {
        },
        movies :: Routes "/movies" {
          latest :: GET "/latest" {
-           summary :: SProxy "Delete Session",
-           description :: SProxy "If you would like to delete (or \"logout\") from a session,\
-                                 \ call this method with a valid session ID.",
+           summary :: SProxy "Get Latest",
+           description :: SProxy "Get the most newly created movie. This is a live response and will continuously change.",
            tags :: Tags ("Movies" : Nil),
            response :: Movie
          },
@@ -104,20 +103,7 @@ moviesApiSpec :: Spec {
          }
       }
     },
-    docs :: GET "/docs" {
-      summary :: SProxy "API Documentation",
-      description :: SProxy "View API documentation page. API documentation is generated at run-time based on the server spec,\
-                            \ so docs are always in sync with the code.",
-      tags :: Tags ("Documentation" : Nil),
-      response :: String
-    },
-    openApi :: GET "/openapi.json" {
-      summary :: SProxy "OpenAPI JSON",
-      description :: SProxy "The documentation page is generated from an OpenAPI spec derived at compile-time from \
-                            \the server code, so that both are always in sync with the server code.",
-      tags :: Tags ("Documentation" : Nil),
-      response :: String
-    }
+    docs :: Docs.DocsEndpoint "/docs"
   }
 }
 moviesApiSpec = Spec
@@ -195,19 +181,10 @@ getSessionId req = do
   let cookies = requestCookies req
   pure $ note "No cookie" $ Map.lookup "sessionId" cookies
 
-docs :: {} -> Aff (Response String)
-docs _ = pure (Response.ok (Docs.htmlPage "/openapi.json")
-         # Response.setHeaders (Headers.fromFoldable [Tuple "content-type" "text/html"]))
-
-openApi :: OpenApiSpec -> {} -> Aff (Response String)
-openApi openApiSpec _ = do
-  pure (Response.ok (Docs.toJson openApiSpec)
-         # Response.setHeaders (Headers.fromFoldable [Tuple "content-type" ContentType.json]))
-
 main :: Effect Unit
 main = Aff.launchAff_ $ do
   let serverInfo = { title: "The Movie Database API", version: "0.1.0" }
-  let openApiSpec = Docs.mkOpenApiSpec (Docs.defaultOpts { info = serverInfo }) moviesApiSpec
+  let docsOpts = Docs.defaultOpts { info = serverInfo }
   let moviesApi = {
     handlers: {
       v1: {
@@ -232,8 +209,7 @@ main = Aff.launchAff_ $ do
           }
         }
       },
-      docs,
-      openApi: openApi openApiSpec
+      docs: Docs.docsHandler docsOpts moviesApiSpec
     },
     guards: {
       apiKey: getApiKey,

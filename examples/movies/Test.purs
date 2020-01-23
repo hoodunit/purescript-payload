@@ -8,7 +8,7 @@ import Data.Tuple (Tuple(..))
 import Payload.Client (mkGuardedClient, unwrapBody)
 import Payload.Client as Client
 import Payload.Docs as Docs
-import Payload.Examples.Movies.Main (createRating, createSession, deleteRating, deleteSession, docs, getApiKey, getMovie, getSessionId, latestMovie, moviesApiSpec, newToken, openApi, popularMovies)
+import Payload.Examples.Movies.Main (createRating, createSession, deleteRating, deleteSession, getApiKey, getMovie, getSessionId, latestMovie, moviesApiSpec, newToken, popularMovies)
 import Payload.Headers as Headers
 import Payload.Server.Cookies as Cookies
 import Payload.Test.Config (TestConfig)
@@ -24,7 +24,8 @@ cookieOpts cookies = { extraHeaders: Headers.fromFoldable [cookieHeader] }
   
 tests :: TestConfig -> TestSuite
 tests cfg = do
-  let openApiSpec = Docs.mkOpenApiSpec_ moviesApiSpec
+  let serverInfo = { title: "The Movie Database API", version: "0.1.0" }
+  let docsOpts = Docs.defaultOpts { info = serverInfo }
   let moviesApi = {
     handlers: {
       v1: {
@@ -49,8 +50,7 @@ tests cfg = do
           }
         }
       },
-      docs,
-      openApi: openApi openApiSpec
+      docs: Docs.docsHandler docsOpts moviesApiSpec
     },
     guards: {
       apiKey: getApiKey,
