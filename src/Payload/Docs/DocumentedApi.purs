@@ -4,7 +4,6 @@ import Prelude
 
 import Data.Symbol (class IsSymbol, SProxy(..))
 import Foreign.Object as Object
-import Payload.Client.Internal.Url (class EncodeUrl)
 import Payload.Internal.Route (DefaultParentRoute)
 import Payload.Docs.DocumentedEndpoint (class DocumentedEndpoint, mkEndpointOpenApi)
 import Payload.Docs.OpenApi (OpenApiSpec, emptyOpenApi)
@@ -69,10 +68,6 @@ instance openApiSpecListConsRoutes ::
   ( IsSymbol parentName
   , IsSymbol basePath
   , IsSymbol path
-
-  -- Extra check to fail earlier and get more sensible errors for
-  -- invalid parent route URL specs
-  , EncodeUrl path childParams
 
   -- Parse out child routes from parent params
   , Row.Union parentSpec DefaultParentRoute mergedSpec

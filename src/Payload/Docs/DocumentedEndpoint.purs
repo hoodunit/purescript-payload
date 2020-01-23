@@ -13,7 +13,6 @@ import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Payload.Client.Queryable (class EncodeOptionalQuery, class EncodeUrlWithParams)
 import Payload.ContentType (class HasContentType, getContentType)
 import Payload.Docs.JsonSchema (JsonSchema(JsonSchema), JsonSchemaType(..), jsonSchema)
 import Payload.Docs.OpenApi (MediaTypeObject, OpenApiSpec, Operation, Param, ParamLocation(..), PathItem, Response, emptyOpenApi, emptyPathItem, mkOperation)
@@ -65,8 +64,6 @@ instance openApiEndpointRoute ::
            | rest }
 
        , RowToList fullUrlParams fullParamsList
-       , EncodeUrlWithParams fullPath fullParamsList payload
-       , EncodeOptionalQuery fullPath query payload
 
        , HasContentType res
        , ToJsonSchema res
