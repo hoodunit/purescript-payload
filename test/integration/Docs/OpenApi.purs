@@ -98,3 +98,32 @@ tests = do
         let openApiSpec = Docs.mkOpenApiSpec_ spec
         let params = openApiSpec.paths # Object.lookup "/users/{..rest}" >>= _.get <#> _.parameters
         Assert.equal (Just []) params
+    suite "Query params" do
+      test "required key param" $ do
+        let spec = Spec :: _ { routes :: { foo :: GET "/search?q=<q>" {
+                                             response :: String,
+                                             query :: { q :: String }
+                                         } } }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
+        let params = openApiSpec.paths # Object.lookup "/search" >>= _.get <#> _.parameters
+        let param =
+              { name: "q"
+              , "in": ParamInQuery
+              , description: Nothing
+              , required: true
+              , schema: Just (JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaString })) }
+        Assert.equal (Just [param]) params
+      test "optional key param" $ do
+        let spec = Spec :: _ { routes :: { foo :: GET "/search?q=<q>" {
+                                             response :: String,
+                                             query :: { q :: Maybe String }
+                                         } } }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
+        let params = openApiSpec.paths # Object.lookup "/search" >>= _.get <#> _.parameters
+        let param =
+              { name: "q"
+              , "in": ParamInQuery
+              , description: Nothing
+              , required: false
+              , schema: Just (JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaString })) }
+        Assert.equal (Just [param]) params
