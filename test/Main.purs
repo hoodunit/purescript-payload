@@ -56,13 +56,13 @@ tests = do
     ClientQueryParamsTest.tests
     ClientEncodeParamTest.tests
 
-  suite "Server integration" do
+  suite "Integration - Server" do
     MethodsTest.tests
     QueryParamsTest.tests
     GuardsTest.tests
     StatusTest.tests
 
-  suite "Client integration" do
+  suite "Integration - Client" do
     ClientErrorsTest.tests cfg
     ClientMethodsTest.tests cfg
     ClientOptionsTest.tests cfg
