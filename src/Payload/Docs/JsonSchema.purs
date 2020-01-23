@@ -3,10 +3,16 @@ module Payload.Docs.JsonSchema where
 import Prelude
 
 import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype)
 import Foreign.Object (Object)
 import Simple.JSON (class WriteForeign, writeImpl)
 
 newtype JsonSchema = JsonSchema JsonSchemaData
+
+derive instance newtypeJsonSchema :: Newtype JsonSchema _
+instance eqJsonSchema :: Eq JsonSchema where
+  eq (JsonSchema s1) (JsonSchema s2) = s1 `eq` s2
+
 type JsonSchemaData =
   { "type" :: Maybe JsonSchemaType
   , additionalProperties :: Maybe JsonSchema
@@ -52,6 +58,8 @@ instance showJsonSchemaRef :: Show JsonSchemaRef where
   show (JsonSchemaRef ref) = show ref
 instance writeForeignJsonSchemaRef :: WriteForeign JsonSchemaRef where
   writeImpl (JsonSchemaRef ref) = writeImpl ref
+instance eqJsonSchemaRef :: Eq JsonSchemaRef where
+  eq (JsonSchemaRef ref1) (JsonSchemaRef ref2) = ref1 `eq` ref2
                         
 data JsonSchemaType
   = JsonSchemaObject
@@ -78,3 +86,12 @@ instance writeForeignJsonSchemaType :: WriteForeign JsonSchemaType where
   writeImpl JsonSchemaInteger = writeImpl "integer"
   writeImpl JsonSchemaBoolean = writeImpl "boolean"
   writeImpl JsonSchemaNull = writeImpl "null"
+instance eqJsonSchemaType :: Eq JsonSchemaType where
+  eq JsonSchemaObject JsonSchemaObject = true
+  eq JsonSchemaArray JsonSchemaArray = true
+  eq JsonSchemaString JsonSchemaString = true
+  eq JsonSchemaNumber JsonSchemaNumber = true
+  eq JsonSchemaInteger JsonSchemaInteger = true
+  eq JsonSchemaBoolean JsonSchemaBoolean = true
+  eq JsonSchemaNull JsonSchemaNull = true
+  eq _ _ = false

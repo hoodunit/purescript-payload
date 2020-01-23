@@ -71,6 +71,12 @@ instance writeForeignParamLocation :: WriteForeign ParamLocation where
   writeImpl ParamInHeader = writeImpl "header"
   writeImpl ParamInPath = writeImpl "path"
   writeImpl ParamInCookie = writeImpl "cookie"
+instance eqParamLocation :: Eq ParamLocation where
+  eq ParamInQuery ParamInQuery = true
+  eq ParamInHeader ParamInHeader = true
+  eq ParamInPath ParamInPath = true
+  eq ParamInCookie ParamInCookie = true
+  eq _ _ = false
 
 type Server =
   { url :: String

@@ -4,8 +4,8 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Array as Array
+import Data.List (List)
 import Data.List as List
-import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as String
@@ -15,15 +15,14 @@ import Foreign.Object (Object)
 import Foreign.Object as Object
 import Payload.Client.Queryable (class EncodeOptionalQuery, class EncodeUrlWithParams)
 import Payload.ContentType (class HasContentType, getContentType)
-import Payload.Internal.Route (DefaultRouteSpec, Undefined(..))
-import Payload.Docs.JsonSchema (JsonSchema(JsonSchema), JsonSchemaType(..), emptyJsonSchema, jsonSchema)
+import Payload.Docs.JsonSchema (JsonSchema(JsonSchema), JsonSchemaType(..), jsonSchema)
 import Payload.Docs.OpenApi (MediaTypeObject, OpenApiSpec, Operation, Param, ParamLocation(..), PathItem, Response, emptyOpenApi, emptyPathItem, mkOperation)
+import Payload.Internal.Route (DefaultRouteSpec, Undefined(..))
 import Payload.Spec (class IsSymbolList, Route, Tags(..), reflectSymbolList)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList
 import Prim.Symbol as Symbol
-import Record as Record
 import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
 import Type.RowList (RLProxy(..))
@@ -172,6 +171,9 @@ instance toJsonSchemaBoolean :: ToJsonSchema Boolean where
 instance toJsonSchemaArray :: ToJsonSchema a => ToJsonSchema (Array a) where
   toJsonSchema _ = jsonSchema (_ { "type" = Just JsonSchemaArray
                                  , items = Just (toJsonSchema (Proxy :: _ a))})
+instance toJsonSchemaList :: ToJsonSchema a => ToJsonSchema (List a) where
+  toJsonSchema _ = jsonSchema (_ { "type" = Just JsonSchemaArray
+                                 , items = Just (toJsonSchema (Proxy :: _ a))})
 instance toJsonSchemaRecord :: ( ToJsonSchemaRowList rl
                                , RowToList a rl
                                ) => ToJsonSchema (Record a) where
@@ -256,9 +258,10 @@ instance toJsonSchemaQueryParamsRecord ::
 
 methodPathItem :: String -> Operation -> PathItem
 methodPathItem "GET" operation = emptyPathItem { get = Just operation }
-methodPathItem "PUT" operation = emptyPathItem { get = Just operation }
-methodPathItem "POST" operation = emptyPathItem { get = Just operation }
-methodPathItem "DELETE" operation = emptyPathItem { get = Just operation }
-methodPathItem "OPTIONS" operation = emptyPathItem { get = Just operation }
-methodPathItem "HEAD" operation = emptyPathItem { get = Just operation }
+methodPathItem "PUT" operation = emptyPathItem { put = Just operation }
+methodPathItem "POST" operation = emptyPathItem { post = Just operation }
+methodPathItem "DELETE" operation = emptyPathItem { delete = Just operation }
+methodPathItem "OPTIONS" operation = emptyPathItem { options = Just operation }
+methodPathItem "HEAD" operation = emptyPathItem { head = Just operation }
+methodPathItem "PATCH" operation = emptyPathItem { patch = Just operation }
 methodPathItem _ _ = emptyPathItem
