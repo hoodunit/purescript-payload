@@ -84,9 +84,9 @@ htmlPage openApiSpec = """<!DOCTYPE html>
 </html>"""
 
 type DocsEndpoint path = GET path {
-  summary :: SProxy "API Documentation",
-  description :: SProxy "View API documentation page. API documentation is generated at run-time based on the server spec,\
-                        \ so docs are always in sync with the code.",
+  summary :: SProxy "API Live Documentation",
+  description :: SProxy "View API live documentation page. API documentation is derived at compile time based on the server spec\
+                        \ so documentation is always in sync with the server code.",
   tags :: Tags ("Documentation" : Nil),
   response :: String
 }
