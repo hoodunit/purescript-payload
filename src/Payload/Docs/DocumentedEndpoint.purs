@@ -14,7 +14,7 @@ import Foreign.Object as Object
 import Payload.ContentType (class HasContentType, getContentType)
 import Payload.Docs.JsonSchema (JsonSchema(JsonSchema))
 import Payload.Docs.OpenApi (MediaTypeObject, OpenApiSpec, Operation, Param, ParamLocation(..), PathItem, Response, emptyOpenApi, emptyPathItem, mkOperation)
-import Payload.Docs.ToJsonSchema (class ToJsonSchema, class ToJsonSchemaQueryParams, class ToJsonSchemaRowList, FieldJsonSchema, toJsonSchema, toJsonSchemaQueryParams, toJsonSchemaRowList)
+import Payload.Docs.ToJsonSchema (class ToJsonSchema, class ToJsonSchemaQueryParams, class ToJsonSchemaRowList, class ToJsonSchemaUrlParams, FieldJsonSchema, toJsonSchema, toJsonSchemaQueryParams, toJsonSchemaRowList, toJsonSchemaUrlParams)
 import Payload.Internal.Route (DefaultRouteSpec)
 import Payload.Spec (class IsSymbolList, Route, Tags(..), reflectSymbolList)
 import Prim.Row as Row
@@ -67,6 +67,7 @@ instance openApiEndpointRoute ::
        , ToJsonSchema res
        , ToJsonSchemaRowList fullParamsList
        , ToJsonSchemaQueryParams query
+       , ToJsonSchemaUrlParams fullPath fullUrlParams
        )
     => DocumentedEndpoint (Route method path (Record route)) basePath baseParams (Record payload) res where
   mkEndpointOpenApi _ _ _ = emptyOpenApi { paths = paths }
@@ -106,7 +107,7 @@ instance openApiEndpointRoute ::
       parameters = urlParams <> queryParams
 
       urlParams :: Array Param
-      urlParams = toUrlParam <$> toJsonSchemaRowList (RLProxy :: _ fullParamsList)
+      urlParams = toUrlParam <$> toJsonSchemaUrlParams (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
 
       toUrlParam :: FieldJsonSchema -> Param
       toUrlParam {key, required, schema} =

@@ -17,11 +17,14 @@ import Payload.ContentType (class HasContentType, getContentType)
 import Payload.Docs.JsonSchema (JsonSchema(JsonSchema), JsonSchemaType(..), jsonSchema)
 import Payload.Docs.OpenApi (MediaTypeObject, OpenApiSpec, Operation, Param, ParamLocation(..), PathItem, Response, emptyOpenApi, emptyPathItem, mkOperation)
 import Payload.Internal.Route (DefaultRouteSpec, Undefined(..))
+import Payload.Internal.UrlParsing (class ParseUrl, UrlCons, UrlListProxy(..), UrlNil, kind UrlList, Lit, Multi, Key)
 import Payload.Spec (class IsSymbolList, Route, Tags(..), reflectSymbolList)
+import Payload.TypeErrors (type (<>), type (|>))
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList
 import Prim.Symbol as Symbol
+import Prim.TypeError (class Warn, Text)
 import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
 import Type.RowList (RLProxy(..))
@@ -124,3 +127,43 @@ instance toJsonSchemaQueryParamsRecord ::
   , ToJsonSchemaRowList queryList
   ) => ToJsonSchemaQueryParams (Record query) where
   toJsonSchemaQueryParams _ = toJsonSchemaRowList (RLProxy :: _ queryList)
+
+
+class ToJsonSchemaUrlParams (url :: Symbol) (params :: # Type) where
+  toJsonSchemaUrlParams :: SProxy url -> Proxy (Record params) -> Array FieldJsonSchema
+
+instance toJsonSchemaUrlParamsRecord ::
+  ( ParseUrl url urlParts
+  , ToJsonSchemaUrlParamsList urlParts params
+  ) => ToJsonSchemaUrlParams url params where
+  toJsonSchemaUrlParams _ _ = toJsonSchemaUrlParamsList (UrlListProxy :: _ urlParts) (Proxy :: _ (Record params))
+
+
+class ToJsonSchemaUrlParamsList (urlParts :: UrlList) (params :: # Type) where
+  toJsonSchemaUrlParamsList :: UrlListProxy urlParts -> Proxy (Record params) -> Array FieldJsonSchema
+
+instance toJsonSchemaUrlParamsListNil :: ToJsonSchemaUrlParamsList UrlNil params where
+  toJsonSchemaUrlParamsList _ _ = []
+
+instance toJsonSchemaUrlParamsListConsLit ::
+  ToJsonSchemaUrlParamsList rest params
+  => ToJsonSchemaUrlParamsList (UrlCons (Lit lit) rest) params where
+  toJsonSchemaUrlParamsList _ _ = toJsonSchemaUrlParamsList (UrlListProxy :: _ rest) (Proxy :: _ (Record params))
+
+instance toJsonSchemaUrlParamsListConsMulti ::
+  Warn (Text "URL multi-match parameter '<.." <> Text multi <> Text "> cannot be encoded in OpenAPI specification for documentation"
+             |> Text "because OpenAPI does not support wildcard URL parameters."
+             |> Text "The parameter will not appear in documentation.")
+  => ToJsonSchemaUrlParamsList (UrlCons (Multi multi) rest) params where
+  toJsonSchemaUrlParamsList _ _ = []
+
+instance toJsonSchemaUrlParamsListConsKey ::
+  ( IsSymbol key
+  , Row.Cons key fieldVal otherParams params
+  , ToJsonSchemaUrlParamsList rest otherParams
+  , ToJsonSchema fieldVal
+  ) => ToJsonSchemaUrlParamsList (UrlCons (Key key) rest) params where
+  toJsonSchemaUrlParamsList _ _ = [
+    { key: reflectSymbol (SProxy :: _ key)
+    , required: true
+    , schema: toJsonSchema (Proxy :: _ fieldVal) } ]

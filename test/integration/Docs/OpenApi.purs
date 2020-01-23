@@ -90,19 +90,11 @@ tests = do
               , required: true
               , schema: Just (JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaString })) }
         Assert.equal (Just [userParam]) params
-      test "multi-match param is ignored (OpenAPI doesn't support it)" $ do
+      test "multi-match param is ignored in URL params as OpenAPI doesn't support it (but it shows in URL)" $ do
         let spec = Spec :: _ { routes :: { foo :: GET "/users/<..rest>" {
                                              response :: String,
                                              params :: { rest :: List String }
                                          } } }
         let openApiSpec = Docs.mkOpenApiSpec_ spec
         let params = openApiSpec.paths # Object.lookup "/users/{..rest}" >>= _.get <#> _.parameters
-        let itemSchema = Just (JsonSchema $ emptyJsonSchema { "type" = Just JsonSchemaString })
-        let userParam =
-              { name: "rest"
-              , "in": ParamInPath
-              , description: Nothing
-              , required: true
-              , schema: Just (JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaArray
-                                                          , items = itemSchema })) }
         Assert.equal (Just []) params

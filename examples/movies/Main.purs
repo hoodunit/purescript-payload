@@ -3,6 +3,7 @@ module Payload.Examples.Movies.Main where
 import Prelude
 
 import Data.Either (Either, note)
+import Data.List (List)
 import Data.Map as Map
 import Data.Symbol (SProxy(..))
 import Data.Tuple (Tuple(..))
@@ -11,9 +12,9 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Node.HTTP as HTTP
 import Payload.ContentType as ContentType
-import Payload.Headers as Headers
 import Payload.Docs as Docs
 import Payload.Docs.OpenApi (OpenApiSpec)
+import Payload.Headers as Headers
 import Payload.ResponseTypes (Response(..))
 import Payload.Server as Payload
 import Payload.Server.Cookies (requestCookies)
@@ -67,10 +68,11 @@ moviesApiSpec :: Spec {
            tags :: Tags ("Movies" : Nil),
            response :: Movie
          },
-         popular :: GET "/popular" {
+         popular :: GET "/popular/<..rest>" {
            summary :: SProxy "Get Popular",
            description :: SProxy "Get a list of the current popular movies on TMDb. This list updates daily.",
            tags :: Tags ("Movies" : Nil),
+           params :: { rest :: List String },
            response :: { results :: Array Movie }
          },
          byId :: Routes "/<movieId>" {
