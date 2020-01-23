@@ -38,7 +38,8 @@ moviesApiSpec :: Spec {
            new :: GET "/new" {
              summary :: SProxy "Create Request Token",
              description :: SProxy "Create a temporary request token that can be used to validate a TMDb user login. \
-                                   \More details about how this works can be found here.",
+                                   \More details about how this works can be found \
+                                   \[here](https://developers.themoviedb.org/3/authentication/how-do-i-generate-a-session-id).",
              tags :: Tags ("Authentication" : Nil),
              response :: RequestTokenResponse
            }
@@ -47,15 +48,16 @@ moviesApiSpec :: Spec {
            create :: POST "/new" {
              summary :: SProxy "Create Session",
              description :: SProxy "You can use this method to create a fully valid session ID once a user has \
-                                   \validated the request token. More information about how this works can be found here.",
-             tags :: Tags ("Session" : Nil),
+                                   \validated the request token. More information about how this works can be found \
+                                   \[here](https://developers.themoviedb.org/3/authentication/how-do-i-generate-a-session-id).",
+             tags :: Tags ("Authentication" : Nil),
              body :: { requestToken :: String },
              response :: SessionIdResponse
            },
            delete :: DELETE "/" {
              summary :: SProxy "Delete Session",
              description :: SProxy "If you would like to delete (or \"logout\") from a session, call this method with a valid session ID.",
-             tags :: Tags ("Session" : Nil),
+             tags :: Tags ("Authentication" : Nil),
              body :: { sessionId :: String },
              response :: StatusResponse
            }
@@ -80,7 +82,8 @@ moviesApiSpec :: Spec {
            get :: GET "/" {
              summary :: SProxy "Get Details",
              description :: SProxy "Get the primary information about a movie.\n\n\
-                                   \Supports append_to_response. Read more about this here.",
+                                   \Supports `append_to_response`. Read more about this \
+                                   \[here](https://developers.themoviedb.org/3/getting-started/append-to-response).",
              tags :: Tags ("Movies" : Nil),
              response :: Movie
            },
@@ -89,7 +92,8 @@ moviesApiSpec :: Spec {
              create :: POST "/rating" {
                summary :: SProxy "Rate Movie",
                description :: SProxy "Rate a movie.\n\n\
-                                     \A valid session or guest session ID is required. You can read more about how this works here.",
+                                     \A valid session or guest session ID is required. You can read more about how this works \
+                                     \[here](https://developers.themoviedb.org/3/authentication/how-do-i-generate-a-session-id).",
                tags :: Tags ("Movies" : Nil),
                body :: RatingValue,
                response :: StatusCodeResponse
@@ -97,7 +101,8 @@ moviesApiSpec :: Spec {
              delete :: DELETE "/rating" {
                summary :: SProxy "Delete Rating",
                description :: SProxy "Remove your rating for a movie.\n\n\
-                                     \A valid session or guest session ID is required. You can read more about how this works here.",
+                                     \A valid session or guest session ID is required. You can read more about how this works here\
+                                     \[here](https://developers.themoviedb.org/3/authentication/how-do-i-generate-a-session-id).",
                tags :: Tags ("Movies" : Nil),
                response :: StatusCodeResponse
              }
