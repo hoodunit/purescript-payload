@@ -238,3 +238,34 @@ tests = do
                         [ Tuple "application/json" { schema } ]
         let expectedBody = { description: "", content, required: true }
         Assert.equal (Just expectedBody) body
+    suite "endpoint documentation" do
+      test "summary appears in OpenAPI summary" $ do
+        let spec = Spec :: _ {
+                               routes :: {
+                                  foo :: GET "/foo" {
+                                     summary :: SProxy "This is foo",
+                                     response :: String
+                                  }
+                               }
+                             }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
+        let summary = openApiSpec.paths
+                   # Object.lookup "/foo"
+                   >>= _.get
+                   >>= _.summary
+        Assert.equal (Just "This is foo") summary
+      test "description appears in OpenAPI description" $ do
+        let spec = Spec :: _ {
+                               routes :: {
+                                  foo :: GET "/foo" {
+                                     description :: SProxy "Does foo things",
+                                     response :: String
+                                  }
+                               }
+                             }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
+        let summary = openApiSpec.paths
+                   # Object.lookup "/foo"
+                   >>= _.get
+                   >>= _.description
+        Assert.equal (Just "Does foo things") summary
