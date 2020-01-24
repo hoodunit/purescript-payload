@@ -9,7 +9,9 @@ import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
+import Payload.ContentType (class HasContentType, getContentType)
 import Payload.Docs.JsonSchema (JsonSchema(JsonSchema), JsonSchemaType(..), jsonSchema)
+import Payload.Docs.OpenApi as OpenApi
 import Payload.Internal.Route (Undefined(..))
 import Payload.Internal.UrlParsing (class ParseUrl, UrlCons, UrlListProxy(..), UrlNil, kind UrlList, Lit, Multi, Key)
 import Payload.TypeErrors (type (<>), type (|>))
@@ -161,3 +163,21 @@ instance toJsonSchemaUrlParamsListConsKey ::
     { key: reflectSymbol (SProxy :: _ key)
     , required: true
     , schema: toJsonSchema (Proxy :: _ fieldVal) } ]
+
+class ToJsonSchemaBody body where
+  toJsonSchemaBody :: Proxy body -> Maybe OpenApi.RequestBody
+
+instance toJsonSchemaBodyUndefined :: ToJsonSchemaBody Undefined where
+  toJsonSchemaBody _ = Nothing
+
+else instance toJsonSchemaBodyDefined ::
+  ( ToJsonSchema body
+  , HasContentType body
+  ) => ToJsonSchemaBody body where
+  toJsonSchemaBody _ = Just {content, description, required}
+    where
+      contentType = getContentType (Proxy :: _ body)
+      mediaTypeObject = { schema: (toJsonSchema (Proxy :: _ body)) }
+      content = Object.fromFoldable [ Tuple contentType mediaTypeObject ]
+      description = ""
+      required = true

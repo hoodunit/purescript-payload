@@ -190,3 +190,38 @@ tests = do
         let expectedResponses = Object.fromFoldable
                                   [ Tuple "2XX" { description: "", headers, content } ]
         Assert.equal (Just expectedResponses) responses
+    suite "Request bodies" do
+      test "simple string body has correct encoding" $ do
+        let spec = Spec :: _ { routes :: { foo :: POST "/search" {
+                                                body :: String,
+                                                response :: String
+                                              } } }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
+        let body = openApiSpec.paths
+                   # Object.lookup "/search"
+                   >>= _.post
+                   >>= _.requestBody
+        let schema = JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaString })
+        let content = Object.fromFoldable
+                        [ Tuple "text/plain; charset=utf-8" { schema } ]
+        let expectedBody = { description: "", content, required: true }
+        Assert.equal (Just expectedBody) body
+      test "Record body has correct encoding (JSON)" $ do
+        let spec = Spec :: _ { routes :: { foo :: POST "/search" {
+                                                body :: { foo :: Int },
+                                                response :: String
+                                              } } }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
+        let body = openApiSpec.paths
+                   # Object.lookup "/search"
+                   >>= _.post
+                   >>= _.requestBody
+        let intSchema = JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaInteger })
+        let props = Object.fromFoldable [Tuple "foo" intSchema]
+        let schema = JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaObject
+                                                 , properties = Just props
+                                                 , required = Just ["foo"] })
+        let content = Object.fromFoldable
+                        [ Tuple "application/json" { schema } ]
+        let expectedBody = { description: "", content, required: true }
+        Assert.equal (Just expectedBody) body
