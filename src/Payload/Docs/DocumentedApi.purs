@@ -4,8 +4,9 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
+import Foreign.Object as Object
 import Payload.Docs.DocumentedEndpoint (class DocumentedEndpoint, mkEndpointOpenApi)
-import Payload.Docs.OpenApi (OpenApiSpec, emptyOpenApi)
+import Payload.Docs.OpenApi (OpenApiSpec)
 import Payload.Docs.OpenApi as OpenApi
 import Payload.Internal.Route (DefaultParentRoute, Undefined)
 import Payload.Spec (Docs(..), Guards(..), Route(Route), Routes, Spec)
@@ -60,7 +61,11 @@ class DocumentedApiList
       -> OpenApiSpec
 
 instance openApiSpecListNil :: DocumentedApiList RowList.Nil basePath baseParams where
-  mkOpenApiSpecList _ _ _ = emptyOpenApi
+  mkOpenApiSpecList _ _ _ =
+    { openapi: "3.0.2"
+    , info: defaultInfo
+    , paths: Object.empty
+    , servers: [] }
 
 instance openApiSpecListConsRoute ::
   ( IsSymbol routeName
@@ -73,7 +78,10 @@ instance openApiSpecListConsRoute ::
          (RowList.Cons routeName (Route method path routeSpec) remRoutes)
          basePath
          baseParams where
-  mkOpenApiSpecList _ _ _ = OpenApi.union endpointOpenApi rest
+  mkOpenApiSpecList _ _ _ = rest { paths = Object.insert
+                                             endpointOpenApi.path
+                                             endpointOpenApi.item
+                                             rest.paths }
     where
       endpointOpenApi = mkEndpointOpenApi
                        (Route :: Route method path routeSpec)
@@ -131,6 +139,11 @@ instance docsInfoUndefined :: DocsInfo Undefined where
 type DefaultDocsSpec =
   ( title :: SProxy "Payload Live API Documentation"
   , version :: SProxy "0.0.0" )
+
+defaultInfo :: OpenApi.Info
+defaultInfo =
+  { title: "Payload Live API Documentation"
+  , version: "0.0.0" }
 
 instance docsInfoRecord ::
   ( Row.Union docsSpec DefaultDocsSpec mergedSpec

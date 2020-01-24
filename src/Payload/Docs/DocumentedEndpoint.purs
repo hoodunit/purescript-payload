@@ -13,7 +13,8 @@ import Foreign.Object (Object)
 import Foreign.Object as Object
 import Payload.ContentType (class HasContentType, getContentType)
 import Payload.Docs.JsonSchema (JsonSchema(JsonSchema))
-import Payload.Docs.OpenApi (MediaTypeObject, OpenApiSpec, Operation, Param, ParamLocation(..), PathItem, Response, RequestBody, emptyOpenApi, emptyPathItem, mkOperation)
+import Payload.Docs.OpenApi (MediaTypeObject, OpenApiSpec, Operation, Param, ParamLocation(..), PathItem, Response, RequestBody, emptyPathItem, mkOperation)
+import Payload.Docs.OpenApi as OpenApi
 import Payload.Docs.ToJsonSchema (class ToJsonSchema, class ToJsonSchemaBody, class ToJsonSchemaQueryParams, class ToJsonSchemaRowList, class ToJsonSchemaUrlParams, FieldJsonSchema, toJsonSchema, toJsonSchemaBody, toJsonSchemaQueryParams, toJsonSchemaRowList, toJsonSchemaUrlParams)
 import Payload.Internal.Route (DefaultRouteSpec)
 import Payload.Spec (class IsSymbolList, Route, Tags(..), reflectSymbolList)
@@ -23,6 +24,10 @@ import Prim.Symbol as Symbol
 import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
 import Type.RowList (RLProxy(..))
+
+type OpenApiPath =
+  { path :: String
+  , item :: OpenApi.PathItem }
 
 class DocumentedEndpoint
   route
@@ -34,7 +39,7 @@ class DocumentedEndpoint
   mkEndpointOpenApi :: route
              -> SProxy basePath
              -> Proxy (Record baseParams)
-             -> OpenApiSpec
+             -> OpenApiPath
 
 instance openApiEndpointRoute ::
        ( Row.Union route DefaultRouteSpec mergedRoute
@@ -71,11 +76,8 @@ instance openApiEndpointRoute ::
        , ToJsonSchemaBody body
        )
     => DocumentedEndpoint (Route method path (Record route)) basePath baseParams (Record payload) res where
-  mkEndpointOpenApi _ _ _ = emptyOpenApi { paths = paths }
+  mkEndpointOpenApi _ _ _ = { path, item: pathItem }
     where
-      paths :: Object PathItem
-      paths = Object.singleton path pathItem
-
       path :: String
       path = toOpenApiPath (reflectSymbol (SProxy :: _ fullPath))
 

@@ -82,17 +82,6 @@ type Server =
   { url :: String
   , description :: Maybe String }
 
-emptyOpenApi :: OpenApiSpec
-emptyOpenApi =
-  { openapi: "3.0.2"
-  , info: defaultInfo
-  , paths: Object.empty
-  , servers: []
-  }
-
-defaultInfo :: Info
-defaultInfo = { title: "Payload Live API Documentation", version: "0.0.0" }
-
 emptyPathItem :: PathItem
 emptyPathItem =
   { summary: Nothing
@@ -120,5 +109,4 @@ union :: OpenApiSpec -> OpenApiSpec -> OpenApiSpec
 union api1 api2 = { paths: Object.union api2.paths api1.paths
                   , openapi: api2.openapi
                   , info: api2.info
-                  , servers: api1.servers <> api2.servers
-                  }
+                  , servers: api1.servers <> api2.servers }
