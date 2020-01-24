@@ -2,30 +2,21 @@ module Payload.Docs.ToJsonSchema where
 
 import Prelude
 
-import Control.Alt ((<|>))
 import Data.Array as Array
 import Data.List (List)
-import Data.List as List
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.String (Pattern(..), Replacement(..))
-import Data.String as String
+import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Payload.ContentType (class HasContentType, getContentType)
 import Payload.Docs.JsonSchema (JsonSchema(JsonSchema), JsonSchemaType(..), jsonSchema)
-import Payload.Docs.OpenApi (MediaTypeObject, OpenApiSpec, Operation, Param, ParamLocation(..), PathItem, Response, emptyOpenApi, emptyPathItem, mkOperation)
-import Payload.Internal.Route (DefaultRouteSpec, Undefined(..))
+import Payload.Internal.Route (Undefined(..))
 import Payload.Internal.UrlParsing (class ParseUrl, UrlCons, UrlListProxy(..), UrlNil, kind UrlList, Lit, Multi, Key)
-import Payload.Spec (class IsSymbolList, Route, Tags(..), reflectSymbolList)
 import Payload.TypeErrors (type (<>), type (|>))
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList
-import Prim.Symbol as Symbol
 import Prim.TypeError (class Warn, Text)
-import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
 import Type.RowList (RLProxy(..))
 
