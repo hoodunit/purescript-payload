@@ -30,14 +30,28 @@ class ClientApi routesSpec client | routesSpec -> client where
   mkClientApi :: forall r. Options -> Spec { routes :: routesSpec | r } -> client
 
 instance clientApiRecord ::
-  ( RowToList routesSpec routesSpecList
-  , ClientApiList routesSpecList "" () (Record client)
-  ) => ClientApi (Record routesSpec) (Record client) where
+  ( -- Parse out child routes from root
+    Row.Union rootSpec DefaultParentRoute mergedSpec
+  , Row.Nub mergedSpec rootSpecWithDefaults
+  , TypeEquals
+      (Record rootSpecWithDefaults)
+      { params :: Record rootParams
+      , guards :: guards
+      | childRoutes}
+
+  -- Recurse through child routes
+  , RowToList childRoutes childRoutesList
+  , ClientApiList
+      childRoutesList
+      "" -- child base path
+      rootParams -- child base params
+      (Record client) -- child client
+  ) => ClientApi (Record rootSpec) (Record client) where
   mkClientApi opts routesSpec = mkClientApiList
                         opts
-                        (RLProxy :: _ routesSpecList)
+                        (RLProxy :: _ childRoutesList)
                         (SProxy :: _ "")
-                        (Proxy :: _ (Record ()))
+                        (Proxy :: _ (Record rootParams))
 
 class ClientApiList
   (routesSpecList :: RowList)
@@ -114,7 +128,9 @@ instance clientApiListConsRoutes ::
   , Row.Nub mergedSpec parentSpecWithDefaults
   , TypeEquals
       (Record parentSpecWithDefaults)
-      {params :: Record parentParams, guards :: parentGuards | childRoutes}
+      { params :: Record parentParams
+      , guards :: parentGuards
+      | childRoutes}
   , Row.Union baseParams parentParams childParams
 
   , Row.Cons parentName (Record childClient) remClient client 
