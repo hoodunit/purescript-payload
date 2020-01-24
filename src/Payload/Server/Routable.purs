@@ -33,7 +33,7 @@ import Payload.Server.Internal.Trie (Trie)
 import Payload.Server.Internal.Trie as Trie
 import Payload.Server.Internal.Url as PayloadUrl
 import Payload.Server.Response as Resp
-import Payload.Spec (kind SList, Spec, SNil, Guards(Guards), Route(Route), Routes(..))
+import Payload.Spec (Docs(..), Guards(Guards), Route(Route), Routes(..), SNil, Spec, kind SList)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList
@@ -99,6 +99,27 @@ class RoutableList
 
 instance routableListNil :: RoutableList RowList.Nil basePath baseParams baseGuards guardsSpec handlers guards where
   mkRouterList _ _ _ _ _ _ _ trie = Right trie
+
+-- Skip over docs (these are not handled here)
+instance routableListConsDocs ::
+  ( RoutableList remRoutes basePath baseParams baseGuards guardsSpec (Record handlers) (Record guards)
+  ) => RoutableList (RowList.Cons name (Docs docsSpec) remRoutes)
+                    basePath
+                    baseParams
+                    baseGuards
+                    guardsSpec
+                    (Record handlers)
+                    (Record guards)
+                    where
+  mkRouterList _ basePath baseParams baseGuards guardsSpec handlers guards trie =
+    mkRouterList (RLProxy :: RLProxy remRoutes)
+          basePath
+          baseParams
+          baseGuards
+          guardsSpec
+          handlers
+          guards
+          trie
 
 instance routableListCons ::
   ( IsSymbol routeName

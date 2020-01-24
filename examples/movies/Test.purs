@@ -24,8 +24,6 @@ cookieOpts cookies = { extraHeaders: Headers.fromFoldable [cookieHeader] }
   
 tests :: TestConfig -> TestSuite
 tests cfg = do
-  let serverInfo = { title: "The Movie Database API", version: "0.1.0" }
-  let docsOpts = Docs.defaultOpts { info = serverInfo }
   let moviesApi = {
     handlers: {
       v1: {
@@ -50,7 +48,7 @@ tests cfg = do
           }
         }
       },
-      docs: Docs.docsHandler docsOpts moviesApiSpec
+      documentation: Docs.docsHandler_ moviesApiSpec
     },
     guards: {
       apiKey: getApiKey,

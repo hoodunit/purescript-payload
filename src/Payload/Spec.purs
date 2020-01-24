@@ -10,6 +10,7 @@ module Payload.Spec
        , DELETE
        , Routes(Routes)
        , Guards(Guards)
+       , Docs(Docs)
        , Tags(Tags)
        , kind SList
        , SNil
@@ -67,6 +68,9 @@ type DELETE = Route "DELETE"
 -- |
 -- |
 data Routes (path :: Symbol) routesSpec = Routes
+
+-- | Wrapper for adding documentation metadata
+data Docs docsSpec = Docs
 
 -- | Type-level list of guard names that will be run before calling
 -- | a route or child routes. A wrapper around Symbol lists.

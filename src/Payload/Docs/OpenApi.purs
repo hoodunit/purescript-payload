@@ -115,6 +115,7 @@ mkOperation responses =
   , requestBody: Nothing
   , responses }
 
+-- | Values on right will overwrite values on left
 union :: OpenApiSpec -> OpenApiSpec -> OpenApiSpec
 union api1 api2 = { paths: Object.union api2.paths api1.paths
                   , openapi: api2.openapi

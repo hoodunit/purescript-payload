@@ -7,7 +7,7 @@ module Payload.Internal.Route
 
 import Data.Symbol (SProxy(..))
 import Payload.ResponseTypes (Empty(..))
-import Payload.Spec (Guards(Guards), Tags(Tags), Nil)
+import Payload.Spec (Docs(..), Guards(Guards), Nil, Tags(Tags))
 
 type DefaultServerRouteSpec =
   ( params :: {}
@@ -31,7 +31,12 @@ type DefaultRouteSpec =
 
 data Undefined = Undefined
 
-type DefaultParentRoute = ( params :: {}, guards :: Guards Nil )
+type DefaultParentRoute =
+  ( params :: {}
+  , guards :: Guards Nil
+  , docs :: Docs Undefined )
 defaultParent :: Record DefaultParentRoute
 defaultParent =
-  { params: {}, guards: Guards :: _ Nil }
+  { params: {}
+  , guards: Guards
+  , docs: Docs }

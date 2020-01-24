@@ -16,7 +16,7 @@ import Payload.Client.Options (RequestOptions, Options)
 import Payload.Client.Queryable (class Queryable, ClientFn, ClientFnWithOptions, request)
 import Payload.Headers as Headers
 import Payload.Internal.Route (DefaultParentRoute)
-import Payload.Spec (Spec, Route(Route), Routes)
+import Payload.Spec (Docs(..), Route(Route), Routes, Spec)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
 import Prim.RowList as RowList
@@ -54,6 +54,21 @@ class ClientApiList
 
 instance clientApiListNil :: ClientApiList RowList.Nil basePath baseParams (Record ()) where
   mkClientApiList _ _ _ _ = {}
+
+-- Skip over docs (these are not handled here)
+instance clientApiListConsDocs ::
+  ( ClientApiList remRoutes basePath baseParams (Record client)
+  ) => ClientApiList
+         (RowList.Cons docsTag (Docs docsSpec) remRoutes)
+         basePath
+         baseParams
+         (Record client) where
+  mkClientApiList opts _ _ _ = rest
+    where
+      rest = mkClientApiList opts
+             (RLProxy :: _ remRoutes)
+             (SProxy :: _ basePath)
+             (Proxy :: _ (Record baseParams))
 
 instance clientApiListCons ::
   ( IsSymbol routeName

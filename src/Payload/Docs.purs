@@ -17,13 +17,11 @@ import Payload.Spec (type (:), GET, Spec, Tags(..), Nil)
 import Simple.JSON as SimpleJSON
 
 type Options =
-  { baseUrl :: Maybe String
-  , info :: OpenApi.Info }
+  { baseUrl :: Maybe String }
 
 defaultOpts :: Options
 defaultOpts =
-  { baseUrl: Nothing
-  , info: OpenApi.defaultInfo }
+  { baseUrl: Nothing }
 
 mkOpenApiSpec :: forall routesSpec r
                  . DocumentedApi routesSpec
@@ -31,8 +29,7 @@ mkOpenApiSpec :: forall routesSpec r
                  -> Spec { routes :: routesSpec | r }
                  -> OpenApiSpec
 mkOpenApiSpec opts spec = routesOpenApiSpec
-                            { servers = servers
-                            , info = opts.info }
+                            { servers = servers }
   where
     routesOpenApiSpec :: OpenApiSpec
     routesOpenApiSpec = DocumentedApi.mkOpenApiSpec spec

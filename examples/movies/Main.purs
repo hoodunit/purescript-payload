@@ -20,7 +20,7 @@ import Payload.Server as Payload
 import Payload.Server.Cookies (requestCookies)
 import Payload.Server.Handlers (File(..))
 import Payload.Server.Response as Response
-import Payload.Spec (type (:), DELETE, GET, Guards(..), Nil, POST, Route, Routes, Spec(Spec), Tags(..))
+import Payload.Spec (type (:), DELETE, Docs(..), GET, Guards(..), Nil, POST, Route, Routes, Spec(Spec), Tags(..))
 
 -- Example API based on The Movie Database API at
 -- https://developers.themoviedb.org
@@ -31,89 +31,95 @@ moviesApiSpec :: Spec {
      sessionId :: SessionId
   },
   routes :: {
-    v1 :: Routes "/v1" {
-       guards :: Guards ("apiKey" : Nil),
-       auth :: Routes "/authentication" {
-         token :: Routes "/token" {
-           new :: GET "/new" {
-             summary :: SProxy "Create Request Token",
-             description :: SProxy "Create a temporary request token that can be used to validate a TMDb user login. \
-                                   \More details about how this works can be found \
-                                   \[here](https://developers.themoviedb.org/3/authentication/how-do-i-generate-a-session-id).",
-             tags :: Tags ("Authentication" : Nil),
-             response :: RequestTokenResponse
-           }
-         },
-         session :: Routes "/session" {
-           create :: POST "/new" {
-             summary :: SProxy "Create Session",
-             description :: SProxy "You can use this method to create a fully valid session ID once a user has \
-                                   \validated the request token. More information about how this works can be found \
-                                   \[here](https://developers.themoviedb.org/3/authentication/how-do-i-generate-a-session-id).",
-             tags :: Tags ("Authentication" : Nil),
-             body :: { requestToken :: String },
-             response :: SessionIdResponse
-           },
-           delete :: DELETE "/" {
-             summary :: SProxy "Delete Session",
-             description :: SProxy "If you would like to delete (or \"logout\") from a session, call this method with a valid session ID.",
-             tags :: Tags ("Authentication" : Nil),
-             body :: { sessionId :: String },
-             response :: StatusResponse
-           }
-         }
-       },
-       movies :: Routes "/movies" {
-         latest :: GET "/latest" {
-           summary :: SProxy "Get Latest",
-           description :: SProxy "Get the most newly created movie. This is a live response and will continuously change.",
-           tags :: Tags ("Movies" : Nil),
-           response :: Movie
-         },
-         popular :: GET "/popular/<..rest>" {
-           summary :: SProxy "Get Popular",
-           description :: SProxy "Get a list of the current popular movies on TMDb. This list updates daily.",
-           tags :: Tags ("Movies" : Nil),
-           params :: { rest :: List String },
-           response :: { results :: Array Movie }
-         },
-         byId :: Routes "/<movieId>" {
-           params :: { movieId :: Int },
-           get :: GET "/" {
-             summary :: SProxy "Get Details",
-             description :: SProxy "Get the primary information about a movie.\n\n\
-                                   \Supports `append_to_response`. Read more about this \
-                                   \[here](https://developers.themoviedb.org/3/getting-started/append-to-response).",
-             tags :: Tags ("Movies" : Nil),
-             response :: Movie
-           },
-           rating :: Routes "/rating" {
-             guards :: Guards ("sessionId" : Nil),
-             create :: POST "/rating" {
-               summary :: SProxy "Rate Movie",
-               description :: SProxy "Rate a movie.\n\n\
-                                     \A valid session or guest session ID is required. You can read more about how this works \
-                                     \[here](https://developers.themoviedb.org/3/authentication/how-do-i-generate-a-session-id).",
-               tags :: Tags ("Movies" : Nil),
-               body :: RatingValue,
-               response :: StatusCodeResponse
-             },
-             delete :: DELETE "/rating" {
-               summary :: SProxy "Delete Rating",
-               description :: SProxy "Remove your rating for a movie.\n\n\
-                                     \A valid session or guest session ID is required. You can read more about how this works here\
-                                     \[here](https://developers.themoviedb.org/3/authentication/how-do-i-generate-a-session-id).",
-               tags :: Tags ("Movies" : Nil),
-               response :: StatusCodeResponse
-             }
-           }
-         }
-      }
-    },
-    docs :: Docs.DocsEndpoint "/docs"
+    v1 :: Routes "/v1" V1Routes,
+    documentation :: Docs.DocsEndpoint "/docs"
   }
 }
 moviesApiSpec = Spec
+
+type V1Routes = {
+  guards :: Guards ("apiKey" : Nil),
+  docs :: Docs {
+    title :: SProxy "The Movie Database API",
+    version :: SProxy "0.1.0"
+  },
+  auth :: Routes "/authentication" {
+    token :: Routes "/token" {
+      new :: GET "/new" {
+        summary :: SProxy "Create Request Token",
+        description :: SProxy "Create a temporary request token that can be used to validate a TMDb user login. \
+                              \More details about how this works can be found \
+                              \[here](https://developers.themoviedb.org/3/authentication/how-do-i-generate-a-session-id).",
+        tags :: Tags ("Authentication" : Nil),
+        response :: RequestTokenResponse
+      }
+    },
+    session :: Routes "/session" {
+      create :: POST "/new" {
+        summary :: SProxy "Create Session",
+        description :: SProxy "You can use this method to create a fully valid session ID once a user has \
+                              \validated the request token. More information about how this works can be found \
+                              \[here](https://developers.themoviedb.org/3/authentication/how-do-i-generate-a-session-id).",
+        tags :: Tags ("Authentication" : Nil),
+        body :: { requestToken :: String },
+        response :: SessionIdResponse
+      },
+      delete :: DELETE "/" {
+        summary :: SProxy "Delete Session",
+        description :: SProxy "If you would like to delete (or \"logout\") from a session, call this method with a valid session ID.",
+        tags :: Tags ("Authentication" : Nil),
+        body :: { sessionId :: String },
+        response :: StatusResponse
+      }
+    }
+  },
+  movies :: Routes "/movies" {
+    latest :: GET "/latest" {
+      summary :: SProxy "Get Latest",
+      description :: SProxy "Get the most newly created movie. This is a live response and will continuously change.",
+      tags :: Tags ("Movies" : Nil),
+      response :: Movie
+    },
+    popular :: GET "/popular/<..rest>" {
+      summary :: SProxy "Get Popular",
+      description :: SProxy "Get a list of the current popular movies on TMDb. This list updates daily.",
+      tags :: Tags ("Movies" : Nil),
+      params :: { rest :: List String },
+      response :: { results :: Array Movie }
+    },
+    byId :: Routes "/<movieId>" {
+      params :: { movieId :: Int },
+      get :: GET "/" {
+        summary :: SProxy "Get Details",
+        description :: SProxy "Get the primary information about a movie.\n\n\
+                              \Supports `append_to_response`. Read more about this \
+                              \[here](https://developers.themoviedb.org/3/getting-started/append-to-response).",
+        tags :: Tags ("Movies" : Nil),
+        response :: Movie
+      },
+      rating :: Routes "/rating" {
+        guards :: Guards ("sessionId" : Nil),
+        create :: POST "/rating" {
+          summary :: SProxy "Rate Movie",
+          description :: SProxy "Rate a movie.\n\n\
+                                \A valid session or guest session ID is required. You can read more about how this works \
+                                \[here](https://developers.themoviedb.org/3/authentication/how-do-i-generate-a-session-id).",
+          tags :: Tags ("Movies" : Nil),
+          body :: RatingValue,
+          response :: StatusCodeResponse
+        },
+        delete :: DELETE "/rating" {
+          summary :: SProxy "Delete Rating",
+          description :: SProxy "Remove your rating for a movie.\n\n\
+                                \A valid session or guest session ID is required. You can read more about how this works here\
+                                \[here](https://developers.themoviedb.org/3/authentication/how-do-i-generate-a-session-id).",
+          tags :: Tags ("Movies" : Nil),
+          response :: StatusCodeResponse
+        }
+      }
+    }
+  }
+}
 
 type Movie =
   { id :: Int
@@ -190,8 +196,7 @@ getSessionId req = do
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do
-  let serverInfo = { title: "The Movie Database API", version: "0.1.0" }
-  let docsOpts = Docs.defaultOpts { info = serverInfo }
+  let docsOpts = Docs.defaultOpts
   let moviesApi = {
     handlers: {
       v1: {
@@ -216,7 +221,7 @@ main = Aff.launchAff_ $ do
           }
         }
       },
-      docs: Docs.docsHandler docsOpts moviesApiSpec
+      documentation: Docs.docsHandler docsOpts (Spec :: Spec { routes :: V1Routes })
     },
     guards: {
       apiKey: getApiKey,

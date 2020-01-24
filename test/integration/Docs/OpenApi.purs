@@ -4,13 +4,14 @@ import Prelude
 
 import Data.List (List)
 import Data.Maybe (Maybe(..), isJust)
+import Data.Symbol (SProxy(..))
 import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Payload.Docs as Docs
 import Payload.Docs.JsonSchema (JsonSchema(..), JsonSchemaType(..), emptyJsonSchema)
 import Payload.Docs.OpenApi (ParamLocation(..))
-import Payload.Spec (GET, POST, PUT, Spec(Spec), DELETE)
+import Payload.Spec (DELETE, Docs(..), GET, POST, PUT, Spec(Spec))
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
   
@@ -19,14 +20,26 @@ tests = do
   suite "OpenAPI" do
     suite "info" do
       test "title option appears in OpenAPI title" $ do
-        let spec = Spec :: _ { routes :: { foo :: GET "/foo" { response :: String } } }
-        let opts = Docs.defaultOpts { info { title = "My API" } }
-        let openApiSpec = Docs.mkOpenApiSpec opts spec
+        let spec = Spec :: _ {
+                               routes :: {
+                                  docs :: Docs {
+                                     title :: SProxy "My API"
+                                  },
+                                  foo :: GET "/foo" { response :: String }
+                               }
+                             }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
         Assert.equal "My API" openApiSpec.info.title
       test "version option appears in OpenAPI version" $ do
-        let spec = Spec :: _ { routes :: { foo :: GET "/foo" { response :: String } } }
-        let opts = Docs.defaultOpts { info { version = "1.0" } }
-        let openApiSpec = Docs.mkOpenApiSpec opts spec
+        let spec = Spec :: _ {
+                               routes :: {
+                                  docs :: Docs {
+                                     version :: SProxy "1.0"
+                                  },
+                                  foo :: GET "/foo" { response :: String }
+                               }
+                             }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
         Assert.equal "1.0" openApiSpec.info.version
     suite "methods" do
       let assertMethodOperationExists openApiSpec op =
