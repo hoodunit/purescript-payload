@@ -20,15 +20,33 @@ import Type.Proxy (Proxy(..))
 class DocumentedApi routesSpec where
   mkOpenApiSpec :: forall r. Spec { routes :: routesSpec | r } -> OpenApiSpec
 
-instance openApiSpecRecord ::
-  ( DocumentedApiList (RowList.Cons "" (Routes "" (Record routesSpec)) RowList.Nil) "" ()
-  ) => DocumentedApi (Record routesSpec) where
+instance openApiSpecRootRecord ::
+  ( -- Parse out child routes from root
+    Row.Union rootSpec DefaultParentRoute mergedSpec
+  , Row.Nub mergedSpec rootSpecWithDefaults
+  , TypeEquals
+      (Record rootSpecWithDefaults)
+      { params :: Record rootParams
+      , guards :: guards
+      , docs :: Docs docsSpec
+      | childRoutes}
+
+  -- Recurse through child routes
+  , RowToList childRoutes childRoutesList
+  , DocumentedApiList
+      childRoutesList
+      "" -- child base path
+      rootParams -- child base params
+
+  , DocsInfo docsSpec
+  ) => DocumentedApi (Record rootSpec) where
   mkOpenApiSpec routesSpec = mkOpenApiSpecList
-                           routesList
+                           (RLProxy :: _ childRoutesList)
                            (SProxy :: _ "")
-                           (Proxy :: _ {})
+                           (Proxy :: _ (Record rootParams))
+                           # addDocsInfo docsInfo
     where
-      routesList = (RLProxy :: _ (RowList.Cons "" (Routes "" (Record routesSpec)) RowList.Nil))
+      docsInfo = getDocsInfo (Proxy :: _ docsSpec)
 
 class DocumentedApiList
   (routesSpecList :: RowList)
@@ -43,34 +61,6 @@ class DocumentedApiList
 
 instance openApiSpecListNil :: DocumentedApiList RowList.Nil basePath baseParams where
   mkOpenApiSpecList _ _ _ = emptyOpenApi
-
--- Skip over Docs tags here as they are handled at the higher level
-instance openApiSpecListConsDocs ::
-  ( IsSymbol basePath
-  , DocumentedApiList remRoutes basePath baseParams
-  ) => DocumentedApiList
-         (RowList.Cons "docs" (Docs docsSpec) remRoutes)
-         basePath
-         baseParams where
-  mkOpenApiSpecList _ _ _ = rest
-    where
-      rest = mkOpenApiSpecList (RLProxy :: _ remRoutes)
-                               (SProxy :: _ basePath)
-                               (Proxy :: _ (Record baseParams))
-             
---Skip over Guards tags here as they are handled elsewhere
-instance openApiSpecListConsGuards ::
-  ( IsSymbol basePath
-  , DocumentedApiList remRoutes basePath baseParams
-  ) => DocumentedApiList
-         (RowList.Cons "guards" (Guards guardsSpec) remRoutes)
-         basePath
-         baseParams where
-  mkOpenApiSpecList _ _ _ = rest
-    where
-      rest = mkOpenApiSpecList (RLProxy :: _ remRoutes)
-                               (SProxy :: _ basePath)
-                               (Proxy :: _ (Record baseParams))
 
 instance openApiSpecListConsRoute ::
   ( IsSymbol routeName
@@ -104,7 +94,7 @@ instance openApiSpecListConsRoutes ::
   , TypeEquals
       (Record parentSpecWithDefaults)
       { params :: Record parentParams
-      , guards :: parentGuards
+      , guards :: guards
       , docs :: Docs docsSpec
       | childRoutes}
   , Row.Union baseParams parentParams childParams
@@ -120,10 +110,8 @@ instance openApiSpecListConsRoutes ::
          (RowList.Cons parentName (Routes path (Record parentSpec)) remRoutes)
          basePath
          baseParams where
-  mkOpenApiSpecList _ _ _ = (OpenApi.union childRoutes rest)
-    # (\spec -> case docsInfo of
-        Just i -> spec { info = i }
-        Nothing -> spec)
+  mkOpenApiSpecList _ _ _ = OpenApi.union childRoutes rest
+                            # addDocsInfo docsInfo
     where
       childRoutes = mkOpenApiSpecList
                       (RLProxy :: _ childRoutesList)
@@ -157,3 +145,7 @@ instance docsInfoRecord ::
   getDocsInfo _ = Just
     { title: reflectSymbol (SProxy :: _ title)
     , version: reflectSymbol (SProxy :: _ version) }
+
+addDocsInfo :: Maybe OpenApi.Info -> OpenApiSpec -> OpenApiSpec
+addDocsInfo Nothing spec = spec
+addDocsInfo (Just info) spec = spec { info = info }
