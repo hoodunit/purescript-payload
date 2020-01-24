@@ -12,7 +12,7 @@ import Payload.Headers as Headers
 import Payload.ResponseTypes (Failure(..))
 import Payload.Server.Guards as Guards
 import Payload.Server.Response as Resp
-import Payload.Spec (type (:), Spec(Spec), GET, Guards(..), Nil)
+import Payload.Spec (type (:), GET, Guards(..), Nil, Routes(..), Spec(Spec))
 import Payload.Test.Helpers (get_, respMatches, withRoutes, withServer)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
@@ -72,23 +72,117 @@ tests = do
   let api = { guards, handlers }
   suite "Guards" do
     let { get } = Helpers.request "http://localhost:3000"
-    test "GET /admin succeeds if secret is provided" $ do
+    test "routes to guarded handler if guard is passed (secret is provied)" $ do
       withServer spec api do
         res <- get_ "http://localhost:3000" "/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
         respMatches { status: 200, body: "Admin page" } res
-    test "GET /admin fails with 404 if no secret is given" $ do
+    test "fails with 404 if guard is failed (no secret provided)" $ do
       withServer spec api do
         res <- get "/admin"
         Assert.equal 404 res.status
-    test "GET /user succeeds if username is provided" $ do
+    test "routes to guarded handler if guard is passed (username is provided)" $ do
       withServer spec api do
         res <- get "/user?username"
         respMatches { status: 200, body: "User page" } res
-    test "GET /user fails with 404 if no username is provided" $ do
+    test "fails with 404 if guard is not passed (no username is provided)" $ do
       withServer spec api do
         res <- get "/user"
         Assert.equal 404 res.status
-    test "GET / succeeds" $ do
+    test "unguarded call succeeds" $ do
       withServer spec api do
         res <- get "/"
         respMatches { status: 200, body: "Unauthenticated page" } res
+    test "top-level guard: request fails if guard fails" $ do
+      let spec_ = Spec :: Spec {
+            guards :: {
+               adminUser :: AdminUser
+            },
+            routes :: {
+              guards :: Guards ("adminUser" : Nil),
+              adminIndex :: GET "/admin" {
+                 response :: String
+              }
+            }
+          }
+      withServer spec_ { guards: { adminUser: getAdminUser }, handlers: { adminIndex } } do
+        res <- get "/admin"
+        Assert.equal 404 res.status
+    test "top-level guard: request succeeds if guard succeeds" $ do
+      let spec_ = Spec :: Spec {
+            guards :: {
+               adminUser :: AdminUser
+            },
+            routes :: {
+              guards :: Guards ("adminUser" : Nil),
+              adminIndex :: GET "/admin" {
+                 response :: String
+              }
+            }
+          }
+      withServer spec_ { guards: { adminUser: getAdminUser }, handlers: { adminIndex } } do
+        res <- get_ "http://localhost:3000" "/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
+        Assert.equal 200 res.status
+    test "parent routes guard: request fails if guard fails" $ do
+      let spec_ = Spec :: Spec {
+            guards :: {
+               adminUser :: AdminUser
+            },
+            routes :: {
+              all :: Routes "/all" {
+                guards :: Guards ("adminUser" : Nil),
+                adminIndex :: GET "/admin" {
+                   response :: String
+                }
+              }
+            }
+          }
+      withServer spec_ { guards: { adminUser: getAdminUser }, handlers: { all: { adminIndex } } } do
+        res <- get "/admin"
+        Assert.equal 404 res.status
+    test "parent routes guard: request succeeds if guard succeeds" $ do
+      let spec_ = Spec :: Spec {
+            guards :: {
+               adminUser :: AdminUser
+            },
+            routes :: {
+              all :: Routes "/all" {
+                guards :: Guards ("adminUser" : Nil),
+                adminIndex :: GET "/admin" {
+                   response :: String
+                }
+              }
+            }
+          }
+      withServer spec_ { guards: { adminUser: getAdminUser }, handlers: { all: { adminIndex } } } do
+        res <- get_ "http://localhost:3000" "/all/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
+        Assert.equal 200 res.status
+    test "endpoint guard: request fails if guard fails" $ do
+      let spec_ = Spec :: Spec {
+            guards :: {
+               adminUser :: AdminUser
+            },
+            routes :: {
+              adminIndex :: GET "/admin" {
+                 guards :: Guards ("adminUser" : Nil),
+                 response :: String
+              }
+            }
+          }
+      withServer spec_ { guards: { adminUser: getAdminUser }, handlers: { adminIndex } } do
+        res <- get "/admin"
+        Assert.equal 404 res.status
+    test "endpoint guard: request succeeds if guard succeeds" $ do
+      let spec_ = Spec :: Spec {
+            guards :: {
+               adminUser :: AdminUser
+            },
+            routes :: {
+              adminIndex :: GET "/admin" {
+                 guards :: Guards ("adminUser" : Nil),
+                 response :: String
+              }
+            }
+          }
+      withServer spec_ { guards: { adminUser: getAdminUser }, handlers: { adminIndex } } do
+        res <- get_ "http://localhost:3000" "/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
+        Assert.equal 200 res.status

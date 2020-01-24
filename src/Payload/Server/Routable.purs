@@ -36,7 +36,7 @@ import Payload.Server.Response as Resp
 import Payload.Spec (Docs(..), Guards(Guards), Route(Route), Routes(..), SNil, Spec, kind SList)
 import Prim.Row as Row
 import Prim.RowList (class RowToList, kind RowList)
-import Prim.RowList as RowList
+import Prim.RowList as RL
 import Prim.Symbol as Symbol
 import Record (get)
 import Record as Record
@@ -61,16 +61,39 @@ class Routable routesSpec guardsSpec handlers guards |
               -> { handlers :: handlers, guards :: guards }
               -> Either String RoutingTrie
 
-instance routableRecord ::
-  ( RowToList routesSpec routesSpecList
-  , RoutableList routesSpecList "" () SNil guardsSpec (Record handlers) (Record guards)
-  ) => Routable (Record routesSpec) (Record guardsSpec) (Record handlers) (Record guards) where
+instance routableRootRecord ::
+  (
+  -- Parse out child routes from root
+    Row.Union rootSpec DefaultParentRoute mergedSpec
+  , Row.Nub mergedSpec rootSpecWithDefaults
+  , TypeEquals
+      (Record rootSpecWithDefaults)
+      { params :: Record rootParams
+      , guards :: Guards rootGuards
+      , docs :: docs
+      | childRoutes}
+
+  -- Recurse through child routes
+  , RowToList childRoutes childRoutesList
+  , RoutableList
+      childRoutesList
+      "" -- child base path
+      rootParams -- child base params
+      rootGuards -- child base guards
+      guardsSpec
+      handlers
+      guards
+  ) => Routable
+         (Record rootSpec)
+         (Record guardsSpec)
+         handlers
+         guards where
   mkRouter _ { handlers, guards } =
     mkRouterList
-      (RLProxy :: RLProxy routesSpecList)
+      (RLProxy :: _ childRoutesList)
       (SProxy :: _ "")
-      (Proxy :: _ {})
-      (Guards :: _ SNil)
+      (Proxy :: _ (Record rootParams))
+      (Guards :: _ rootGuards)
       (Proxy :: _ (Record guardsSpec))
       handlers
       guards
@@ -97,29 +120,8 @@ class RoutableList
     -> RoutingTrie
     -> Either String RoutingTrie
 
-instance routableListNil :: RoutableList RowList.Nil basePath baseParams baseGuards guardsSpec handlers guards where
+instance routableListNil :: RoutableList RL.Nil basePath baseParams baseGuards guardsSpec handlers guards where
   mkRouterList _ _ _ _ _ _ _ trie = Right trie
-
--- Skip over docs (these are not handled here)
-instance routableListConsDocs ::
-  ( RoutableList remRoutes basePath baseParams baseGuards guardsSpec (Record handlers) (Record guards)
-  ) => RoutableList (RowList.Cons name (Docs docsSpec) remRoutes)
-                    basePath
-                    baseParams
-                    baseGuards
-                    guardsSpec
-                    (Record handlers)
-                    (Record guards)
-                    where
-  mkRouterList _ basePath baseParams baseGuards guardsSpec handlers guards trie =
-    mkRouterList (RLProxy :: RLProxy remRoutes)
-          basePath
-          baseParams
-          baseGuards
-          guardsSpec
-          handlers
-          guards
-          trie
 
 instance routableListCons ::
   ( IsSymbol routeName
@@ -134,7 +136,7 @@ instance routableListCons ::
   , Symbol.Append basePath path fullPath
   , ParseUrl fullPath urlParts
   , ToSegments urlParts
-  ) => RoutableList (RowList.Cons routeName (Route method path (Record spec)) remRoutes)
+  ) => RoutableList (RL.Cons routeName (Route method path (Record spec)) remRoutes)
                     basePath
                     baseParams
                     baseGuards
@@ -216,7 +218,10 @@ instance routableListConsRoutes ::
   , Row.Nub mergedSpec parentSpecWithDefaults
   , TypeEquals
       (Record parentSpecWithDefaults)
-      {params :: Record parentParams, guards :: Guards parentGuards | childRoutes}
+      { params :: Record parentParams
+      , guards :: Guards parentGuards
+      , docs :: docs
+      | childRoutes}
   , Row.Union baseParams parentParams childParams
   , GuardParsing.Append baseGuards parentGuards childGuards
 
@@ -229,7 +234,7 @@ instance routableListConsRoutes ::
 
   -- Iterate through rest of list routes
   , RoutableList remRoutes basePath baseParams baseGuards guardsSpec (Record handlers) (Record guards)
-  ) => RoutableList (RowList.Cons parentName (Routes path (Record parentSpec)) remRoutes)
+  ) => RoutableList (RL.Cons parentName (Routes path (Record parentSpec)) remRoutes)
                     basePath
                     baseParams
                     baseGuards
