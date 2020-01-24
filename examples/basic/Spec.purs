@@ -16,12 +16,12 @@ spec :: Spec {
       getProfiles :: GET "/profiles" {
         response :: Array String
       },
-      byId :: Routes "/<id>" {
+      byId :: Routes "/{id}" {
         params :: { id :: Int },
         get :: GET "/" {
           response :: User
         },
-        getPost :: GET "/posts/<postId>" {
+        getPost :: GET "/posts/{postId}" {
           params :: { postId :: String },
           response :: Post
         }
@@ -38,29 +38,29 @@ spec :: Spec {
         response :: User
       }
     },
-    getUsersNonAdmin :: GET "/<name>" {
+    getUsersNonAdmin :: GET "/{name}" {
       params :: { name :: String },
       response :: Array User
     },
     indexPage :: GET "/" {
       response :: File
     },
-    files :: GET "/<..path>" {
+    files :: GET "/{..path}" {
       params :: { path :: List String },
       response :: File
     },
-    getPage :: GET "/pages/<id>" {
+    getPage :: GET "/pages/{id}" {
       params :: { id :: String },
       response :: String
     },
-    getPageMetadata :: GET "/pages/<id>/metadata" {
+    getPageMetadata :: GET "/pages/{id}/metadata" {
       params :: { id :: String },
       response :: String
     },
     getHello :: GET "/hello there" {
       response :: String
     },
-    search :: GET "/search?a=<a>&b=<b>&<..rest>" {
+    search :: GET "/search?a={a}&b={b}&{..rest}" {
       query :: { a :: Int, b :: Int, rest :: Object (Array String) },
       response :: String
     }

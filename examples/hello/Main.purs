@@ -11,7 +11,7 @@ type Message =
   , text :: String }
 
 spec :: Spec {
-  getMessages :: GET "/users/<id>/messages?limit=<limit>" {
+  getMessages :: GET "/users/{id}/messages?limit={limit}" {
     params :: { id :: Int },
     query :: { limit :: Int },
     response :: Array Message

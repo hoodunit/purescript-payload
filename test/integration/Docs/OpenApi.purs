@@ -87,7 +87,7 @@ tests = do
         assertMethodOperationExists openApiSpec operation
     suite "URL params" do
       test "single required param" $ do
-        let spec = Spec :: _ { routes :: { foo :: GET "/users/<userId>" {
+        let spec = Spec :: _ { routes :: { foo :: GET "/users/{userId}" {
                                              response :: String,
                                              params :: { userId :: String }
                                          } } }
@@ -101,7 +101,7 @@ tests = do
               , schema: Just (JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaString })) }
         Assert.equal (Just [userParam]) params
       test "multi-match param is ignored in URL params as OpenAPI doesn't support it (but it shows in URL)" $ do
-        let spec = Spec :: _ { routes :: { foo :: GET "/users/<..rest>" {
+        let spec = Spec :: _ { routes :: { foo :: GET "/users/{..rest}" {
                                              response :: String,
                                              params :: { rest :: List String }
                                          } } }
@@ -110,7 +110,7 @@ tests = do
         Assert.equal (Just []) params
     suite "Query params" do
       test "required key param" $ do
-        let spec = Spec :: _ { routes :: { foo :: GET "/search?q=<q>" {
+        let spec = Spec :: _ { routes :: { foo :: GET "/search?q={q}" {
                                              response :: String,
                                              query :: { q :: String }
                                          } } }
@@ -124,7 +124,7 @@ tests = do
               , schema: Just (JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaString })) }
         Assert.equal (Just [param]) params
       test "optional key param" $ do
-        let spec = Spec :: _ { routes :: { foo :: GET "/search?q=<q>" {
+        let spec = Spec :: _ { routes :: { foo :: GET "/search?q={q}" {
                                              response :: String,
                                              query :: { q :: Maybe String }
                                          } } }
@@ -138,7 +138,7 @@ tests = do
               , schema: Just (JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaString })) }
         Assert.equal (Just [param]) params
       test "multi-match" $ do
-        let spec = Spec :: _ { routes :: { foo :: GET "/search?<..all>" {
+        let spec = Spec :: _ { routes :: { foo :: GET "/search?{..all}" {
                                              response :: String,
                                              query :: { all :: Object (Array String) }
                                          } } }

@@ -57,8 +57,8 @@ instance eqSegment :: Eq Segment where
 
 instance showSegment :: Show Segment where
   show (Lit a) = a
-  show (Key a) = "<" <> a <> ">"
-  show (Multi a) = "<" <> a <> "..>"
+  show (Key a) = "{" <> a <> "}"
+  show (Multi a) = "{.." <> a <> "}"
 
 instance ordSegment :: Ord Segment where
   compare (Lit a) (Lit b) = a `compare` b
@@ -146,19 +146,19 @@ else instance failNoSlashAtStart ::
 -- Multi ----------------------------------------------------
 else instance failEmptyMulti ::
   ( ParseError u xs "multi-segment matches must have a name" doc
-  ) => Match u ">" xs "" "multi" UrlParseFail
+  ) => Match u "}" xs "" "multi" UrlParseFail
 else instance endAtMulti ::
-  Match u ">" "" acc "multi" (UrlCons (Multi acc) UrlNil)
+  Match u "}" "" acc "multi" (UrlCons (Multi acc) UrlNil)
 else instance queryAfterMulti ::
   ( Symbol.Cons y ys xs
   , Match u y ys "" "end" rest
-  ) => Match u ">" xs acc "multi" (UrlCons (Multi acc) UrlNil)
+  ) => Match u "}" xs acc "multi" (UrlCons (Multi acc) UrlNil)
 else instance failMissingMultiEnd ::
   ( ParseError u "" "multi tag was not closed" doc
   ) => Match u x "" acc "multi" UrlParseFail
 else instance failNestedOpenMulti ::
   ( ParseError u xs "tags cannot be nested in multi tags" doc
-  ) => Match u "<" xs acc "multi" UrlParseFail
+  ) => Match u "{" xs acc "multi" UrlParseFail
 else instance contMulti ::
   ( Symbol.Cons y ys xs
   , Symbol.Append acc x newAcc
@@ -169,7 +169,7 @@ else instance contMulti ::
 else instance startKey ::
   ( Symbol.Cons y ys xs
   , Match u y ys "" "key" rest
-  ) => Match u "<" xs "" "any" rest
+  ) => Match u "{" xs "" "any" rest
 else instance switchKeyToMulti ::
   ( Symbol.Cons "." ys xs
   , Symbol.Cons z zs ys
@@ -177,28 +177,28 @@ else instance switchKeyToMulti ::
   ) => Match u "." xs "" "key" rest
 else instance failEmptyKey ::
   ( ParseError u xs "key matches must have name" doc
-  ) => Match u ">" xs "" "key" UrlParseFail
+  ) => Match u "}" xs "" "key" UrlParseFail
 else instance endAtKey ::
-  Match u ">" "" acc "key" (UrlCons (Key acc) UrlNil)
+  Match u "}" "" acc "key" (UrlCons (Key acc) UrlNil)
 else instance endKey ::
   ( Symbol.Cons y ys xs
   , Match u y ys "" "start" rest
-  ) => Match u ">" xs acc "key" (UrlCons (Key acc) rest)
+  ) => Match u "}" xs acc "key" (UrlCons (Key acc) rest)
 else instance failMissingKeyEnd ::
   ( Symbol.Append acc x key
   , ParseError u "" "key tag was not closed" doc
   ) => Match u x "" acc "key" UrlParseFail
 else instance failNestedOpenKey ::
   ( ParseError u xs "key tags cannot be nested" doc
-  ) => Match u "<" xs acc "key" UrlParseFail
+  ) => Match u "{" xs acc "key" UrlParseFail
 else instance contKey ::
   ( Symbol.Cons y ys xs
   , Symbol.Append acc x newAcc
   , Match u y ys newAcc "key" rest
   ) => Match u x xs acc "key" rest
 else instance failEndKeyWithoutStart ::
-  ( ParseError u xs "saw closing '>' for key without opening '<'" doc
-  ) => Match u ">" xs acc mode UrlParseFail
+  ( ParseError u xs "saw closing '}' for key without opening '{'" doc
+  ) => Match u "}" xs acc mode UrlParseFail
 
 -- Query ----------------------------------------------------
 else instance endLitAtQuery :: Match u "?" xs acc "lit" (UrlCons (Lit acc) UrlNil)

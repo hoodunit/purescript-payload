@@ -80,14 +80,14 @@ type V1Routes = {
       tags :: Tags ("Movies" : Nil),
       response :: Movie
     },
-    popular :: GET "/popular/<..rest>" {
+    popular :: GET "/popular/{..rest}" {
       summary :: SProxy "Get Popular",
       description :: SProxy "Get a list of the current popular movies on TMDb. This list updates daily.",
       tags :: Tags ("Movies" : Nil),
       params :: { rest :: List String },
       response :: { results :: Array Movie }
     },
-    byId :: Routes "/<movieId>" {
+    byId :: Routes "/{movieId}" {
       params :: { movieId :: Int },
       get :: GET "/" {
         summary :: SProxy "Get Details",

@@ -19,7 +19,7 @@ instance eqSegment :: Eq Segment where
   eq _ _ = false
 
 instance showSegment :: Show Segment where
-  show (Key name key) = "(Key " <> name <> "=<" <> key <> ">)"
+  show (Key name key) = "(Key " <> name <> "={" <> key <> "})"
   show (Multi a) = "(Multi '" <> a <> "')"
 
 instance ordSegment :: Ord Segment where
@@ -120,21 +120,21 @@ else instance startMulti ::
   , Symbol.Cons "." zs ys
   , Symbol.Cons q qs zs
   , Match u q qs "" "" "multi" rest
-  ) => Match u "<" xs acc acc2 "any" rest
+  ) => Match u "{" xs acc acc2 "any" rest
 else instance failEmptyMulti ::
   ( ParseError u xs "multi-segment query matches must have a name" doc
-  ) => Match u ">" xs "" acc2 "multi" QueryParseFail
+  ) => Match u "}" xs "" acc2 "multi" QueryParseFail
 else instance endAtMulti ::
-  Match u ">" "" acc acc2 "multi" (QueryCons (Multi acc) QueryNil)
+  Match u "}" "" acc acc2 "multi" (QueryCons (Multi acc) QueryNil)
 else instance failContinueAfterMulti ::
   ( ParseError u xs "multi-segment query match must be the final component of a path" doc
-  ) => Match u ">" xs acc acc2 "multi" QueryParseFail
+  ) => Match u "}" xs acc acc2 "multi" QueryParseFail
 else instance failMissingMultiEnd ::
   ( ParseError u "" "multi-segment query match was not closed" doc
   ) => Match u x "" acc acc2 "multi" QueryParseFail
 else instance failNestedOpenMulti ::
   ( ParseError u xs "tags cannot be nested in multi-segment query matches" doc
-  ) => Match u "<" xs acc acc2 "multi" QueryParseFail
+  ) => Match u "{" xs acc acc2 "multi" QueryParseFail
 else instance contMulti ::
   ( Symbol.Cons y ys xs
   , Symbol.Append acc x newAcc
@@ -145,9 +145,9 @@ else instance contMulti ::
 else instance keyEquals ::
   ( Symbol.Cons y ys xs
   , Match u y ys acc "" "key" rest
-  ) => Match u "<" xs acc "" "keyEquals" rest
+  ) => Match u "{" xs acc "" "keyEquals" rest
 else instance failedKeyEquals ::
-  ( ParseError u xs "query param key name must start with opening '<', e.g. limit=<limit>" doc
+  ( ParseError u xs "query param key name must start with opening '{', e.g. limit={limit}" doc
   ) => Match u x xs acc "" "keyEquals" QueryParseFail
 else instance switchKeyToMulti ::
   ( Symbol.Cons "." ys xs
@@ -156,20 +156,20 @@ else instance switchKeyToMulti ::
   ) => Match u "." xs "" acc2 "key" rest
 else instance failEmptyKey ::
   ( ParseError u xs "query param matches must have a name" doc
-  ) => Match u ">" xs acc "" "key" QueryParseFail
+  ) => Match u "}" xs acc "" "key" QueryParseFail
 else instance endAtKey ::
-  Match u ">" "" name key "key" (QueryCons (Key name key) QueryNil)
+  Match u "}" "" name key "key" (QueryCons (Key name key) QueryNil)
 else instance endKey ::
   ( Symbol.Cons y ys xs
   , Match u y ys "" "" "ampersand" rest
-  ) => Match u ">" xs name key "key" (QueryCons (Key name key) rest)
+  ) => Match u "}" xs name key "key" (QueryCons (Key name key) rest)
 else instance failMissingKeyEnd ::
   ( Symbol.Append acc x key
   , ParseError u "" "key tag was not closed" doc
   ) => Match u x "" acc acc2 "key" QueryParseFail
 else instance failNestedOpenKey ::
   ( ParseError u xs "key tags cannot be nested" doc
-  ) => Match u "<" xs acc acc2 "key" QueryParseFail
+  ) => Match u "{" xs acc acc2 "key" QueryParseFail
 else instance contKey ::
   ( Symbol.Cons y ys xs
   , Symbol.Append acc2 x newAcc2
@@ -189,11 +189,11 @@ else instance switchToKeyEquals ::
   , Match u y ys acc "" "keyEquals" rest
   ) => Match u "=" xs acc "" "lit" rest
 else instance failEndKeyWithoutStart ::
-  ( ParseError u xs "saw closing '>' for key without opening '<'" doc
-  ) => Match u ">" xs acc acc2 mode QueryParseFail
+  ( ParseError u xs "saw closing '}' for key without opening '{'" doc
+  ) => Match u "}" xs acc acc2 mode QueryParseFail
 else instance failOpenKeyWithoutEquals ::
-  ( ParseError u xs "saw key name without query param name - query params should be of form name=<keyName>" doc
-  ) => Match u "<" xs acc acc2 any QueryParseFail
+  ( ParseError u xs "saw key name without query param name - query params should be of form name={keyName}" doc
+  ) => Match u "{" xs acc acc2 any QueryParseFail
 
 -- Literals/query param names ----------------------------------
 else instance startLit ::
@@ -201,10 +201,10 @@ else instance startLit ::
   , Match u y ys x "" "lit" rest
   ) => Match u x xs "" "" "any" rest
 else instance failSplitLit ::
-  ( ParseError u xs "saw & before query param name - query params should be of form name=<keyName>" doc
+  ( ParseError u xs "saw & before query param name - query params should be of form name={keyName}" doc
   ) => Match u "&" xs acc "" "lit" QueryParseFail
 else instance failEndAtLit ::
-  ( ParseError u "" "query string ended before query param name - query params should be of form name=<keyName>" doc
+  ( ParseError u "" "query string ended before query param name - query params should be of form name={keyName}" doc
   ) => Match u x "" acc "" "lit" QueryParseFail
 else instance contLit ::
   ( Symbol.Cons y ys xs

@@ -21,7 +21,7 @@ tests = do
         Assert.equal
           (Right {limit: 12})
             (Query.decodeQuery
-              (SProxy :: SProxy "/search?limit=<limit>")
+              (SProxy :: SProxy "/search?limit={limit}")
               (Proxy :: Proxy { limit :: Int })
               "limit=12")
       test "Int: decoding fails for invalid int" do
@@ -29,63 +29,63 @@ tests = do
           true
           (isLeft
             (Query.decodeQuery
-              (SProxy :: SProxy "/search?limit=<limit>")
+              (SProxy :: SProxy "/search?limit={limit}")
               (Proxy :: Proxy { limit :: Int })
               "limit=asdf"))
       test "String: decoding succeeds" do
         Assert.equal
           (Right {query: "whatever"})
             (Query.decodeQuery
-              (SProxy :: SProxy "/search?query=<query>")
+              (SProxy :: SProxy "/search?query={query}")
               (Proxy :: Proxy { query :: String })
               "query=whatever")
       test "Boolean: \"true\" decodes to true" do
         Assert.equal
           (Right {query: true})
             (Query.decodeQuery
-              (SProxy :: SProxy "/search?query=<query>")
+              (SProxy :: SProxy "/search?query={query}")
               (Proxy :: Proxy { query :: Boolean })
               "query=true")
       test "Boolean: \"false\" decodes to false" do
         Assert.equal
           (Right {query: false})
             (Query.decodeQuery
-              (SProxy :: SProxy "/search?query=<query>")
+              (SProxy :: SProxy "/search?query={query}")
               (Proxy :: Proxy { query :: Boolean })
               "query=false")
       test "Boolean: \"\" fails to decode" do
         Assert.equal
           true
           (isLeft (Query.decodeQuery
-            (SProxy :: SProxy "/search?query=<query>")
+            (SProxy :: SProxy "/search?query={query}")
             (Proxy :: Proxy { query :: Boolean })
             "query="))
       test "Maybe: decoding Maybe Int parses Int when Int is given" do
         Assert.equal
           (Right {query: Just 1})
             (Query.decodeQuery
-              (SProxy :: SProxy "/search?query=<query>")
+              (SProxy :: SProxy "/search?query={query}")
               (Proxy :: Proxy { query :: Maybe Int })
               "query=1")
       test "Maybe: decoding Maybe Int returns Nothing when query value is empty" do
         Assert.equal
           (Right {query: Nothing})
             (Query.decodeQuery
-              (SProxy :: SProxy "/search?query=<query>")
+              (SProxy :: SProxy "/search?query={query}")
               (Proxy :: Proxy { query :: Maybe Int })
               "query=")
       test "Maybe: decoding Maybe Int returns Nothing when query value is omitted" do
         Assert.equal
           (Right {query: Nothing})
             (Query.decodeQuery
-              (SProxy :: SProxy "/search?query=<query>")
+              (SProxy :: SProxy "/search?query={query}")
               (Proxy :: Proxy { query :: Maybe Int })
               "")
       test "extra parameters are ignored" do
         Assert.equal
           (Right {limit: 12})
             (Query.decodeQuery
-              (SProxy :: SProxy "/search?limit=<limit>")
+              (SProxy :: SProxy "/search?limit={limit}")
               (Proxy :: Proxy { limit :: Int })
               "foo=blah&limit=12&a=b")
 
@@ -96,7 +96,7 @@ tests = do
                                            , Tuple "limit" ["12"]
                                            , Tuple "a" ["b"] ]})
             (Query.decodeQuery
-              (SProxy :: SProxy "/search?<..all>")
+              (SProxy :: SProxy "/search?{..all}")
               (Proxy :: Proxy { all :: Object (Array String) })
               "foo=blah&limit=12&a=b")
       test "removes other matches from multi-matched result" do
@@ -105,6 +105,6 @@ tests = do
                  , bar: "bar"
                  , all: Object.fromFoldable [ Tuple "limit" ["12"], Tuple "a" ["b"] ]})
             (Query.decodeQuery
-              (SProxy :: SProxy "/search?foo=<foo>&bar=<bar>&<..all>")
+              (SProxy :: SProxy "/search?foo={foo}&bar={bar}&{..all}")
               (Proxy :: Proxy { foo :: String, bar :: String, all :: Object (Array String) })
               "foo=blah&limit=12&a=b&bar=bar")

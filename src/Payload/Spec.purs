@@ -33,8 +33,8 @@ data Spec apiSpec = Spec
 -- |
 -- | Examples:
 -- | ```purescript
--- | GET "/api/user/<id>"
--- | DELETE "/api/posts/<..rest>"
+-- | GET "/api/user/{id}"
+-- | DELETE "/api/posts/{..rest}"
 -- | ```
 data Route (method :: Symbol) (path :: Symbol) spec = Route
 
@@ -57,7 +57,7 @@ type DELETE = Route "DELETE"
 -- | 
 -- | Example:
 -- | ```purescript
--- | Routes "/users/<userId>" {
+-- | Routes "/users/{userId}" {
 -- |   guards :: Guards ("apiKey" : Nil),
 -- |   params :: { userId :: Int },
 -- |   posts :: GET "/posts" {

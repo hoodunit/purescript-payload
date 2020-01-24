@@ -13,7 +13,7 @@ spec :: Spec
   , routes ::
     { indexPage :: GET "/"
         { response :: File }
-    , public :: GET "/<..path>"
+    , public :: GET "/{..path}"
         { params :: { path :: List String }
         , response :: File }
     }

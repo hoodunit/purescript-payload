@@ -30,7 +30,7 @@ tests cfg = do
           res <- client.foo {}
           bodyEquals { foo: 12 } res
       test "GET succeeds with URL params" $ do
-        let spec = Spec :: _ { foo :: GET "/foo/<id>/<thing>"
+        let spec = Spec :: _ { foo :: GET "/foo/{id}/{thing}"
                                        { params :: { id :: Int, thing :: String }
                                        , response :: String } }
         let handlers = { foo: \{params: {id, thing}} -> pure $ "ID " <> show (id :: Int) <> ", " <> thing }
@@ -107,7 +107,7 @@ tests cfg = do
           res <- client.foo { body: [1] }
           bodyEquals "[1]" res
       test "DELETE succeeds with params" $ do
-        let spec = Spec :: _ { foo :: DELETE "/foo/<id>" { params :: { id :: Int }, response :: String } }
+        let spec = Spec :: _ { foo :: DELETE "/foo/{id}" { params :: { id :: Int }, response :: String } }
         let handlers = { foo: \{params: {id}} -> pure $ "Delete " <> show id }
         withRoutes spec handlers do
           let client = mkClient cfg.clientOpts spec

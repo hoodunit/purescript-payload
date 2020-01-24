@@ -46,7 +46,7 @@ tests cfg = do
     test "GET /users without secret should fall through to non-admin route" $ withApi do
       users <- unwrapBody $ client.getUsersNonAdmin { params: { name: "users" } }
       Assert.equal [{ id: 1, name: "John Doe" }] users
-    test "GET /users/<id>" $ withApi do
+    test "GET /users/{id}" $ withApi do
       user <- unwrapBody $ client.users.byId.get { params: { id: 1 } }
       Assert.equal { id: 1, name: "whodunnit" } user
     test "GET /users/profile" $ withApi do
@@ -57,13 +57,13 @@ tests cfg = do
       Assert.equal { id: 5, name: "New user!" } newUser
     test "POST /users/new fails without the secret" $ withApi do
       assertFail (client.adminUsers.create { body: { id: 5, name: "New user!" }})
-    test "GET /users/<id>/posts/<postId>" $ withApi $ do
+    test "GET /users/{id}/posts/{postId}" $ withApi $ do
       post <- unwrapBody $ client.users.byId.getPost { params: { id: 1, postId: "1" } }
       Assert.equal { id: "1", text: "Some post" } post
-    test "GET /pages/<id>" $ withApi $ do
+    test "GET /pages/{id}" $ withApi $ do
       page <- unwrapBody $ client.getPage { params: { id: "1" } }
       Assert.equal "Page 1" page
-    test "GET /pages/<id>/metadata" $ withApi $ do
+    test "GET /pages/{id}/metadata" $ withApi $ do
       pageMetadata <- unwrapBody $ client.getPageMetadata { params: { id: "1" }}
       Assert.equal "Page metadata 1" pageMetadata
     test "GET /hello%20there" $ withApi $ do

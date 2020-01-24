@@ -31,7 +31,7 @@ type Message =
   , text :: String }
 
 spec :: Spec {
-  getMessages :: GET "/users/<id>/messages?limit=<limit>" {
+  getMessages :: GET "/users/{id}/messages?limit={limit}" {
     params :: { id :: Int },
     query :: { limit :: Int },
     response :: Array Message
@@ -101,7 +101,7 @@ Here is a simple spec for an HTTP API:
 
 ```purescript
 spec :: Spec {
-  getUser :: GET "/users/<id>" {
+  getUser :: GET "/users/{id}" {
     params :: { id :: Int },
     response :: User
   }
@@ -114,7 +114,7 @@ type User =
 
 ```
 
-`GET "/users/<id>"` says we have a `GET` endpoint with a URL parameter named `id`. The type of `id` is defined below it as an `Int`. The endpoint returns a `User`, with type as defined below.
+`GET "/users/{id}"` says we have a `GET` endpoint with a URL parameter named `id`. The type of `id` is defined below it as an `Int`. The endpoint returns a `User`, with type as defined below.
 
 To run a Payload server that complies with this spec, you simply provide the spec and a record of handlers corresponding to each endpoint defined in the API spec to [`Payload.launch`](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server#v:launch) (or another function in [`Payload.Server`](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server)). A server for the above API spec can be run like so:
 
@@ -153,7 +153,7 @@ moviesApiSpec :: Spec {
          latest :: GET "/latest" {
            response :: Movie
          },
-         byId :: Routes "/<movieId>" {
+         byId :: Routes "/{movieId}" {
            params :: { movieId :: Int },
            get :: GET "/" {
              response :: Movie
@@ -199,11 +199,11 @@ Payload also automatically handles `HEAD` requests where a `GET` request is spec
 
 Payload supports decoding two types of URL parameters: named segments and multi-matches.
 
-Named segments are specified by giving a name in the URL string in the form `/foo/<myName>/bar` and a corresponding type in the `params` field of the endpoint spec. The handler will only be called if URL parameters can be decoded as the given type, or 404 Not Found will be returned. Decoded parameters are merged by name into the payload record provided to handlers. For example:
+Named segments are specified by giving a name in the URL string in the form `/foo/{myName}/bar` and a corresponding type in the `params` field of the endpoint spec. The handler will only be called if URL parameters can be decoded as the given type, or 404 Not Found will be returned. Decoded parameters are merged by name into the payload record provided to handlers. For example:
 
 ```purescript
 -- Spec:
-getMessage :: GET "/users/<id>/messages/<messageId>" {
+getMessage :: GET "/users/{id}/messages/{messageId}" {
   params :: { id :: Int, messageId :: String },
   response :: Array Message
 }
@@ -220,7 +220,7 @@ Multi-matches must appear at the end of a URL and similarly given a type in the 
 
 ```purescript
 -- Spec:
-files :: GET "/<..path>" {
+files :: GET "/{..path}" {
   params :: { path :: List String },
   response :: File
 }
@@ -256,7 +256,7 @@ Payload supports two different types of query parameters: keys and multi-matches
 
 ```purescript
 -- Spec:
-search :: GET "/search?a=<a>&b=<b>&<..rest>"
+search :: GET "/search?a={a}&b={b}&{..rest}"
   { query :: { a :: Int, b :: Int, rest :: Object (Array String) }
   , response :: String }
 
@@ -270,7 +270,7 @@ For key matches, the query parameter must be decodable via the [DecodeQueryParam
 Optional query parameters can be given by specifying the query key with `Maybe`. For example:
 
 ```purescript
-search :: GET "/search?foo=<foo>"
+search :: GET "/search?foo={foo}"
   { query :: { foo :: Maybe Int }
   , response :: String }
 

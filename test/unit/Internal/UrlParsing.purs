@@ -13,7 +13,7 @@ decode :: forall urlStr urlParts
   => ParseUrl urlStr urlParts
   => ToSegments urlParts
   => SProxy urlStr -> List Segment -> TestSuite
-decode path decoded = test ("'" <> (reflectSymbol path) <> "'") do
+decode path decoded = test ("'" <> (reflectSymbol (SProxy :: _ urlStr)) <> "'") do
   Assert.equal decoded (asSegments path)
 
 tests :: TestSuite
@@ -33,36 +33,36 @@ tests = suite "URL spec type-level parsing" do
     -- decode (SProxy :: _ "users") (Lit "users" : Nil)
 
   suite "keys" do
-    decode (SProxy :: _ "/<userId>") (Key "userId" : Nil)
-    decode (SProxy :: _ "/<userId>/") (Key "userId" : Nil)
-    decode (SProxy :: _ "/users/<userId>") (Lit "users" : Key "userId" : Nil)
-    decode (SProxy :: _ "/users/<userId>/posts")
+    decode (SProxy :: _ "/{userId}") (Key "userId" : Nil)
+    decode (SProxy :: _ "/{userId}/") (Key "userId" : Nil)
+    decode (SProxy :: _ "/users/{userId}") (Lit "users" : Key "userId" : Nil)
+    decode (SProxy :: _ "/users/{userId}/posts")
            (Lit "users" : Key "userId" : Lit "posts" : Nil)
-    decode (SProxy :: _ "/users/<userId>/posts/<postId>")
+    decode (SProxy :: _ "/users/{userId}/posts/{postId}")
            (Lit "users" : Key "userId" : Lit "posts" : Key "postId" : Nil)
 
     -- Should fail at compile time:
-    -- decode (SProxy :: _ "<userId>") (Key "userId" : Nil)
-    -- decode (SProxy :: _ "<>") Nil
-    -- decode (SProxy :: _ "/users/<>") Nil
-    -- decode (SProxy :: _ "/users/<>/posts") Nil
-    -- decode (SProxy :: _ "/users/<userId") Nil
-    -- decode (SProxy :: _ "/users/<use<rId>") Nil
-    -- decode (SProxy :: _ "/users/<user>Id>") Nil
-    -- decode (SProxy :: _ "/users/<use<r>Id>") Nil
-    -- decode (SProxy :: _ "/users/<userId>foo") Nil
+    -- decode (SProxy :: _ "{userId}") (Key "userId" : Nil)
+    -- decode (SProxy :: _ "{}") Nil
+    -- decode (SProxy :: _ "/users/{}") Nil
+    -- decode (SProxy :: _ "/users/{}/posts") Nil
+    -- decode (SProxy :: _ "/users/{userId") Nil
+    -- decode (SProxy :: _ "/users/{use{rId}") Nil
+    -- decode (SProxy :: _ "/users/{user{Id}") Nil
+    -- decode (SProxy :: _ "/users/{use{r}Id}") Nil
+    -- decode (SProxy :: _ "/users/{userId}foo") Nil
 
   suite "multi" do
-    decode (SProxy :: _ "/<..rest>") (Multi "rest" : Nil)
-    decode (SProxy :: _ "/users/<id>/<..rest>") (Lit "users" : Key "id" : Multi "rest" : Nil)
+    decode (SProxy :: _ "/{..rest}") (Multi "rest" : Nil)
+    decode (SProxy :: _ "/users/{id}/{..rest}") (Lit "users" : Key "id" : Multi "rest" : Nil)
 
     -- Should fail at compile time:
-    -- decode (SProxy :: _ "/<..>") Nil
-    -- decode (SProxy :: _ "/<..rest>/<user>") Nil
-    -- decode (SProxy :: _ "/<..all") Nil
-    -- decode (SProxy :: _ "/<..re<st>") Nil
-    -- decode (SProxy :: _ "/<..re<a>st>") Nil
-    -- decode (SProxy :: _ "/<..rea>st>") Nil
+    -- decode (SProxy :: _ "/{..}") Nil
+    -- decode (SProxy :: _ "/{..rest}/{user}") Nil
+    -- decode (SProxy :: _ "/{..all") Nil
+    -- decode (SProxy :: _ "/{..re{st}") Nil
+    -- decode (SProxy :: _ "/{..re{a}st}") Nil
+    -- decode (SProxy :: _ "/{..rea}st}") Nil
 
   suite "query" do
-    decode (SProxy :: _ "/<..rest>?foo") (Multi "rest" : Nil)
+    decode (SProxy :: _ "/{..rest}?foo") (Multi "rest" : Nil)

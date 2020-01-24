@@ -24,17 +24,17 @@ githubApiSpec :: Spec {
   },
   routes :: {
     repositories :: Routes "/repositories" {
-      list :: GET "/?since=<since>" {
+      list :: GET "/?since={since}" {
          query :: { since :: Maybe Int },
          response :: Array Repository
       }
     },
     repos :: Routes "/repos" {
-      byOwner :: Routes "/<owner>" {
+      byOwner :: Routes "/{owner}" {
          params :: {
            owner :: String
          },
-         repo :: Routes "/<repo>" {
+         repo :: Routes "/{repo}" {
            params :: {
               repo :: String
            },

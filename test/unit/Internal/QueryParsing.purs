@@ -19,30 +19,30 @@ decode path decoded = test ("'" <> (reflectSymbol path) <> "'") do
 tests :: TestSuite
 tests = suite "Query type-level parsing" do
   suite "keys" do
-    decode (SProxy :: _ "/foo?foo=<myFoo>") (Key "foo" "myFoo" : Nil)
-    decode (SProxy :: _ "/foo?foo=<myFoo>&bar=<myBar>")
+    decode (SProxy :: _ "/foo?foo={myFoo}") (Key "foo" "myFoo" : Nil)
+    decode (SProxy :: _ "/foo?foo={myFoo}&bar={myBar}")
       (Key "foo" "myFoo" : Key "bar" "myBar" : Nil)
-    decode (SProxy :: _ "/foo?foo=<myFoo>&bar=<myBar>&qux=<myQux>")
+    decode (SProxy :: _ "/foo?foo={myFoo}&bar={myBar}&qux={myQux}")
       (Key "foo" "myFoo" : Key "bar" "myBar" : Key "qux" "myQux" : Nil)
 
     -- Should fail at compile time:
-    -- decode (SProxy :: _ "/foo?<userId>") Nil
+    -- decode (SProxy :: _ "/foo?{userId}") Nil
     -- decode (SProxy :: _ "/foo?session") Nil
-    -- decode (SProxy :: _ "/foo?session=<>") Nil
-    -- decode (SProxy :: _ "/foo?session=<session") Nil
-    -- decode (SProxy :: _ "/foo?session=session>") Nil
-    -- decode (SProxy :: _ "/foo?session=<ses<sion>") Nil
-    -- decode (SProxy :: _ "/foo?session=<ses>sion>") Nil
-    -- decode (SProxy :: _ "/foo?session=<session><..rest>") Nil
+    -- decode (SProxy :: _ "/foo?session={}") Nil
+    -- decode (SProxy :: _ "/foo?session={session") Nil
+    -- decode (SProxy :: _ "/foo?session=session}") Nil
+    -- decode (SProxy :: _ "/foo?session={ses{sion}") Nil
+    -- decode (SProxy :: _ "/foo?session={ses}sion}") Nil
+    -- decode (SProxy :: _ "/foo?session={session}{..rest}") Nil
 
   suite "multi" do
-    decode (SProxy :: _ "/foo?<..rest>") (Multi "rest" : Nil)
-    decode (SProxy :: _ "/foo?a=<a>&<..rest>") (Key "a" "a" : Multi "rest" : Nil)
+    decode (SProxy :: _ "/foo?{..rest}") (Multi "rest" : Nil)
+    decode (SProxy :: _ "/foo?a={a}&{..rest}") (Key "a" "a" : Multi "rest" : Nil)
 
     -- Should fail at compile time:
-    -- decode (SProxy :: _ "/?<..>") Nil
-    -- decode (SProxy :: _ "/?<..rest>&foo") Nil
-    -- decode (SProxy :: _ "/?<..all") Nil
-    -- decode (SProxy :: _ "/?<..re<st>") Nil
-    -- decode (SProxy :: _ "/?<..re<a>st>") Nil
-    -- decode (SProxy :: _ "/?<..rea>st>") Nil
+    -- decode (SProxy :: _ "/?{..}") Nil
+    -- decode (SProxy :: _ "/?{..rest}&foo") Nil
+    -- decode (SProxy :: _ "/?{..all") Nil
+    -- decode (SProxy :: _ "/?{..re{st}") Nil
+    -- decode (SProxy :: _ "/?{..re{a}st}") Nil
+    -- decode (SProxy :: _ "/?{..rea}st}") Nil
