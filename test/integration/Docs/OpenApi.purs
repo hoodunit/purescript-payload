@@ -2,18 +2,15 @@ module Payload.Test.Integration.Docs.OpenApi where
 
 import Prelude
 
-import Data.Foldable (all)
 import Data.List (List)
 import Data.Maybe (Maybe(..), isJust)
-import Effect.Class (liftEffect)
-import Effect.Console (log)
+import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Payload.Docs as Docs
 import Payload.Docs.JsonSchema (JsonSchema(..), JsonSchemaType(..), emptyJsonSchema)
 import Payload.Docs.OpenApi (ParamLocation(..))
-import Payload.Docs.OpenApi as OpenApi
-import Payload.Spec (GET, POST, PUT, Routes(..), Spec(Spec), DELETE)
+import Payload.Spec (GET, POST, PUT, Spec(Spec), DELETE)
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
   
@@ -146,3 +143,50 @@ tests = do
               , required: true
               , schema: objectSchema }
         Assert.equal (Just [param]) params
+    suite "Response bodies" do
+      test "simple string response has correct status and encoding" $ do
+        let spec = Spec :: _ { routes :: { foo :: GET "/search" {response :: String} } }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
+        let responses = openApiSpec.paths
+                     # Object.lookup "/search"
+                     >>= _.get
+                     <#> _.responses
+        let headers = Object.empty
+        let schema = JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaString })
+        let content = Object.fromFoldable
+                        [ Tuple "text/plain; charset=utf-8" { schema } ]
+        let expectedResponses = Object.fromFoldable
+                                  [ Tuple "2XX" { description: "", headers, content } ]
+        Assert.equal (Just expectedResponses) responses
+      test "simple string response has correct status and encoding" $ do
+        let spec = Spec :: _ { routes :: { foo :: GET "/search" {response :: String} } }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
+        let responses = openApiSpec.paths
+                     # Object.lookup "/search"
+                     >>= _.get
+                     <#> _.responses
+        let headers = Object.empty
+        let schema = JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaString })
+        let content = Object.fromFoldable
+                        [ Tuple "text/plain; charset=utf-8" { schema } ]
+        let expectedResponses = Object.fromFoldable
+                                  [ Tuple "2XX" { description: "", headers, content } ]
+        Assert.equal (Just expectedResponses) responses
+      test "Record response has correct status and encoding" $ do
+        let spec = Spec :: _ { routes :: { foo :: GET "/search" {response :: { foo :: Int } } } }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
+        let responses = openApiSpec.paths
+                     # Object.lookup "/search"
+                     >>= _.get
+                     <#> _.responses
+        let headers = Object.empty
+        let intSchema = JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaInteger })
+        let props = Object.fromFoldable [Tuple "foo" intSchema]
+        let schema = JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaObject
+                                                 , properties = Just props
+                                                 , required = Just ["foo"] })
+        let content = Object.fromFoldable
+                        [ Tuple "application/json" { schema } ]
+        let expectedResponses = Object.fromFoldable
+                                  [ Tuple "2XX" { description: "", headers, content } ]
+        Assert.equal (Just expectedResponses) responses

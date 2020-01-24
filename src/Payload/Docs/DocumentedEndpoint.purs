@@ -129,7 +129,7 @@ instance openApiEndpointRoute ::
         , schema: Just schema }
 
       responses :: Object Response
-      responses = Object.singleton "200" response
+      responses = Object.singleton "2XX" response
 
       response :: Response
       response = { description: ""
