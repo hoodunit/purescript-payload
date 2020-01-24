@@ -46,6 +46,9 @@ instance toJsonSchemaArray :: ToJsonSchema a => ToJsonSchema (Array a) where
 instance toJsonSchemaList :: ToJsonSchema a => ToJsonSchema (List a) where
   toJsonSchema _ = jsonSchema (_ { "type" = Just JsonSchemaArray
                                  , items = Just (toJsonSchema (Proxy :: _ a))})
+instance toJsonSchemaObject :: ToJsonSchema a => ToJsonSchema (Object a) where
+  toJsonSchema _ = jsonSchema (_ { "type" = Just JsonSchemaObject
+                                 , additionalProperties = Just (toJsonSchema (Proxy :: _ a)) })
 instance toJsonSchemaRecord :: ( ToJsonSchemaRowList rl
                                , RowToList a rl
                                ) => ToJsonSchema (Record a) where

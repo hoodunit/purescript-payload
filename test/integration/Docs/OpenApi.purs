@@ -127,3 +127,22 @@ tests = do
               , required: false
               , schema: Just (JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaString })) }
         Assert.equal (Just [param]) params
+      test "multi-match" $ do
+        let spec = Spec :: _ { routes :: { foo :: GET "/search?<..all>" {
+                                             response :: String,
+                                             query :: { all :: Object (Array String) }
+                                         } } }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
+        let params = openApiSpec.paths # Object.lookup "/search" >>= _.get <#> _.parameters
+        let strSchema = Just (JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaString }))
+        let arrayStrSchema = Just (JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaArray
+                                                               , items = strSchema }))
+        let objectSchema = Just (JsonSchema (emptyJsonSchema { "type" = Just JsonSchemaObject
+                                                             , additionalProperties = arrayStrSchema }))
+        let param =
+              { name: "all"
+              , "in": ParamInQuery
+              , description: Nothing
+              , required: true
+              , schema: objectSchema }
+        Assert.equal (Just [param]) params
