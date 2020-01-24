@@ -30,14 +30,29 @@ class ClientApi routesSpec client | routesSpec -> client where
   mkClientApi :: forall r. Options -> Spec { routes :: routesSpec | r } -> client
 
 instance clientApiRecord ::
-  ( RowToList routesSpec routesSpecList
-  , ClientApiList routesSpecList "" () (Record client)
-  ) => ClientApi (Record routesSpec) (Record client) where
+  ( -- Parse out child routes from root
+    Row.Union rootSpec DefaultParentRoute mergedSpec
+  , Row.Nub mergedSpec rootSpecWithDefaults
+  , TypeEquals
+      (Record rootSpecWithDefaults)
+      { params :: Record rootParams
+      , guards :: guards
+      , docs :: docs
+      | childRoutes}
+
+  -- Recurse through child routes
+  , RowToList childRoutes childRoutesList
+  , ClientApiList
+      childRoutesList
+      "" -- child base path
+      rootParams -- child base params
+      (Record client) -- child client
+  ) => ClientApi (Record rootSpec) (Record client) where
   mkClientApi opts routesSpec = mkClientApiList
                         opts
-                        (RLProxy :: _ routesSpecList)
+                        (RLProxy :: _ childRoutesList)
                         (SProxy :: _ "")
-                        (Proxy :: _ (Record ()))
+                        (Proxy :: _ (Record rootParams))
 
 class ClientApiList
   (routesSpecList :: RowList)
@@ -54,21 +69,6 @@ class ClientApiList
 
 instance clientApiListNil :: ClientApiList RowList.Nil basePath baseParams (Record ()) where
   mkClientApiList _ _ _ _ = {}
-
--- Skip over docs (these are not handled here)
-instance clientApiListConsDocs ::
-  ( ClientApiList remRoutes basePath baseParams (Record client)
-  ) => ClientApiList
-         (RowList.Cons docsTag (Docs docsSpec) remRoutes)
-         basePath
-         baseParams
-         (Record client) where
-  mkClientApiList opts _ _ _ = rest
-    where
-      rest = mkClientApiList opts
-             (RLProxy :: _ remRoutes)
-             (SProxy :: _ basePath)
-             (Proxy :: _ (Record baseParams))
 
 instance clientApiListCons ::
   ( IsSymbol routeName
@@ -129,7 +129,10 @@ instance clientApiListConsRoutes ::
   , Row.Nub mergedSpec parentSpecWithDefaults
   , TypeEquals
       (Record parentSpecWithDefaults)
-      {params :: Record parentParams, guards :: parentGuards | childRoutes}
+      { params :: Record parentParams
+      , guards :: parentGuards
+      , docs :: docs
+      | childRoutes}
   , Row.Union baseParams parentParams childParams
 
   , Row.Cons parentName (Record childClient) remClient client 
