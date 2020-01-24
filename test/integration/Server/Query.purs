@@ -2,66 +2,17 @@ module Payload.Test.Integration.Server.QueryParams where
 
 import Prelude
 
-import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Foreign.Object (Object)
 import Payload.Spec (GET, POST, Spec(..))
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
-import Test.Unit.Assert as Assert
 
 tests :: TestSuite
 tests = do
   let { get, post } = Helpers.request "http://localhost:3000"
   suite "Query parameter requests" do
-    suite "literals (e.g. foo)" do
-      test "GET /search?foo succeeds when 'foo' is provided" $ do
-        let spec = Spec :: _ { search :: GET "/search?foo"
-                                { response :: String }}
-        let handlers = { search: \_ -> pure $ "Search result" }
-        withRoutes spec handlers do
-          res <- get "/search?foo"
-          respMatches { status: 200, body: "Search result" } res
-      test "GET /search?foo fails with 404 when 'foo' is not provided" $ do
-        let spec = Spec :: _ { search :: GET "/search?foo"
-                                { response :: String }}
-        let handlers = { search: \_ -> pure $ "Search result" }
-        withRoutes spec handlers do
-          res <- get "/search"
-          Assert.equal 404 res.status
-      test "GET /search?foo fails with 404 when 'foo' is provided but not as a literal (foo=asdf)" $ do
-        let spec = Spec :: _ { search :: GET "/search?foo"
-                                { response :: String }}
-        let handlers = { search: \_ -> pure $ "Search result" }
-        withRoutes spec handlers do
-          res <- get "/search?foo=asdf"
-          Assert.equal 404 res.status
-      test "GET /search?foo succeeds when 'foo' is provided with empty string" $ do
-        let spec = Spec :: _ { search :: GET "/search?foo"
-                                { response :: String }}
-        let handlers = { search: \_ -> pure $ "Search result" }
-        withRoutes spec handlers do
-          res <- get "/search?foo="
-          respMatches { status: 200, body: "Search result" } res
-      test "GET /search?a=<a>&foo=asdf&b=<b> succeeds when 'foo' is first parameter" $ do
-        let spec = Spec :: _ { search :: GET "/search?a=<a>&foo&b=<b>"
-                                { query :: { a :: Int, b :: Int }
-                                , response :: String }}
-        let handlers = { search: \_ -> pure $ "Search result" }
-        withRoutes spec handlers do
-          res <- get "/search?foo&a=1&b=1"
-          respMatches { status: 200, body: "Search result" } res
-      test "GET /search?a=<a>&foo&b=<b> succeeds when 'foo' is last parameter" $ do
-        let spec = Spec :: _ { search :: GET "/search?a=<a>&foo&b=<b>"
-                                { query :: { a :: Int, b :: Int }
-                                , response :: String }}
-        let handlers = { search: \_ -> pure $ "Search result" }
-        withRoutes spec handlers do
-          res <- get "/search?a=1&b=1&foo"
-          respMatches { status: 200, body: "Search result" } res
-
-
     suite "keys (e.g. foo=<myFoo>)" do
       test "GET /search?limit=3 succeeds with valid int" $ do
         let spec = Spec :: _ { search :: GET "/search?limit=<limit>"

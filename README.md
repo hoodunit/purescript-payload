@@ -252,11 +252,11 @@ createUser { body: user } = pure user
 
 #### Query strings
 
-Payload supports three different types of query parameters: literals, keys, and multi-matches. Here is an example with all three:
+Payload supports two different types of query parameters: keys and multi-matches. Here is an example with both:
 
 ```purescript
 -- Spec:
-search :: GET "/search?a=<a>&foo&b=<b>&<..rest>"
+search :: GET "/search?a=<a>&b=<b>&<..rest>"
   { query :: { a :: Int, b :: Int, rest :: Object (Array String) }
   , response :: String }
 
@@ -265,7 +265,7 @@ search :: { query :: { a :: Int, b :: Int, rest :: Object (Array String) } }
 search _ = pure "Search result"
 ```
 
-For query literals, the handler will only be called if the literal exists somewhere in the query string. For key matches, the query parameter must be decodable via the [DecodeQueryParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.QueryParams#t:DecodeQueryParam) type class. Query param decoding can also be extended via this type class.
+For key matches, the query parameter must be decodable via the [DecodeQueryParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.QueryParams#t:DecodeQueryParam) type class. Query param decoding can also be extended via this type class.
 
 Optional query parameters can be given by specifying the query key with `Maybe`. For example:
 

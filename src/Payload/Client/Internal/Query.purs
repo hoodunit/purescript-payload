@@ -7,7 +7,7 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Payload.Client.QueryParams (class EncodeQueryParam, class EncodeQueryParamMulti, encodeQueryParam, encodeQueryParamMulti)
-import Payload.Internal.QueryParsing (Lit, Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
+import Payload.Internal.QueryParsing (Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
 import Prim.Row as Row
 import Record as Record
 import Type.Prelude (class IsSymbol, SProxy(..), reflectSymbol)
@@ -36,17 +36,6 @@ class EncodeQueryList
 
 instance encodeQueryListNil :: EncodeQueryList QueryNil query where
   encodeQueryList _ _ = Nil
-
-instance encodeQueryListConsLiteral ::
-  ( IsSymbol lit
-  , EncodeQueryList rest query
-  ) => EncodeQueryList
-         (QueryCons (Lit lit) rest)
-         query where
-  encodeQueryList _ query = literal : rest
-    where
-      literal = reflectSymbol (SProxy :: SProxy lit)
-      rest = encodeQueryList (QueryListProxy :: _ rest) query
 
 instance encodeQueryListConsKey ::
   ( IsSymbol queryKey

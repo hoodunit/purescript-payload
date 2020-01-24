@@ -11,24 +11,18 @@ import Type.Prelude (class IsSymbol, SProxy(..), reflectSymbol)
 
 --------------------------------------------------------------------------------
 
-data Segment = Lit String | Key String String | Multi String
+data Segment = Key String String | Multi String
 
 instance eqSegment :: Eq Segment where
-  eq (Lit a) (Lit b) = a == b
   eq (Key name1 key1) (Key name2 key2) = name1 == name2 && key1 == key2
   eq (Multi a) (Multi b) = a == b
   eq _ _ = false
 
 instance showSegment :: Show Segment where
-  show (Lit a) = "(Lit '" <> a <> "')"
   show (Key name key) = "(Key " <> name <> "=<" <> key <> ">)"
   show (Multi a) = "(Multi '" <> a <> "')"
-  -- show (Lit a) = "/" <> a
-  -- show (Key a) = "/<" <> a <> ">"
-  -- show (Multi a) = "/<" <> a <> "..>"
 
 instance ordSegment :: Ord Segment where
-  compare (Lit a) (Lit b) = a `compare` b
   compare (Key name1 key1) (Key name2 key2) =
     case name1 `compare` name2 of
       EQ -> key1 `compare` key2
@@ -36,9 +30,8 @@ instance ordSegment :: Ord Segment where
   compare (Multi a) (Multi b) = a `compare` b
   compare a b = rank a `compare` rank b
     where
-      rank (Lit _) = 1
-      rank (Key _ _) = 2
-      rank (Multi _) = 3
+      rank (Key _ _) = 1
+      rank (Multi _) = 2
 
 asSegments :: forall urlStr urlParts
   .  ParseQuery urlStr urlParts
@@ -69,14 +62,6 @@ instance toSegmentsConsMulti ::
   toSegments _ segs = toSegments (QueryListProxy :: _ rest) (Multi multiStr : segs)
     where
       multiStr = reflectSymbol (SProxy :: SProxy multi)
-
-instance toSegmentsConsLit ::
-  ( IsSymbol lit
-  , ToSegments rest
-  ) => ToSegments (QueryCons (Lit lit) rest) where
-  toSegments _ segs = toSegments (QueryListProxy :: _ rest) (Lit litStr : segs)
-    where
-      litStr = reflectSymbol (SProxy :: SProxy lit)
 
 --------------------------------------------------------------------------------
 
@@ -157,13 +142,13 @@ else instance contMulti ::
   ) => Match u x xs acc "" "multi" rest
 
 -- Keys --------------------------------------------------------
-else instance keyStart ::
+else instance keyEquals ::
   ( Symbol.Cons y ys xs
   , Match u y ys acc "" "key" rest
-  ) => Match u "<" xs acc "" "keyStart" rest
-else instance failedKeyStart ::
+  ) => Match u "<" xs acc "" "keyEquals" rest
+else instance failedKeyEquals ::
   ( ParseError u xs "query param key name must start with opening '<', e.g. limit=<limit>" doc
-  ) => Match u x xs acc "" "keyStart" QueryParseFail
+  ) => Match u x xs acc "" "keyEquals" QueryParseFail
 else instance switchKeyToMulti ::
   ( Symbol.Cons "." ys xs
   , Symbol.Cons z zs ys
@@ -199,29 +184,28 @@ else instance ampersandFail ::
   ( ParseError u xs "expected '&' between query parts" doc
   ) => Match u x xs name key "ampersand" QueryParseFail
 
-else instance switchToKey ::
+else instance switchToKeyEquals ::
   ( Symbol.Cons y ys xs
-  , Match u y ys acc "" "keyStart" rest
+  , Match u y ys acc "" "keyEquals" rest
   ) => Match u "=" xs acc "" "lit" rest
 else instance failEndKeyWithoutStart ::
   ( ParseError u xs "saw closing '>' for key without opening '<'" doc
   ) => Match u ">" xs acc acc2 mode QueryParseFail
 else instance failOpenKeyWithoutEquals ::
-  ( ParseError u xs "saw key name without query param name - should be of form name=<keyName>" doc
+  ( ParseError u xs "saw key name without query param name - query params should be of form name=<keyName>" doc
   ) => Match u "<" xs acc acc2 any QueryParseFail
 
--- Literals ----------------------------------------------------
+-- Literals/query param names ----------------------------------
 else instance startLit ::
   ( Symbol.Cons y ys xs
   , Match u y ys x "" "lit" rest
   ) => Match u x xs "" "" "any" rest
-else instance splitLit ::
-  ( Symbol.Cons y ys xs
-  , Match u y ys "" "" "any" rest
-  ) => Match u "&" xs acc "" "lit" (QueryCons (Lit acc) rest)
-else instance endAtLit ::
-  ( Symbol.Append acc x newAcc
-  ) => Match u x "" acc "" "lit" (QueryCons (Lit newAcc) QueryNil)
+else instance failSplitLit ::
+  ( ParseError u xs "saw & before query param name - query params should be of form name=<keyName>" doc
+  ) => Match u "&" xs acc "" "lit" QueryParseFail
+else instance failEndAtLit ::
+  ( ParseError u "" "query string ended before query param name - query params should be of form name=<keyName>" doc
+  ) => Match u x "" acc "" "lit" QueryParseFail
 else instance contLit ::
   ( Symbol.Cons y ys xs
   , Symbol.Append acc x newAcc
@@ -237,7 +221,6 @@ else instance failMatch ::
 
 foreign import kind QueryPart
 foreign import data Key :: Symbol -> Symbol -> QueryPart
-foreign import data Lit :: Symbol -> QueryPart
 foreign import data Multi :: Symbol -> QueryPart
 
 class ParseError
