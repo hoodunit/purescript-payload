@@ -5,7 +5,7 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Foreign.Object as Object
-import Payload.Internal.QueryParsing (Lit, Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
+import Payload.Internal.QueryParsing (Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
 import Payload.Server.Internal.Querystring (ParsedQuery, querystringParse)
 import Payload.Server.QueryParams (class DecodeQueryParam, class DecodeQueryParamMulti, decodeQueryParam, decodeQueryParamMulti)
 import Prim.Row as Row
@@ -67,17 +67,3 @@ instance matchQueryConsKey ::
                        in matchQuery (QueryListProxy :: _ rest) queryType newParams newQueryObj
     where
       queryKey = reflectSymbol (SProxy :: SProxy queryKey)
-
-instance matchQueryConsLit ::
-  ( IsSymbol lit
-  , MatchQuery rest query from to
-  ) => MatchQuery (QueryCons (Lit lit) rest) query from to where
-  matchQuery _ queryType query queryObj =
-    case Object.lookup literal queryObj of
-      Nothing -> Left $ "Could not find query parameter literal with name '" <> literal <> "'"
-      Just [""] -> let newQueryObj = Object.delete literal queryObj
-                   in matchQuery (QueryListProxy :: _ rest) queryType query newQueryObj
-      Just [paramVal] -> Left $ "Expected query parameter literal '" <> literal <> "' but received '" <> literal <> "=" <> paramVal
-      Just arr -> Left $ "Expected single query parameter literal '" <> literal <> "' but received array '" <> show arr <> "'"
-    where
-      literal = reflectSymbol (SProxy :: SProxy lit)

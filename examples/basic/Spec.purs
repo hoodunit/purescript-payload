@@ -60,7 +60,7 @@ spec :: Spec {
     getHello :: GET "/hello there" {
       response :: String
     },
-    search :: GET "/search?a=<a>&foo&b=<b>&<..rest>" {
+    search :: GET "/search?a=<a>&b=<b>&<..rest>" {
       query :: { a :: Int, b :: Int, rest :: Object (Array String) },
       response :: String
     }
