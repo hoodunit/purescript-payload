@@ -11,7 +11,7 @@ import Foreign.Object as Object
 import Payload.Docs as Docs
 import Payload.Docs.JsonSchema (JsonSchema(..), JsonSchemaType(..), emptyJsonSchema)
 import Payload.Docs.OpenApi (ParamLocation(..))
-import Payload.Spec (DELETE, Docs(..), GET, POST, PUT, Spec(Spec))
+import Payload.Spec (type (:), DELETE, Docs(..), GET, POST, PUT, Spec(Spec), Tags(..), Nil)
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
   
@@ -269,3 +269,18 @@ tests = do
                    >>= _.get
                    >>= _.description
         Assert.equal (Just "Does foo things") summary
+      test "tags appear in OpenAPI tags" $ do
+        let spec = Spec :: _ {
+                               routes :: {
+                                  foo :: GET "/foo" {
+                                     tags :: Tags ("foo" : "admin" : Nil),
+                                     response :: String
+                                  }
+                               }
+                             }
+        let openApiSpec = Docs.mkOpenApiSpec_ spec
+        let summary = openApiSpec.paths
+                   # Object.lookup "/foo"
+                   >>= _.get
+                   <#> _.tags
+        Assert.equal (Just ["foo", "admin"]) summary
