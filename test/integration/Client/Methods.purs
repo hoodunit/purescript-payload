@@ -4,7 +4,7 @@ import Prelude
 
 import Payload.Client (mkClient)
 import Payload.ResponseTypes (Empty(..))
-import Payload.Spec (DELETE, GET, HEAD, POST, PUT, Routes, Spec(Spec))
+import Payload.Spec (DELETE, GET, HEAD, POST, PUT, Routes, Spec(Spec), OPTIONS)
 import Payload.Test.Config (TestConfig)
 import Payload.Test.Helpers (bodyEquals, withRoutes)
 import Test.Unit (TestSuite, suite, test)
@@ -120,3 +120,12 @@ tests cfg = do
           let client = mkClient cfg.clientOpts spec
           res <- client.v1.foo { body: [1] }
           bodyEquals "[1]" res
+
+      test "OPTIONS succeeds" $ do
+        let spec = Spec :: _ { foo :: OPTIONS "/foo"
+                                 { response :: String } }
+        let handlers = { foo: \_ -> pure "Response" }
+        withRoutes spec handlers do
+          let client = mkClient cfg.clientOpts spec
+          res <- client.foo {}
+          bodyEquals "Response" res

@@ -215,6 +215,34 @@ else instance queryableDeleteRoute ::
     let url = urlPath <> urlQuery
     let headers = maybe [] (\_ -> [ContentType (MediaType (getContentType (Proxy :: _ body)))]) body
     makeRequest {method: DELETE, url, body, headers, opts, reqOpts}
+else instance queryableOptionsRoute ::
+       ( Row.Lacks "body" route
+       , Row.Union route DefaultRouteSpec mergedRoute
+       , Row.Nub mergedRoute routeWithDefaults
+       , TypeEquals (Record routeWithDefaults)
+           { response :: res
+           , params :: Record params
+           , query :: query
+           | r }
+       , Row.Union baseParams params fullUrlParams
+       , Symbol.Append basePath path fullPath
+
+       , RowToList fullUrlParams fullParamsList
+       , EncodeUrlWithParams fullPath fullParamsList payload
+       , EncodeOptionalQuery fullPath query payload
+       , DecodeResponse res
+       )
+    => Queryable (Route "OPTIONS" path (Record route)) basePath baseParams (Record payload) res where
+  request _ _ _ opts reqOpts payload = do
+    let urlPath = encodeUrlWithParams opts
+                        (SProxy :: _ fullPath)
+                        (RLProxy :: _ fullParamsList)
+                        payload
+    let urlQuery = encodeOptionalQuery (SProxy :: _ fullPath)
+                               (Proxy :: _ query)
+                               payload
+    let url = urlPath <> urlQuery
+    makeRequest {method: OPTIONS, url, body: Nothing, headers: [], opts, reqOpts}
 
 type Request =
   { method :: Method

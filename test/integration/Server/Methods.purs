@@ -6,14 +6,14 @@ import Data.Maybe (Maybe(..))
 import Payload.ResponseTypes (Empty(..))
 import Payload.Server.Response as Response
 import Payload.Server.Status as Status
-import Payload.Spec (DELETE, GET, HEAD, POST, PUT, Spec(Spec))
+import Payload.Spec (DELETE, GET, HEAD, POST, PUT, Spec(Spec), OPTIONS)
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
   
 tests :: TestSuite
 tests = do
-  let { get, put, post, head, delete } = Helpers.request "http://localhost:3000"
+  let { get, options, put, post, head, delete } = Helpers.request "http://localhost:3000"
   suite "Methods" do
     suite "GET" do
       test "GET succeeds" $ do
@@ -91,3 +91,11 @@ tests = do
         withRoutes spec handlers do
           res <- delete "/foo" (Just "{\"id\": \"A1\"}")
           respMatches { status: 200, body: "Delete A1" } res
+
+    suite "OPTIONS" do
+      test "OPTIONS succeeds" $ do
+        let spec = Spec :: _ { foo :: OPTIONS "/foo" { response :: String } }
+        let handlers = { foo: \_ -> pure "Response" }
+        withRoutes spec handlers do
+          res <- options "/foo"
+          respMatches { status: 200, body: "Response" } res

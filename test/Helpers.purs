@@ -67,6 +67,7 @@ type ApiResponse =
 
 type RequestClient =
   { get :: String -> Aff ApiResponse
+  , options :: String -> Aff ApiResponse
   , post :: String -> String -> Aff ApiResponse
   , put :: String -> String -> Aff ApiResponse
   , delete :: String -> Maybe String -> Aff ApiResponse
@@ -75,6 +76,7 @@ type RequestClient =
 request :: String -> RequestClient
 request host =
   { get: get host
+  , options: options host
   , post: post host
   , put: put host
   , delete: delete host
@@ -91,6 +93,16 @@ get_ host path headers = AX.request req >>= decodeResponse
             , url = host <> "/" <> path
             , responseFormat = ResponseFormat.string
             , headers = (\(Tuple name val) -> RequestHeader name val) <$> Headers.toUnfoldable headers }
+
+options :: String -> String -> Aff ApiResponse
+options host path = do
+  let url = host <> "/" <> path
+  let req = AX.defaultRequest
+        { method = Left OPTIONS
+        , url = url
+        , responseFormat = ResponseFormat.string }
+  result <- AX.request req
+  decodeResponse result
 
 post :: String -> String -> String -> Aff ApiResponse
 post host path reqBody = AX.post ResponseFormat.string (host <> path) (Just body) >>= decodeResponse

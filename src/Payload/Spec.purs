@@ -5,6 +5,7 @@ module Payload.Spec
        , Route(Route)
        , GET
        , HEAD
+       , OPTIONS
        , POST
        , PUT
        , DELETE
@@ -35,6 +36,7 @@ type GET = Route "GET"
 -- | HEAD responses will not contain a body.
 type HEAD = Route "HEAD"
 
+type OPTIONS = Route "OPTIONS"
 type POST = Route "POST"
 type PUT = Route "PUT"
 type DELETE = Route "DELETE"
