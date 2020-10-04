@@ -43,13 +43,13 @@ tests = do
     QueryParsingTest.tests
 
   suite "Unit - Server" do
-    UrlTest.tests
-    QueryTest.tests
-    ParamsTest.tests
-    TrieTest.tests
-    OmitEmptyTest.tests
     CookiesTest.tests
+    OmitEmptyTest.tests
+    ParamsTest.tests
+    QueryTest.tests
     ResponseTest.tests
+    TrieTest.tests
+    UrlTest.tests
 
   suite "Unit - Client" do
     ClientQueryParamsTest.tests
