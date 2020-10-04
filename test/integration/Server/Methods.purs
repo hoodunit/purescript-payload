@@ -2,6 +2,7 @@ module Payload.Test.Integration.Server.Methods where
 
 import Prelude
 
+import Data.Maybe (Maybe(..))
 import Payload.ResponseTypes (Empty(..))
 import Payload.Server.Response as Response
 import Payload.Server.Status as Status
@@ -62,17 +63,31 @@ tests = do
           respMatches { status: 202, body: "" } res
 
     suite "PUT" do
-      test "PUT succeeds" $ do
+      test "PUT succeeds without body" $ do
         let spec = Spec :: _ { foo :: PUT "/foo" { response :: String } }
         let handlers = { foo: \_ -> pure "Put" }
         withRoutes spec handlers do
           res <- put "/foo" ""
           respMatches { status: 200, body: "Put" } res
+      test "PUT succeeds with body" $ do
+        let spec = Spec :: _ { foo :: PUT "/foo" { body :: { id :: String }
+                                                 , response :: String } }
+        let handlers = { foo: \{body: {id}} -> pure ("Put " <> id) }
+        withRoutes spec handlers do
+          res <- put "/foo" "{\"id\": \"A1\"}"
+          respMatches { status: 200, body: "Put A1" } res
 
     suite "DELETE" do
-      test "DELETE succeeds" $ do
+      test "DELETE succeeds without body" $ do
         let spec = Spec :: _ { foo :: DELETE "/foo" { response :: String } }
         let handlers = { foo: \_ -> pure "Delete" }
         withRoutes spec handlers do
-          res <- delete "/foo"
+          res <- delete "/foo" Nothing
           respMatches { status: 200, body: "Delete" } res
+      test "DELETE succeeds with body" $ do
+        let spec = Spec :: _ { foo :: DELETE "/foo" { body :: { id :: String }
+                                                    , response :: String } }
+        let handlers = { foo: \{body: {id}} -> pure ("Delete " <> id) }
+        withRoutes spec handlers do
+          res <- delete "/foo" (Just "{\"id\": \"A1\"}")
+          respMatches { status: 200, body: "Delete A1" } res
