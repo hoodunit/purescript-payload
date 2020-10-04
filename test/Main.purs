@@ -15,6 +15,7 @@ import Payload.Test.Integration.Client.Options as ClientOptionsTest
 import Payload.Test.Integration.Client.QueryParams as ClientQueryParams
 import Payload.Test.Integration.Client.Statuses as ClientStatuses
 import Payload.Test.Integration.Client.ContentTypes as ClientContentTypes
+import Payload.Test.Integration.Server.Body as BodyTest
 import Payload.Test.Integration.Server.Guards as GuardsTest
 import Payload.Test.Integration.Server.Methods as MethodsTest
 import Payload.Test.Integration.Server.QueryParams as QueryParamsTest
@@ -56,6 +57,7 @@ tests = do
     ClientEncodeParamTest.tests
 
   suite "Integration - Server" do
+    BodyTest.tests
     MethodsTest.tests
     QueryParamsTest.tests
     GuardsTest.tests
