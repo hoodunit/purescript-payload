@@ -100,11 +100,11 @@ instance handleablePostRoute ::
                   guardsSpec
                   (Record allGuards) where
   handle _ _ _ _ route handler allGuards { method, path, query } req res = do
+    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
     body <- withExceptT badRequest $ except $ (decodeBody bodyStr :: Either String body)
-    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards: guards }
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
@@ -155,9 +155,9 @@ instance handleableRoute ::
                   guardsSpec
                   (Record allGuards) where
   handle _ _ _ _ route handler allGuards { method, path, query } req res = do
+    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
-    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (payload :: Record payloadWithEmpty) = to { params, query: decodedQuery, guards }
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
@@ -205,9 +205,9 @@ instance handleableHeadRoute ::
                   guardsSpec
                   (Record allGuards) where
   handle _ _ _ _ route handler allGuards { method, path, query } req res = do
+    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
-    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (payload :: Record payloadWithEmpty) = to { params, query: decodedQuery, guards }
     Resp.setBody EmptyBody <$> mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
@@ -258,11 +258,11 @@ instance handleablePutRoute ::
                   guardsSpec
                   (Record allGuards) where
   handle _ _ _ _ route handler allGuards { method, path, query } req res = do
+    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
     body <- withExceptT badRequest $ except $ (decodeOptionalBody bodyStr :: Either String body)
-    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards }
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
@@ -316,11 +316,11 @@ instance handleableDeleteRoute ::
                   guardsSpec
                   (Record allGuards) where
   handle _ _ _ _ route handler allGuards { method, path, query } req res = do
+    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
     body <- withExceptT badRequest $ except $ (decodeOptionalBody bodyStr :: Either String body)
-    guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards }
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
