@@ -19,6 +19,6 @@ tests = do
         { status: 200
         , body: "[{\"text\":\"Hey 1\",\"id\":1},{\"text\":\"Limit 2\",\"id\":2}]" }
         res
-    test "GET /user/12/messages?limit=2.5 fails with 404 Not Found" $ withApi do
+    test "GET /user/12/messages?limit=2.5 fails with 400 Bad Request" $ withApi do
       res <- get "/users/12/messages?limit=2.5"
-      Assert.equal 404 res.status
+      Assert.equal 400 res.status

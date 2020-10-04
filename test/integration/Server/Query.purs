@@ -29,7 +29,7 @@ tests = do
         let handlers = { search: \_ -> pure $ "Search result" }
         withRoutes spec handlers do
           res <- get "/search?limit=3.1"
-          respMatches { status: 404, body: "" } res
+          respMatches { status: 400, body: "" } res
       test "GET /search?limit=asdf fails with non-integer" $ do
         let spec = Spec :: _ { search :: GET "/search?limit=<limit>"
                                 { query :: { limit :: Int }
@@ -37,7 +37,7 @@ tests = do
         let handlers = { search: \_ -> pure $ "Search result" }
         withRoutes spec handlers do
           res <- get "/search?limit=asdf"
-          respMatches { status: 404, body: "" } res
+          respMatches { status: 400, body: "" } res
       test "GET /search fails with missing required limit key" $ do
         let spec = Spec :: _ { search :: GET "/search?limit=<limit>"
                                 { query :: { limit :: Int }
@@ -45,7 +45,7 @@ tests = do
         let handlers = { search: \_ -> pure $ "Search result" }
         withRoutes spec handlers do
           res <- get "/search"
-          respMatches { status: 404, body: "" } res
+          respMatches { status: 400, body: "" } res
       test "GET /search?limit=asdf succeeds with provided optional limit key" $ do
         let spec = Spec :: _ { search :: GET "/search?limit=<limit>"
                                 { query :: { limit :: Maybe Int }
@@ -92,7 +92,7 @@ tests = do
         let handlers = { profile: \_ -> pure "Saved profile" }
         withRoutes spec handlers do
           res <- post "/profile?id=3.0&foo=asdf" ""
-          respMatches { status: 404, body: "" } res
+          respMatches { status: 400, body: "" } res
       test "GET /search?query=asdf succeeds with some String" $ do
         let spec = Spec :: _ { search :: GET "/search?query=<searchQuery>"
                                 { query :: { searchQuery :: String }
@@ -145,4 +145,4 @@ tests = do
         let handlers = { search: \{query: {a}} -> pure a }
         withRoutes spec handlers do
           res <- get "/search?a=foo1&a=foo2"
-          respMatches { status: 404, body: "" } res
+          respMatches { status: 400, body: "" } res
