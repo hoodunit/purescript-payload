@@ -19,6 +19,7 @@ import Payload.Test.Integration.Server.Guards as GuardsTest
 import Payload.Test.Integration.Server.Methods as MethodsTest
 import Payload.Test.Integration.Server.QueryParams as QueryParamsTest
 import Payload.Test.Integration.Server.Status as StatusTest
+import Payload.Test.Integration.Server.Routing as RoutingTest
 import Payload.Test.Unit.Client.QueryParams as ClientQueryParamsTest
 import Payload.Test.Unit.Client.EncodeParam as ClientEncodeParamTest
 import Payload.Test.Unit.Internal.QueryParsing as QueryParsingTest
@@ -61,6 +62,7 @@ tests = do
     QueryParamsTest.tests
     GuardsTest.tests
     StatusTest.tests
+    RoutingTest.tests
 
   suite "Integration - Client" do
     ClientErrorsTest.tests cfg

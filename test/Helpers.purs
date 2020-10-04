@@ -69,7 +69,7 @@ type RequestClient =
   { get :: String -> Aff ApiResponse
   , post :: String -> String -> Aff ApiResponse
   , put :: String -> String -> Aff ApiResponse
-  , delete :: String -> Aff ApiResponse
+  , delete :: String -> Maybe String -> Aff ApiResponse
   , head :: String -> Aff ApiResponse }
 
 request :: String -> RequestClient
@@ -98,11 +98,21 @@ post host path reqBody = AX.post ResponseFormat.string (host <> path) (Just body
 
 put :: String -> String -> String -> Aff ApiResponse
 put host path reqBody = do
-  result <- AX.put ResponseFormat.string (host <> "/" <> path) (Just $ RequestBody.String reqBody)
+  let body = Just $ RequestBody.String reqBody
+  result <- AX.put ResponseFormat.string (host <> "/" <> path) body
   decodeResponse result
 
-delete :: String -> String -> Aff ApiResponse
-delete host path = AX.delete ResponseFormat.string (host <> "/" <> path) >>= decodeResponse
+delete :: String -> String -> Maybe String -> Aff ApiResponse
+delete host path reqBody = do
+  let content = RequestBody.String <$> reqBody
+  let url = host <> "/" <> path
+  let req = AX.defaultRequest
+        { method = Left DELETE
+        , url = url
+        , content = content
+        , responseFormat = ResponseFormat.string }
+  result <- AX.request req
+  decodeResponse result
 
 head :: String -> String -> Aff ApiResponse
 head host path = AX.request req >>= decodeResponse

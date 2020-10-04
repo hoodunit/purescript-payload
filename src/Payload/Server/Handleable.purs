@@ -15,7 +15,6 @@ import Data.Symbol (class IsSymbol, SProxy(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
-import Effect.Exception (Error)
 import Effect.Exception as Ex
 import Effect.Ref as Ref
 import Node.Encoding (Encoding(..))
@@ -23,7 +22,7 @@ import Node.HTTP as HTTP
 import Node.Stream (onDataString, onEnd, onError)
 import Payload.Internal.Route (Undefined(..))
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments)
-import Payload.ResponseTypes (Failure(..), RawResponse, Response(..), ResponseBody(..), Result)
+import Payload.ResponseTypes (Failure(Error, Forward), RawResponse, Response(..), ResponseBody(..), Result)
 import Payload.Server.DecodeBody (class DecodeBody, decodeBody)
 import Payload.Server.Guards (class RunGuards, runGuards)
 import Payload.Server.Internal.GuardParsing (GuardTypes(..))
@@ -104,12 +103,15 @@ instance handleablePostRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
-    body <- withExceptT Forward $ except $ (decodeBody bodyStr :: Either String body)
+    body <- withExceptT badRequest $ except $ (decodeBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards: guards }
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
+      badRequest :: String -> Failure
+      badRequest _ = Error $ Resp.badRequest EmptyBody
+
       decodePath :: List String -> Either String (Record fullUrlParams)
       decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
 
@@ -259,12 +261,15 @@ instance handleablePutRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
-    body <- withExceptT Forward $ except $ (decodeOptionalBody bodyStr :: Either String body)
+    body <- withExceptT badRequest $ except $ (decodeOptionalBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards }
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
+      badRequest :: String -> Failure
+      badRequest _ = Error $ Resp.badRequest EmptyBody
+
       decodePath :: List String -> Either String (Record fullUrlParams)
       decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
 
@@ -314,12 +319,15 @@ instance handleableDeleteRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT Forward $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
-    body <- withExceptT Forward $ except $ (decodeOptionalBody bodyStr :: Either String body)
+    body <- withExceptT badRequest $ except $ (decodeOptionalBody bodyStr :: Either String body)
     guards <- runGuards (Guards :: _ fullGuards) (GuardTypes :: _ (Record guardsSpec)) allGuards {} req
     let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards }
     mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
+      badRequest :: String -> Failure
+      badRequest _ = Error $ Resp.badRequest EmptyBody
+
       decodePath :: List String -> Either String (Record fullUrlParams)
       decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
 
@@ -339,7 +347,7 @@ mkResponse _ _ aff = do
 readBody :: HTTP.Request -> Aff String
 readBody req = Aff.makeAff (readBody_ req)
 
-readBody_ :: HTTP.Request -> (Either Error String -> Effect Unit) -> Effect Aff.Canceler
+readBody_ :: HTTP.Request -> (Either Ex.Error String -> Effect Unit) -> Effect Aff.Canceler
 readBody_ req cb = do
   buffer <- Ref.new ""
   let inputStream = HTTP.requestAsStream req
