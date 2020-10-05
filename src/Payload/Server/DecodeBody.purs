@@ -6,7 +6,8 @@ module Payload.Server.DecodeBody
 import Prelude
 
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..))
+import Data.Either (Either)
+import Data.Maybe (Maybe(..))
 import Simple.JSON as SimpleJson
 
 class DecodeBody body where
@@ -19,4 +20,8 @@ instance decodeBodyArray :: SimpleJson.ReadForeign (Array r) => DecodeBody (Arra
   decodeBody = SimpleJson.readJSON >>> lmap show
 
 instance decodeBodyString :: DecodeBody String where
-  decodeBody = Right
+  decodeBody = pure
+
+instance decodeBodyMaybe :: DecodeBody a => DecodeBody (Maybe a) where
+  decodeBody "" = pure Nothing
+  decodeBody str = Just <$> decodeBody str

@@ -2,7 +2,7 @@ module Payload.Test.Integration.Server.Body where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Foreign.Object (Object)
 import Payload.Spec (GET, POST, PUT, Spec(..), DELETE)
 import Payload.Test.Helpers (respMatches, withRoutes)
@@ -50,3 +50,17 @@ tests = do
         withRoutes spec handlers do
             res <- delete "/foo" (Just "asdf")
             respMatches { status: 400, body: "" } res
+      test "sending valid body for optional body returns 200 response" $ do
+        let spec = Spec :: _ { foo :: POST "/foo"
+                               { body :: Maybe { id :: Int }, response :: String } }
+        let handlers = { foo: \{body} -> pure $ maybe "No body" (_.id >>> show) body }
+        withRoutes spec handlers do
+            res <- post "/foo" "{\"id\": 5}"
+            respMatches { status: 200, body: "5" } res
+      test "sending no body for optional body returns 200 response" $ do
+        let spec = Spec :: _ { foo :: POST "/foo"
+                               { body :: Maybe { id :: Int }, response :: String } }
+        let handlers = { foo: \{body} -> pure $ maybe "No body" (_.id >>> show) body }
+        withRoutes spec handlers do
+            res <- post "/foo" ""
+            respMatches { status: 200, body: "No body" } res
