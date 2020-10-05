@@ -267,7 +267,7 @@ search _ = pure "Search result"
 
 For key matches, the query parameter must be decodable via the [DecodeQueryParam](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.QueryParams#t:DecodeQueryParam) type class. Query param decoding can also be extended via this type class.
 
-Optional query parameters can be given by specifying the query key with `Maybe`. For example:
+Query parameters can be made optional by specifying the query key with `Mabye`. For example:
 
 ```purescript
 search :: GET "/search?foo=<foo>"
