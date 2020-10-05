@@ -50,7 +50,7 @@ tests cfg = do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo { body: { message: "Hi there" } }
           bodyEquals "Received 'Hi there'" res
-      test "POST succeeds with empty body route" $ do
+      test "POST succeeds with empty string body" $ do
         let spec = Spec :: _ { foo :: POST "/foo"
                                        { body :: String
                                        , response :: String } }
@@ -59,6 +59,13 @@ tests cfg = do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo { body: "" }
           bodyEquals "fooEmpty" res
+      test "POST succeeds without body" $ do
+        let spec = Spec :: _ { foo :: POST "/foo" { response :: String } }
+        let handlers = { foo: \_ -> pure $ "foo" }
+        withRoutes spec handlers do
+          let client = mkClient cfg.clientOpts spec
+          res <- client.foo {}
+          bodyEquals "foo" res
       test "POST succeeds with valid optional body" $ do
         let spec = Spec :: _ { foo :: POST "/foo"
                                        { body :: Maybe String

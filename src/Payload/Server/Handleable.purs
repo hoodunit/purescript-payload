@@ -73,7 +73,7 @@ instance handleablePostRoute ::
        , Resp.ToSpecResponse docRoute handlerRes res
        , Resp.EncodeResponse res
        , Symbol.Append basePath path fullPath
-       , DecodeBody body
+       , DecodeOptionalBody body
 
        , Row.Union baseParams params fullUrlParams
        , PayloadUrl.DecodeUrl fullPath fullUrlParams
@@ -104,7 +104,7 @@ instance handleablePostRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT badRequest $ except $ decodeQuery query
     bodyStr <- lift $ readBody req
-    body <- withExceptT badRequest $ except $ (decodeBody bodyStr :: Either String body)
+    body <- withExceptT badRequest $ except $ (decodeOptionalBody bodyStr :: Either String body)
     let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards: guards }
     mkResponse (Proxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 

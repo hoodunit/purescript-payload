@@ -96,16 +96,13 @@ else instance queryablePostRoute ::
            | r }
        , Row.Union baseParams params fullUrlParams
        , Symbol.Append basePath path fullPath
-       , TypeEquals (Record payload)
-           { body :: body
-           | rest }
 
        , RowToList fullUrlParams fullParamsList
        , EncodeUrlWithParams fullPath fullParamsList payload
        , EncodeOptionalQuery fullPath query payload
-       , DecodeResponse res
+       , EncodeOptionalBody body payload
        , HasContentType body
-       , EncodeBody body
+       , DecodeResponse res
        )
     => Queryable (Route "POST" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts reqOpts payload = do
@@ -117,10 +114,9 @@ else instance queryablePostRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    let (body :: body) = Record.get (Proxy :: Proxy "body") (to payload)
-    let encodedBody = RequestBody.String (encodeBody body)
-    let headers = [ContentType (MediaType (getContentType (Proxy :: _ body)))]
-    makeRequest {method: POST, url, body: Just encodedBody, headers, opts, reqOpts}
+    let body = encodeOptionalBody (Proxy :: _ body) payload
+    let headers = maybe [] (\_ -> [ContentType (MediaType (getContentType (Proxy :: _ body)))]) body
+    makeRequest {method: POST, url, body, headers, opts, reqOpts}
 else instance queryableHeadRoute ::
        ( Row.Lacks "body" route
        , Row.Lacks "response" route
@@ -169,7 +165,6 @@ else instance queryablePutRoute ::
        )
     => Queryable (Route "PUT" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts reqOpts payload = do
-    let body = encodeOptionalBody (Proxy :: _ body) payload
     let urlPath = encodeUrlWithParams opts
                         (Proxy :: _ fullPath)
                         (Proxy :: _ fullParamsList)
@@ -178,6 +173,7 @@ else instance queryablePutRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
+    let body = encodeOptionalBody (Proxy :: _ body) payload
     let headers = maybe [] (\_ -> [ContentType (MediaType (getContentType (Proxy :: _ body)))]) body
     makeRequest {method: PUT, url, body, headers, opts, reqOpts}
 else instance queryableDeleteRoute ::
