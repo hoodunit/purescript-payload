@@ -2,6 +2,7 @@ module Payload.Test.Integration.Client.Methods where
 
 import Prelude
 
+import Data.Maybe (Maybe(..), fromMaybe)
 import Payload.Client (mkClient)
 import Payload.ResponseTypes (Empty(..))
 import Payload.Spec (DELETE, GET, HEAD, POST, PUT, Routes, Spec(Spec), OPTIONS)
@@ -58,6 +59,24 @@ tests cfg = do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo { body: "" }
           bodyEquals "fooEmpty" res
+      test "POST succeeds with valid optional body" $ do
+        let spec = Spec :: _ { foo :: POST "/foo"
+                                       { body :: Maybe String
+                                       , response :: String } }
+        let handlers = { foo: \{body} -> pure $ fromMaybe "no body" body }
+        withRoutes spec handlers do
+          let client = mkClient cfg.clientOpts spec
+          res <- client.foo { body: Just "the body" }
+          bodyEquals "the body" res
+      test "POST succeeds with missing optional body" $ do
+        let spec = Spec :: _ { foo :: POST "/foo"
+                                       { body :: Maybe String
+                                       , response :: String } }
+        let handlers = { foo: \{body} -> pure $ fromMaybe "no body" body }
+        withRoutes spec handlers do
+          let client = mkClient cfg.clientOpts spec
+          res <- client.foo { body: Nothing }
+          bodyEquals "no body" res
 
     suite "HEAD" do
       test "HEAD succeeds" $ do
@@ -83,6 +102,24 @@ tests cfg = do
           let client = mkClient cfg.clientOpts spec
           res <- client.foo { body: "Put!" }
           bodyEquals "Put!" res
+      test "PUT succeeds with valid optional body" $ do
+        let spec = Spec :: _ { foo :: PUT "/foo"
+                                       { body :: Maybe String
+                                       , response :: String } }
+        let handlers = { foo: \{body} -> pure $ fromMaybe "no body" body }
+        withRoutes spec handlers do
+          let client = mkClient cfg.clientOpts spec
+          res <- client.foo { body: Just "the body" }
+          bodyEquals "the body" res
+      test "PUT succeeds with missing optional body" $ do
+        let spec = Spec :: _ { foo :: PUT "/foo"
+                                       { body :: Maybe String
+                                       , response :: String } }
+        let handlers = { foo: \{body} -> pure $ fromMaybe "no body" body }
+        withRoutes spec handlers do
+          let client = mkClient cfg.clientOpts spec
+          res <- client.foo { body: Nothing }
+          bodyEquals "no body" res
 
     suite "DELETE" do
       test "DELETE succeeds without body" $ do
@@ -120,6 +157,24 @@ tests cfg = do
           let client = mkClient cfg.clientOpts spec
           res <- client.v1.foo { body: [1] }
           bodyEquals "[1]" res
+      test "DELETE succeeds with valid optional body" $ do
+        let spec = Spec :: _ { foo :: DELETE "/foo"
+                                       { body :: Maybe String
+                                       , response :: String } }
+        let handlers = { foo: \{body} -> pure $ fromMaybe "no body" body }
+        withRoutes spec handlers do
+          let client = mkClient cfg.clientOpts spec
+          res <- client.foo { body: Just "the body" }
+          bodyEquals "the body" res
+      test "DELETE succeeds with missing optional body" $ do
+        let spec = Spec :: _ { foo :: DELETE "/foo"
+                                       { body :: Maybe String
+                                       , response :: String } }
+        let handlers = { foo: \{body} -> pure $ fromMaybe "no body" body }
+        withRoutes spec handlers do
+          let client = mkClient cfg.clientOpts spec
+          res <- client.foo { body: Nothing }
+          bodyEquals "no body" res
 
       test "OPTIONS succeeds" $ do
         let spec = Spec :: _ { foo :: OPTIONS "/foo"

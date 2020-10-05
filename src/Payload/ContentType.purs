@@ -1,9 +1,10 @@
 module Payload.ContentType where
 
+import Data.Maybe (Maybe)
 import Effect.Exception.Unsafe (unsafeThrow)
 import Payload.Internal.Route (Undefined)
 import Payload.ResponseTypes (Json)
-import Type.Proxy (Proxy)
+import Type.Proxy (Proxy(Proxy))
 
 class HasContentType :: forall k. k -> Constraint
 class HasContentType a where
@@ -23,6 +24,9 @@ instance hasContentTypeRecord :: HasContentType (Record r) where
 
 instance hasContentTypeArray :: HasContentType (Array r) where
   getContentType _ = json
+
+instance hasContentTypeMaybe :: HasContentType a => HasContentType (Maybe a) where
+  getContentType _ = getContentType (Proxy :: _ a)
 
 type ContentType = String
 
