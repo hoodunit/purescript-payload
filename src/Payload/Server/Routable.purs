@@ -172,22 +172,6 @@ instance routableListCons ::
         methodHandler url req res
         <#> Resp.setBody EmptyBody
         # executeHandler res
-
-      executeHandler :: HTTP.Response -> Result RawResponse -> Aff Outcome
-      executeHandler res mHandler = do
-        result <- Aff.attempt $ runExceptT mHandler
-        case result of
-          Right (Right rawResponse) -> do
-            liftEffect $ sendResponse res rawResponse
-            pure Success
-          Right (Left (Resp.Error errorResp)) -> do
-            liftEffect $ sendResponse res errorResp
-            pure Failure
-          Right (Left (Resp.Forward error)) -> pure (Forward error)
-          Left error -> do
-            liftEffect $ errorShow error
-            liftEffect $ sendResponse res (Resp.internalError (StringBody "Internal error"))
-            pure Failure
       
       methodHandler :: MethodHandler
       methodHandler = handle
@@ -201,6 +185,22 @@ instance routableListCons ::
 
       payloadHandler :: handler
       payloadHandler = get (Proxy :: Proxy routeName) handlers
+
+executeHandler :: HTTP.Response -> Result RawResponse -> Aff Outcome
+executeHandler res mHandler = do
+  result <- Aff.attempt $ runExceptT mHandler
+  case result of
+    Right (Right rawResponse) -> do
+      liftEffect $ sendResponse res rawResponse
+      pure Success
+    Right (Left (Resp.Error errorResp)) -> do
+      liftEffect $ sendResponse res errorResp
+      pure Failure
+    Right (Left (Resp.Forward error)) -> pure (Forward error)
+    Left error -> do
+      liftEffect $ errorShow error
+      liftEffect $ sendResponse res (Resp.internalError (StringBody "Internal error"))
+      pure Failure
 
 instance routableListConsRoutes ::
   ( IsSymbol parentName
