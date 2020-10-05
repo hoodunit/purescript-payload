@@ -178,15 +178,15 @@ instance routableListCons ::
         result <- Aff.attempt $ runExceptT mHandler
         case result of
           Right (Right rawResponse) -> do
-            liftEffect $ sendResponse res (Right rawResponse)
+            liftEffect $ sendResponse res rawResponse
             pure Success
-          Right (Left (Resp.Error error)) -> do
-            liftEffect $ sendResponse res (Left error)
+          Right (Left (Resp.Error errorResp)) -> do
+            liftEffect $ sendResponse res errorResp
             pure Failure
           Right (Left (Resp.Forward error)) -> pure (Forward error)
           Left error -> do
             liftEffect $ errorShow error
-            liftEffect $ sendResponse res (Left (Resp.internalError (StringBody "Internal error")))
+            liftEffect $ sendResponse res (Resp.internalError (StringBody "Internal error"))
             pure Failure
       
       methodHandler :: MethodHandler

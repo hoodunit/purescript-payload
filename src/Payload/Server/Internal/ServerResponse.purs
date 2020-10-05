@@ -21,14 +21,13 @@ import Payload.Server.Response (internalError)
 import Type.Equality (to)
 import Unsafe.Coerce (unsafeCoerce)
 
-sendResponse :: HTTP.Response -> Either RawResponse RawResponse -> Effect Unit
-sendResponse res serverResult = Aff.runAff_ onComplete do
-  liftEffect $ case serverResult of
-    Right serverRes -> writeResponse res serverRes
-    Left err -> writeResponse res err
+sendResponse :: HTTP.Response -> RawResponse -> Effect Unit
+sendResponse res rawResp = Aff.runAff_ onComplete do
+  liftEffect (writeResponse res rawResp)
   where
     onComplete (Left errors) = do
-      log $ "Error sending response:\n  Server response:\n" <> show serverResult <> "\n\n  Error(s): " <> show errors
+      log $ "Error sending response:\n  Server response:\n" <> show rawResp <>
+        "\n\n  Error(s): " <> show errors
       writeResponse res (internalError (StringBody "Error sending server response"))
     onComplete (Right _) = pure unit
 
