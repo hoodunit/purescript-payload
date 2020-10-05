@@ -250,6 +250,8 @@ createUser :: { body :: User } -> Aff User
 createUser { body: user } = pure user
 ```
 
+Bodies can be made optional by specifying the type as `Maybe a`.
+
 #### Query strings
 
 Payload supports two different types of query parameters: keys and multi-matches. Here is an example with both:
