@@ -13,6 +13,7 @@ import Data.HTTP.Method (Method(..))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.String as String
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff, error, throwError)
 import Effect.Aff as Aff
@@ -149,9 +150,18 @@ decodeBody res =
 unwrapStatusCode :: StatusCode -> Int
 unwrapStatusCode (StatusCode c) = c
 
+-- From purescript-neon
+while :: forall a. (a -> Boolean) -> (a -> a) -> a -> a
+while p f x = if p x then while p f (f x) else x
+
+removeCR :: String -> String
+removeCR str = 
+  while (\s -> String.contains (String.Pattern "\r") s)
+    (\s -> String.replace (String.Pattern "\r") (String.Replacement "") s) str
+
 respMatches :: { status :: Int, body :: String } -> ApiResponse -> Test
 respMatches expected received =
-  Assert.equal expected { status: received.status, body: received.body }
+  Assert.equal expected { status: received.status, body: (removeCR received.body) }
 
 bodyEquals :: forall body. Eq body => Show body => body -> ClientResponse body -> Aff Unit
 bodyEquals expected (Right (Response { body })) = Assert.equal expected body
