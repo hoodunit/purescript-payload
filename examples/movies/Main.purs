@@ -7,7 +7,7 @@ import Data.Map as Map
 import Effect.Aff (Aff)
 import Node.HTTP as HTTP
 import Payload.Server.Cookies (requestCookies)
-import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
+import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards, POST, Routes, Nil)
 
 -- Example API based on The Movie Database API at
 -- https://developers.themoviedb.org

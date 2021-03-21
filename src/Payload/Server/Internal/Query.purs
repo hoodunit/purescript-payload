@@ -3,19 +3,18 @@ module Payload.Server.Internal.Query where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
 import Foreign.Object as Object
-import Payload.Internal.QueryParsing (Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
+import Payload.Internal.QueryParsing (Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, QueryList)
 import Payload.Server.Internal.Querystring (ParsedQuery, querystringParse)
 import Payload.Server.QueryParams (class DecodeQueryParam, class DecodeQueryParamMulti, decodeQueryParam, decodeQueryParamMulti)
 import Prim.Row as Row
 import Record as Record
 import Type.Equality (class TypeEquals, to)
-import Type.Prelude (class IsSymbol, SProxy(..), reflectSymbol)
-import Type.Proxy (Proxy)
+import Type.Prelude (class IsSymbol, reflectSymbol)
+import Type.Proxy (Proxy(..))
 
 class DecodeQuery (queryUrlSpec :: Symbol) query | queryUrlSpec -> query where
-  decodeQuery :: SProxy queryUrlSpec -> Proxy (Record query) -> String -> Either String (Record query)
+  decodeQuery :: Proxy queryUrlSpec -> Proxy (Record query) -> String -> Either String (Record query)
 
 instance decodeQueryAny ::
   ( ParseQuery queryUrlSpec queryParts
@@ -48,7 +47,7 @@ instance matchQueryConsMulti ::
   matchQuery _ queryType query queryObj =
     case decodeQueryParamMulti queryObj of
       Left errors -> Left $ show errors
-      Right decoded -> Right (to $ Record.insert (SProxy :: SProxy ourKey) decoded query)
+      Right decoded -> Right (to $ Record.insert (Proxy :: Proxy ourKey) decoded query)
 
 instance matchQueryConsKey ::
   ( IsSymbol queryKey
@@ -62,8 +61,8 @@ instance matchQueryConsKey ::
   matchQuery _ queryType query queryObj =
     case decodeQueryParam queryObj queryKey of
       Left errors -> Left $ show errors
-      Right decoded -> let newParams = Record.insert (SProxy :: SProxy ourKey) decoded query
+      Right decoded -> let newParams = Record.insert (Proxy :: Proxy ourKey) decoded query
                            newQueryObj = Object.delete queryKey queryObj
                        in matchQuery (QueryListProxy :: _ rest) queryType newParams newQueryObj
     where
-      queryKey = reflectSymbol (SProxy :: SProxy queryKey)
+      queryKey = reflectSymbol (Proxy :: Proxy queryKey)

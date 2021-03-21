@@ -4,16 +4,15 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Effect.Aff (Aff, error, throwError)
+import Effect.Aff (error, throwError)
 import Payload.Client (ClientError(..), mkClient)
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Response(..))
 import Payload.Server.Response as Response
-import Payload.Server.Status as Status
 import Payload.Spec (GET, Spec(Spec))
 import Payload.Test.Config (TestConfig)
 import Payload.Test.Helpers (withRoutes)
-import Test.Unit (TestSuite, failure, suite, test)
+import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
   
 tests :: TestConfig -> TestSuite

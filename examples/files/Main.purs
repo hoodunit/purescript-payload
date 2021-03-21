@@ -26,6 +26,13 @@ indexPage = Handlers.file "examples/files/index.html"
 public :: { params :: { path :: List String } } -> Aff (Either Failure File)
 public { params: {path} } = Handlers.directory "examples/files/public" path 
 
+api ::
+    { guards :: Record ()
+    , handlers ::
+        { indexPage :: Record () -> Aff File
+        , public :: { params :: { path :: List String } } -> Aff (Either Failure File)
+        }
+    }
 api =
   { handlers: { indexPage, public }
   , guards: {} }

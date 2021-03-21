@@ -11,7 +11,7 @@ import Prelude
 import Control.Monad.Except (except, lift, withExceptT)
 import Data.Either (Either(..))
 import Data.List (List)
-import Data.Symbol (class IsSymbol, SProxy(..))
+import Data.Symbol (class IsSymbol)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -22,7 +22,7 @@ import Node.HTTP as HTTP
 import Node.Stream (onDataString, onEnd, onError)
 import Payload.Internal.Route (Undefined(..))
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments)
-import Payload.ResponseTypes (Failure(Error, Forward), RawResponse, Response(..), ResponseBody(..), Result)
+import Payload.ResponseTypes (Failure(Error, Forward), RawResponse, Response, ResponseBody(..), Result)
 import Payload.Server.DecodeBody (class DecodeBody, decodeBody)
 import Payload.Server.Guards (class RunGuards, runGuards)
 import Payload.Server.Internal.GuardParsing (GuardTypes(..))
@@ -32,7 +32,7 @@ import Payload.Server.Internal.Query as PayloadQuery
 import Payload.Server.Internal.Request (RequestUrl)
 import Payload.Server.Internal.Url as PayloadUrl
 import Payload.Server.Response as Resp
-import Payload.Spec (Guards(..), Route, kind GuardList)
+import Payload.Spec (Guards(..), Route, GuardList)
 import Prim.Row as Row
 import Prim.Symbol as Symbol
 import Type.Equality (class TypeEquals, to)
@@ -44,11 +44,11 @@ class Handleable
   route
   handler
   (basePath :: Symbol)
-  (baseParams :: # Type)
+  (baseParams :: Row Type)
   (baseGuards :: GuardList)
-  (guardsSpec :: # Type)
+  (guardsSpec :: Row Type)
   guards | route -> handler where
-  handle :: SProxy basePath
+  handle :: Proxy basePath
             -> Proxy (Record baseParams)
             -> Guards baseGuards
             -> GuardTypes (Record guardsSpec)
@@ -106,17 +106,17 @@ instance handleablePostRoute ::
     bodyStr <- lift $ readBody req
     body <- withExceptT badRequest $ except $ (decodeBody bodyStr :: Either String body)
     let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards: guards }
-    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
+    mkResponse (Proxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
       badRequest :: String -> Failure
       badRequest _ = Error $ Resp.badRequest EmptyBody
 
       decodePath :: List String -> Either String (Record fullUrlParams)
-      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
+      decodePath = PayloadUrl.decodeUrl (Proxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
 
       decodeQuery :: String -> Either String (Record query)
-      decodeQuery = PayloadQuery.decodeQuery (SProxy :: _ fullPath) (Proxy :: _ (Record query))
+      decodeQuery = PayloadQuery.decodeQuery (Proxy :: _ fullPath) (Proxy :: _ (Record query))
 
 instance handleableGetRoute ::
        ( TypeEquals (Record route)
@@ -159,17 +159,17 @@ instance handleableGetRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT badRequest $ except $ decodeQuery query
     let (payload :: Record payloadWithEmpty) = to { params, query: decodedQuery, guards }
-    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
+    mkResponse (Proxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
       badRequest :: String -> Failure
       badRequest _ = Error $ Resp.badRequest EmptyBody
 
       decodePath :: List String -> Either String (Record fullUrlParams)
-      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
+      decodePath = PayloadUrl.decodeUrl (Proxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
 
       decodeQuery :: String -> Either String (Record query)
-      decodeQuery = PayloadQuery.decodeQuery (SProxy :: _ fullPath) (Proxy :: _ (Record query))
+      decodeQuery = PayloadQuery.decodeQuery (Proxy :: _ fullPath) (Proxy :: _ (Record query))
 
 instance handleableHeadRoute ::
        ( TypeEquals (Record route)
@@ -212,17 +212,17 @@ instance handleableHeadRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT badRequest $ except $ decodeQuery query
     let (payload :: Record payloadWithEmpty) = to { params, query: decodedQuery, guards }
-    Resp.setBody EmptyBody <$> mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
+    Resp.setBody EmptyBody <$> mkResponse (Proxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
       badRequest :: String -> Failure
       badRequest _ = Error $ Resp.badRequest EmptyBody
 
       decodePath :: List String -> Either String (Record fullUrlParams)
-      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
+      decodePath = PayloadUrl.decodeUrl (Proxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
 
       decodeQuery :: String -> Either String (Record query)
-      decodeQuery = PayloadQuery.decodeQuery (SProxy :: _ fullPath) (Proxy :: _ (Record query))
+      decodeQuery = PayloadQuery.decodeQuery (Proxy :: _ fullPath) (Proxy :: _ (Record query))
 
 instance handleablePutRoute ::
        ( TypeEquals (Record route)
@@ -270,17 +270,17 @@ instance handleablePutRoute ::
     bodyStr <- lift $ readBody req
     body <- withExceptT badRequest $ except $ (decodeOptionalBody bodyStr :: Either String body)
     let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards }
-    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
+    mkResponse (Proxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
       badRequest :: String -> Failure
       badRequest _ = Error $ Resp.badRequest EmptyBody
 
       decodePath :: List String -> Either String (Record fullUrlParams)
-      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
+      decodePath = PayloadUrl.decodeUrl (Proxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
 
       decodeQuery :: String -> Either String (Record query)
-      decodeQuery = PayloadQuery.decodeQuery (SProxy :: _ fullPath) (Proxy :: _ (Record query))
+      decodeQuery = PayloadQuery.decodeQuery (Proxy :: _ fullPath) (Proxy :: _ (Record query))
 
 instance handleableDeleteRoute ::
        ( TypeEquals (Record route)
@@ -328,17 +328,17 @@ instance handleableDeleteRoute ::
     bodyStr <- lift $ readBody req
     body <- withExceptT badRequest $ except $ (decodeOptionalBody bodyStr :: Either String body)
     let (payload :: Record payloadWithEmpty) = to { params, body, query: decodedQuery, guards }
-    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
+    mkResponse (Proxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
       badRequest :: String -> Failure
       badRequest _ = Error $ Resp.badRequest EmptyBody
 
       decodePath :: List String -> Either String (Record fullUrlParams)
-      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
+      decodePath = PayloadUrl.decodeUrl (Proxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
 
       decodeQuery :: String -> Either String (Record query)
-      decodeQuery = PayloadQuery.decodeQuery (SProxy :: _ fullPath) (Proxy :: _ (Record query))
+      decodeQuery = PayloadQuery.decodeQuery (Proxy :: _ fullPath) (Proxy :: _ (Record query))
 
 instance handleableOptionsRoute ::
        ( TypeEquals (Record route)
@@ -381,25 +381,25 @@ instance handleableOptionsRoute ::
     params <- withExceptT Forward $ except $ decodePath path
     decodedQuery <- withExceptT badRequest $ except $ decodeQuery query
     let (payload :: Record payloadWithEmpty) = to { params, query: decodedQuery, guards }
-    mkResponse (SProxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
+    mkResponse (Proxy :: _ docRoute) (Proxy :: _ res) (handler (omitEmpty payload))
 
     where
       badRequest :: String -> Failure
       badRequest _ = Error $ Resp.badRequest EmptyBody
 
       decodePath :: List String -> Either String (Record fullUrlParams)
-      decodePath = PayloadUrl.decodeUrl (SProxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
+      decodePath = PayloadUrl.decodeUrl (Proxy :: _ fullPath) (Proxy :: _ (Record fullUrlParams))
 
       decodeQuery :: String -> Either String (Record query)
-      decodeQuery = PayloadQuery.decodeQuery (SProxy :: _ fullPath) (Proxy :: _ (Record query))
+      decodeQuery = PayloadQuery.decodeQuery (Proxy :: _ fullPath) (Proxy :: _ (Record query))
 
 mkResponse :: forall handlerRes res docRoute
   . Resp.ToSpecResponse docRoute handlerRes res
   => Resp.EncodeResponse res
-  => SProxy docRoute -> Proxy res -> Aff handlerRes -> Result RawResponse
+  => Proxy docRoute -> Proxy res -> Aff handlerRes -> Result RawResponse
 mkResponse _ _ aff = do
   (handlerResp :: handlerRes) <- lift $ aff
-  (specResp :: Response res) <- Resp.toSpecResponse (SProxy :: _ docRoute) handlerResp
+  (specResp :: Response res) <- Resp.toSpecResponse (Proxy :: _ docRoute) handlerResp
   (rawResp :: RawResponse) <- Resp.encodeResponse specResp
   pure rawResp
 

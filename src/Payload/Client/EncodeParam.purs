@@ -5,7 +5,6 @@ module Payload.Client.EncodeParam
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
 import Payload.Client.Internal.EncodeUri (encodeUri)
 
 class EncodeParam a where

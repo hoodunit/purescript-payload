@@ -4,14 +4,16 @@ import Prelude
 
 import Data.List (List(..), (:))
 import Data.List as List
-import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Payload.TypeErrors (class PrintArrow, type (<>), type (|>))
-import Payload.Spec (GCons, GNil, Guards(..), kind GuardList)
+import Payload.Spec (GCons, GNil, Guards(..), GuardList)
 import Prim.Symbol as Symbol
-import Prim.TypeError (class Fail, Text, kind Doc)
+import Prim.TypeError (class Fail, Text, Doc)
+import Type.Proxy (Proxy(..))
 
 foreign import data GuardParseFail :: GuardList
 
+data GuardTypes :: forall k. k -> Type
 data GuardTypes types = GuardTypes
 
 class Append (left :: GuardList) (right :: GuardList) (both :: GuardList) | left right -> both
@@ -102,7 +104,7 @@ instance parseError ::
 toList :: forall guardsStr guards
   .  ParseGuardList guardsStr guards
   => ToGuardList guards
-  => SProxy guardsStr -> List String
+  => Proxy guardsStr -> List String
 toList _ = List.reverse $ toGuardList (Guards :: _ guards) Nil
 
 class ToGuardList (guardList :: GuardList) where
@@ -117,4 +119,4 @@ instance toGuardListCons ::
   ) => ToGuardList (GCons name rest) where
   toGuardList _ names = toGuardList (Guards :: _ rest) (name : names)
     where
-      name = reflectSymbol (SProxy :: SProxy name)
+      name = reflectSymbol (Proxy :: Proxy name)

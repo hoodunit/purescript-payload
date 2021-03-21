@@ -78,22 +78,21 @@ module Payload.Server.Response
 
 import Prelude
 
-import Control.Monad.Except (ExceptT, throwError)
+import Control.Monad.Except (throwError)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, over)
-import Data.Symbol (SProxy)
-import Effect.Aff (Aff)
+import Data.Newtype (over)
 import Node.Stream as Stream
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
-import Payload.ResponseTypes (Empty(..), Failure(..), HttpStatus, Json(..), RawResponse, Response(..), ResponseBody(..), Result)
+import Payload.ResponseTypes (Empty, Failure(..), HttpStatus, Json(..), RawResponse, Response(..), ResponseBody(..), Result)
 import Payload.ContentType as ContentType
 import Payload.Server.Status as Status
 import Payload.TypeErrors (type (<>), type (|>))
 import Prim.TypeError (class Fail, Quote, Text)
 import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals)
+import Type.Proxy (Proxy)
 import Unsafe.Coerce (unsafeCoerce)
 
 status :: forall a. HttpStatus -> a -> Response a
@@ -124,7 +123,7 @@ updateHeaders f (Response res) = Response (res { headers = f res.headers })
 -- | which that type can be produced (e.g. a full response with different
 -- | headers or a different status code).
 class ToSpecResponse (docRoute :: Symbol) a b where
-  toSpecResponse :: SProxy docRoute -> a -> Result (Response b)
+  toSpecResponse :: Proxy docRoute -> a -> Result (Response b)
 
 instance toSpecResponseEitherFailureVal
   :: EncodeResponse a

@@ -2,20 +2,16 @@ module Payload.Examples.Basic.Test where
 
 import Prelude
 
-import Affjax.RequestHeader (RequestHeader(..))
 import Data.Either (Either(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
-import Payload.Client (mkClient, mkGuardedClient, unwrapBody, unwrapResponse)
-import Payload.Client as Client
+import Payload.Client (mkGuardedClient, unwrapBody, unwrapResponse)
 import Payload.Examples.Basic.Main (api)
 import Payload.Examples.Basic.Spec (spec)
 import Payload.Headers as Headers
-import Payload.ResponseTypes (Response(..))
-import Payload.Server.Status as Status
 import Payload.Test.Config (TestConfig)
-import Payload.Test.Helpers (bodyEquals, withServer)
+import Payload.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
 
@@ -32,7 +28,7 @@ assertFail req = do
   case res of
     Right val -> failure $ "Request succeeded with response " <> show val
     Left errors -> pure unit
-  
+
 tests :: TestConfig -> TestSuite
 tests cfg = do
   let withApi = withServer spec api

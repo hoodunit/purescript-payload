@@ -2,7 +2,6 @@ module Payload.Examples.Movies.Test where
 
 import Prelude
 
-import Affjax.RequestHeader (RequestHeader(..))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Tuple (Tuple(..))
@@ -11,9 +10,8 @@ import Payload.Client as Client
 import Payload.Examples.Movies.Main (moviesApi, moviesApiSpec)
 import Payload.Headers as Headers
 import Payload.Server.Cookies as Cookies
-import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards(..), POST, Route, Routes, Nil)
 import Payload.Test.Config (TestConfig)
-import Payload.Test.Helpers (assertFail, assertRes, bodyEquals, withServer)
+import Payload.Test.Helpers (assertFail, bodyEquals, withServer)
 import Test.Unit (TestSuite, suite, test)
 
 cookieOpts :: Map String String -> Client.RequestOptions

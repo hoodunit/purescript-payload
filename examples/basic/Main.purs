@@ -6,7 +6,6 @@ import Data.Either (Either(..))
 import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import Data.String.Utils as StringUtils
 import Effect.Aff (Aff)
 import Foreign.Object (Object)
 import Node.HTTP as HTTP
@@ -16,7 +15,6 @@ import Payload.ResponseTypes (Failure(Forward))
 import Payload.Server.Guards as Guards
 import Payload.Server.Handlers (File(..))
 import Payload.Server.Handlers as Handlers
-import Payload.Server.Response as Response
 
 getUsers :: { guards :: { adminUser :: AdminUser, request :: HTTP.Request }} -> Aff (Array User)
 getUsers { guards: { adminUser: AdminUser adminUser } } = pure [adminUser, { id: 1, name: "John Doe" }]

@@ -7,7 +7,7 @@ import Data.Newtype (unwrap)
 import Effect.Aff (Aff, throwError)
 import Effect.Exception as Ex
 import Payload.Client.DecodeResponse (DecodeResponseError)
-import Payload.ResponseTypes (Response(..), ResponseContent)
+import Payload.ResponseTypes (Response, ResponseContent)
 
 type ClientResponse body = Either ClientError (Response body)
 data ClientError

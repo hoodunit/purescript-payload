@@ -20,7 +20,6 @@ import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
 import Data.String as String
-import Data.Symbol (SProxy(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
@@ -42,6 +41,7 @@ import Payload.Server.Response as Response
 import Payload.Server.Routable (class Routable, HandlerEntry, Outcome(..), mkRouter)
 import Payload.Spec (Spec(Spec))
 import Record as Record
+import Type.Proxy (Proxy(..))
 
 type Options =
   { backlog :: Maybe Int
@@ -137,7 +137,7 @@ startGuarded opts apiSpec api = do
   case mkRouter apiSpec api of
     Right routerTrie -> do
       server <- Server <$> (liftEffect $ HTTP.createServer (handleRequest cfg routerTrie))
-      let httpOpts = Record.delete (SProxy :: SProxy "logLevel") opts
+      let httpOpts = Record.delete (Proxy :: Proxy "logLevel") opts
       listenResult <- listen cfg server httpOpts
       pure (const server <$> listenResult)
     Left err -> pure (Left err)

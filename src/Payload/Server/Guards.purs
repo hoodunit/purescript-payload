@@ -5,7 +5,7 @@ module Payload.Server.Guards
 
        , class ToGuardVal
        , toGuardVal
-         
+
        , class RunGuards
        , runGuards
        ) where
@@ -15,22 +15,23 @@ import Prelude
 import Control.Monad.Except (lift, throwError)
 import Data.Either (Either(..))
 import Data.Map (Map)
-import Data.Symbol (class IsSymbol, SProxy(..))
+import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple)
 import Effect.Aff (Aff)
 import Foreign.Object as Object
 import Node.HTTP as HTTP
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
-import Payload.ResponseTypes (Failure(..), Response(..), Result)
+import Payload.ResponseTypes (Failure(..), Response, Result)
 import Payload.Server.Cookies as Cookies
 import Payload.Server.Internal.GuardParsing (GuardTypes(..))
 import Payload.Server.Response (class EncodeResponse)
 import Payload.Server.Response as Resp
-import Payload.Spec (GCons, GNil, Guards(..), kind GuardList)
+import Payload.Spec (GCons, GNil, Guards(..), GuardList)
 import Prim.Row as Row
 import Record as Record
 import Type.Equality (to)
+import Type.Proxy (Proxy(..))
 
 -- | A guard function must return a value which can be converted
 -- | to the type given in the guard spec.
@@ -79,10 +80,10 @@ type GuardFn a = HTTP.Request -> Aff a
 
 class RunGuards
   (guardNames :: GuardList)
-  (guardsSpec :: # Type)
-  (allGuards :: # Type)
-  (results :: # Type)
-  (routeGuardSpec :: # Type) | guardNames guardsSpec allGuards -> routeGuardSpec where
+  (guardsSpec :: Row Type)
+  (allGuards :: Row Type)
+  (results :: Row Type)
+  (routeGuardSpec :: Row Type) | guardNames guardsSpec allGuards -> routeGuardSpec where
   runGuards :: Guards guardNames
                -> GuardTypes (Record guardsSpec)
                -> Record allGuards
@@ -103,8 +104,8 @@ instance runGuardsCons ::
   , RunGuards rest guardsSpec allGuards newResults routeGuardSpec
   ) => RunGuards (GCons name rest) guardsSpec allGuards results routeGuardSpec where
   runGuards _ _ allGuards results req = do
-    let (guardHandler :: GuardFn guardRes) = Record.get (SProxy :: SProxy name) (to allGuards)
+    let (guardHandler :: GuardFn guardRes) = Record.get (Proxy :: Proxy name) (to allGuards)
     (guardHandlerResult :: guardRes) <- lift $ guardHandler req
     (guardResult :: guardVal) <- toGuardVal guardHandlerResult
-    let newResults = Record.insert (SProxy :: SProxy name) guardResult results
+    let newResults = Record.insert (Proxy :: Proxy name) guardResult results
     runGuards (Guards :: _ rest) (GuardTypes :: _ (Record guardsSpec)) allGuards newResults req

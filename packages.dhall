@@ -116,13 +116,25 @@ let additions =
   }
 -------------------------------
 -}
-
-
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.13.5-20191127/packages.dhall sha256:654e8427ff1f9830542f491623cd5d89b1648774a765520554f98f41d3d1b3b3
+      https://github.com/purescript/package-sets/releases/download/psc-0.14.0-20210318/packages.dhall sha256:98bbacd65191cef354ecbafa1610be13e183ee130491ab9c0ef6e3d606f781b5
 
 let overrides = {=}
 
 let additions = {=}
 
-in  upstream // overrides // additions
+in  (upstream with simple-json =
+        { repo = "https://github.com/justinwoo/purescript-simple-json.git"
+        , version = "v8.0.0"
+        , dependencies =
+            [ "arrays"
+            , "exceptions"
+            , "foreign"
+            , "foreign-object"
+            , "nullable"
+            , "prelude"
+            , "record"
+            , "typelevel-prelude"
+            , "variant"
+            ]
+        }) // overrides // additions

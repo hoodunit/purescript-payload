@@ -7,22 +7,18 @@ module Payload.Client.ClientApi
 
 import Prelude
 
-import Data.Either (Either)
-import Data.Symbol (class IsSymbol, SProxy(..))
-import Effect.Aff (Aff)
+import Data.Symbol (class IsSymbol)
 import Payload.Client.Internal.Url (class EncodeUrl)
-import Payload.Client.Internal.Url as PayloadUrl
-import Payload.Client.Options (RequestOptions, Options)
+import Payload.Client.Options (Options)
 import Payload.Client.Queryable (class Queryable, ClientFn, ClientFnWithOptions, request)
 import Payload.Headers as Headers
 import Payload.Internal.Route (DefaultParentRoute)
 import Payload.Spec (Spec, Route(Route), Routes)
 import Prim.Row as Row
-import Prim.RowList (class RowToList, kind RowList)
+import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RowList
 import Prim.Symbol as Symbol
 import Record as Record
-import Type.Data.RowList (RLProxy(..))
 import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
 
@@ -49,20 +45,20 @@ instance clientApiRecord ::
   ) => ClientApi (Record rootSpec) (Record client) where
   mkClientApi opts routesSpec = mkClientApiList
                         opts
-                        (RLProxy :: _ childRoutesList)
-                        (SProxy :: _ "")
+                        (Proxy :: _ childRoutesList)
+                        (Proxy :: _ "")
                         (Proxy :: _ (Record rootParams))
 
 class ClientApiList
-  (routesSpecList :: RowList)
+  (routesSpecList :: RowList Type)
   (basePath :: Symbol)
-  (baseParams :: # Type)
+  (baseParams :: Row Type)
   client
   | routesSpecList -> client where
     mkClientApiList ::
       Options
-      -> RLProxy routesSpecList
-      -> SProxy basePath
+      -> Proxy routesSpecList
+      -> Proxy basePath
       -> Proxy (Record baseParams)
       -> client
 
@@ -95,12 +91,12 @@ instance clientApiListCons ::
          baseParams
          (Record client) where
   mkClientApiList opts _ _ _ =
-    Record.insert (SProxy :: _ routeName) doRequest rest
-    # Record.insert (SProxy :: _ routeNameWithOptions) doRequestWithOptions
+    Record.insert (Proxy :: _ routeName) doRequest rest
+    # Record.insert (Proxy :: _ routeNameWithOptions) doRequestWithOptions
     where
       rest = mkClientApiList opts
-             (RLProxy :: _ remRoutes)
-             (SProxy :: _ basePath)
+             (Proxy :: _ remRoutes)
+             (Proxy :: _ basePath)
              (Proxy :: _ (Record baseParams))
       doRequest :: ClientFn payload res
       doRequest = doRequestWithOptions { extraHeaders: Headers.empty }
@@ -108,7 +104,7 @@ instance clientApiListCons ::
       doRequestWithOptions :: ClientFnWithOptions payload res
       doRequestWithOptions reqOpts payload =
         request (Route :: Route method path routeSpec)
-                (SProxy :: _ basePath)
+                (Proxy :: _ basePath)
                 (Proxy :: _ (Record baseParams))
                 opts
                 reqOpts
@@ -150,12 +146,12 @@ instance clientApiListConsRoutes ::
          (Record client) where
   mkClientApiList opts _ basePath baseParams =
     Record.insert
-      (SProxy :: _ parentName)
+      (Proxy :: _ parentName)
       childRoutes
-      (mkClientApiList opts (RLProxy :: _ remRoutes) basePath baseParams)
+      (mkClientApiList opts (Proxy :: _ remRoutes) basePath baseParams)
     where
       childRoutes = mkClientApiList
                     opts
-                    (RLProxy :: _ childRoutesList)
-                    (SProxy :: _ childBasePath)
+                    (Proxy :: _ childRoutesList)
+                    (Proxy :: _ childBasePath)
                     (Proxy :: _ (Record childParams))

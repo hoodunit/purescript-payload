@@ -6,8 +6,9 @@ import Data.List (List(..), (:))
 import Data.List as List
 import Payload.TypeErrors (class PrintArrow, type (<>), type (|>))
 import Prim.Symbol as Symbol
-import Prim.TypeError (class Fail, Text, kind Doc)
-import Type.Prelude (class IsSymbol, SProxy(..), reflectSymbol)
+import Prim.TypeError (class Fail, Text, Doc)
+import Type.Prelude (class IsSymbol, reflectSymbol)
+import Type.Proxy (Proxy(..))
 
 --------------------------------------------------------------------------------
 
@@ -36,7 +37,7 @@ instance ordSegment :: Ord Segment where
 asSegments :: forall urlStr urlParts
   .  ParseQuery urlStr urlParts
   => ToSegments urlParts
-  => SProxy urlStr -> List Segment
+  => Proxy urlStr -> List Segment
 asSegments _ = List.reverse $ toSegments (QueryListProxy :: _ urlParts) Nil
 
 class ToSegments (urlParts :: QueryList) where
@@ -52,8 +53,8 @@ instance toSegmentsConsKey ::
   ) => ToSegments (QueryCons (Key name key) rest) where
   toSegments _ segs = toSegments (QueryListProxy :: _ rest) (Key nameStr keyStr : segs)
     where
-      nameStr = reflectSymbol (SProxy :: SProxy name)
-      keyStr = reflectSymbol (SProxy :: SProxy key)
+      nameStr = reflectSymbol (Proxy :: Proxy name)
+      keyStr = reflectSymbol (Proxy :: Proxy key)
 
 instance toSegmentsConsMulti ::
   ( IsSymbol multi
@@ -61,13 +62,13 @@ instance toSegmentsConsMulti ::
   ) => ToSegments (QueryCons (Multi multi) rest) where
   toSegments _ segs = toSegments (QueryListProxy :: _ rest) (Multi multiStr : segs)
     where
-      multiStr = reflectSymbol (SProxy :: SProxy multi)
+      multiStr = reflectSymbol (Proxy :: Proxy multi)
 
 --------------------------------------------------------------------------------
 
 data QueryListProxy (f :: QueryList) = QueryListProxy
 
-foreign import kind QueryList
+data QueryList
 foreign import data QueryParseFail :: QueryList
 foreign import data QueryNil :: QueryList
 foreign import data QueryCons :: QueryPart -> QueryList -> QueryList
@@ -219,7 +220,7 @@ else instance failMatch ::
       Text "' (acc: '" <> Text acc <> Text "', acc2: '" <> Text acc2 <> Text "', mode: " <> Text mode <> Text ")" )
   ) => Match u h t acc acc2 mode rest
 
-foreign import kind QueryPart
+data QueryPart
 foreign import data Key :: Symbol -> Symbol -> QueryPart
 foreign import data Multi :: Symbol -> QueryPart
 

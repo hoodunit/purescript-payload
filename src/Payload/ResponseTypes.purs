@@ -2,7 +2,7 @@ module Payload.ResponseTypes where
 
 import Prelude
 
-import Control.Monad.Except (ExceptT(..))
+import Control.Monad.Except (ExceptT)
 import Data.Newtype (class Newtype)
 import Effect.Aff (Aff)
 import Payload.Headers (Headers)
