@@ -25,7 +25,6 @@ import Payload.Test.Unit.Client.EncodeParam as ClientEncodeParamTest
 import Payload.Test.Unit.Internal.QueryParsing as QueryParsingTest
 import Payload.Test.Unit.Internal.UrlParsing as UrlParsingTest
 import Payload.Test.Unit.Server.Cookies as CookiesTest
-import Payload.Test.Unit.Server.Internal.GuardParsing as GuardParsingTest
 import Payload.Test.Unit.Server.Internal.OmitEmpty as OmitEmptyTest
 import Payload.Test.Unit.Server.Internal.Query as QueryTest
 import Payload.Test.Unit.Server.Internal.Trie as TrieTest
@@ -48,7 +47,6 @@ tests = do
     QueryTest.tests
     ParamsTest.tests
     TrieTest.tests
-    GuardParsingTest.tests
     OmitEmptyTest.tests
     CookiesTest.tests
     ResponseTest.tests
