@@ -117,7 +117,9 @@ foreign import data UrlCons :: UrlPart -> UrlList -> UrlList
 foreign import data UrlParseFail :: UrlList
 
 class ParseUrl (string :: Symbol) (parts :: UrlList) | string -> parts
-instance aNilParse :: ParseUrl "" UrlNil
+instance aNilParse ::
+  ( ParseError "" "" "Paths must start with /" doc
+  ) => ParseUrl "" UrlParseFail
 else instance bConsParse ::
   ( Symbol.Cons h t string
   , Match string h t "" "start" fl
