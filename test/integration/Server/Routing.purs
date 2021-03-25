@@ -8,8 +8,7 @@ import Payload.Spec (GET, POST, PUT, Spec(Spec), DELETE)
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
-import Test.Unit.Assert as Assert
-  
+
 tests :: TestSuite
 tests = do
   let { get, post, put, delete } = Helpers.request "http://localhost:3000"

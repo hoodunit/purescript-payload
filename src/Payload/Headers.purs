@@ -30,7 +30,7 @@ instance eqHeaders :: Eq Headers where
 -- | This prefers values on the right in the case
 -- | of duplicate keys, i.e. old values are overwritten.
 instance semigroupHeaders :: Semigroup Headers where
-  append (Headers a) (Headers b) = Headers (b <> a)
+  append (Headers a) (Headers b) = Headers (Map.union b a)
 
 empty :: Headers
 empty = Headers Map.empty

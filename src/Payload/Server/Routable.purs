@@ -12,8 +12,8 @@ import Prelude
 import Control.Monad.Except (runExceptT)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
-import Data.List (List(..), (:))
-import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
+import Data.List (List, (:))
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -23,7 +23,7 @@ import Payload.Internal.Route (DefaultParentRoute, DefaultServerRouteSpec)
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments, Segment(..))
 import Payload.Internal.UrlParsing as UrlParsing
 import Payload.ResponseTypes (RawResponse, ResponseBody(..), Result)
-import Payload.ResponseTypes as Resp
+import Payload.ResponseTypes (Failure(..)) as Resp
 import Payload.Server.Handleable (class Handleable, MethodHandler, handle)
 import Payload.Server.Internal.GuardParsing (GuardTypes(GuardTypes))
 import Payload.Server.Internal.GuardParsing as GuardParsing
@@ -32,15 +32,14 @@ import Payload.Server.Internal.ServerResponse (sendResponse)
 import Payload.Server.Internal.Trie (Trie)
 import Payload.Server.Internal.Trie as Trie
 import Payload.Server.Internal.Url as PayloadUrl
-import Payload.Server.Response as Resp
-import Payload.Spec (kind GuardList, Spec, GNil, Guards(Guards), Route(Route), Routes(..))
+import Payload.Server.Response (internalError, setBody) as Resp
+import Payload.Spec (GuardList, Spec, Guards(Guards), Route(Route), Routes)
 import Prim.Row as Row
-import Prim.RowList (class RowToList, kind RowList)
+import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Prim.Symbol as Symbol
 import Record (get)
 import Record as Record
-import Type.Data.RowList (RLProxy(..))
 import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
 
@@ -89,8 +88,8 @@ instance routableRootRecord ::
          guards where
   mkRouter _ { handlers, guards } =
     mkRouterList
-      (RLProxy :: _ childRoutesList)
-      (SProxy :: _ "")
+      (Proxy :: _ childRoutesList)
+      (Proxy :: _ "")
       (Proxy :: _ (Record rootParams))
       (Guards :: _ rootGuards)
       (Proxy :: _ (Record guardsSpec))
@@ -99,18 +98,18 @@ instance routableRootRecord ::
       Trie.empty
 
 class RoutableList
-      (routesSpecList :: RowList)
+      (routesSpecList :: RowList Type)
       (basePath :: Symbol)
-      (baseParams :: # Type)
+      (baseParams :: Row Type)
       (baseGuards :: GuardList)
-      (guardsSpec :: # Type)
+      (guardsSpec :: Row Type)
       handlers
       guards
       | routesSpecList guardsSpec -> handlers
       , guardsSpec -> guards where
   mkRouterList ::
-    RLProxy routesSpecList
-    -> SProxy basePath
+    Proxy routesSpecList
+    -> Proxy basePath
     -> Proxy (Record baseParams)
     -> Guards baseGuards
     -> Proxy (Record guardsSpec)
@@ -145,7 +144,7 @@ instance routableListCons ::
                     where
   mkRouterList _ basePath baseParams baseGuards guardsSpec handlers guards trie = do
     newTrie <- insertRoute (Lit method : routePath) handler trie
-    trieWithRest <- mkRouterList (RLProxy :: RLProxy remRoutes)
+    trieWithRest <- mkRouterList (Proxy :: Proxy remRoutes)
           basePath
           baseParams
           baseGuards
@@ -158,10 +157,10 @@ instance routableListCons ::
       _ -> pure trieWithRest
     where
       method :: String
-      method = reflectSymbol (SProxy :: SProxy method)
+      method = reflectSymbol (Proxy :: Proxy method)
 
       routePath :: List Segment
-      routePath = UrlParsing.asSegments (SProxy :: SProxy fullPath)
+      routePath = UrlParsing.asSegments (Proxy :: Proxy fullPath)
 
       handler :: RawHandler
       handler url req res =
@@ -192,7 +191,7 @@ instance routableListCons ::
       
       methodHandler :: MethodHandler
       methodHandler = handle
-                      (SProxy :: _ basePath)
+                      (Proxy :: _ basePath)
                       baseParams
                       baseGuards
                       (GuardTypes :: _ (Record guardsSpec))
@@ -201,7 +200,7 @@ instance routableListCons ::
                       guards
 
       payloadHandler :: handler
-      payloadHandler = get (SProxy :: SProxy routeName) handlers
+      payloadHandler = get (Proxy :: Proxy routeName) handlers
 
 instance routableListConsRoutes ::
   ( IsSymbol parentName
@@ -241,7 +240,7 @@ instance routableListConsRoutes ::
                     (Record guards) where
   mkRouterList _ basePath baseParams baseGuards guardsSpec handlers guards trie =
     case trieWithChildRoutes of
-      Right newTrie -> mkRouterList (RLProxy :: RLProxy remRoutes)
+      Right newTrie -> mkRouterList (Proxy :: Proxy remRoutes)
                       basePath
                       baseParams
                       baseGuards
@@ -250,13 +249,13 @@ instance routableListConsRoutes ::
                       guards
                       newTrie
       Left e -> Left $ "Could not insert child routes for path '"
-                 <> reflectSymbol (SProxy :: SProxy path)
+                 <> reflectSymbol (Proxy :: Proxy path)
                  <> "': " <> e
     where
-      childHandlers = Record.get (SProxy :: _ parentName) handlers
+      childHandlers = Record.get (Proxy :: _ parentName) handlers
       trieWithChildRoutes = mkRouterList
-                            (RLProxy :: _ childRoutesList)
-                            (SProxy :: _ childBasePath)
+                            (Proxy :: _ childRoutesList)
+                            (Proxy :: _ childBasePath)
                             (Proxy :: _ (Record childParams))
                             (Guards :: _ childGuards)
                             guardsSpec

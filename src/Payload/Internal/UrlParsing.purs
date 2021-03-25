@@ -6,13 +6,14 @@ import Data.List (List(..), (:))
 import Data.List as List
 import Payload.TypeErrors (class PrintArrow, type (<>), type (|>))
 import Prim.Symbol as Symbol
-import Prim.TypeError (class Fail, Above, Beside, Text, kind Doc)
-import Type.Prelude (class IsSymbol, SProxy(..), reflectSymbol)
+import Prim.TypeError (class Fail, Text, Doc)
+import Type.Prelude (class IsSymbol, reflectSymbol)
+import Type.Proxy (Proxy(..))
 
 debugShowUrl :: forall urlStr urlParts
   .  ParseUrl urlStr urlParts
   => ShowUrl urlParts
-  => SProxy urlStr -> String
+  => Proxy urlStr -> String
 debugShowUrl _ = showUrl (UrlListProxy :: _ urlParts) ""
 
 class ShowUrl (urlParts :: UrlList) where
@@ -27,7 +28,7 @@ instance showUrlConsKey ::
   ) => ShowUrl (UrlCons (Key key) rest) where
   showUrl _ str = showUrl (UrlListProxy :: _ rest) (str <> "(key: " <> keyStr <> ")")
     where
-      keyStr = reflectSymbol (SProxy :: SProxy key)
+      keyStr = reflectSymbol (Proxy :: Proxy key)
 
 instance showUrlConsMulti ::
   ( IsSymbol multi
@@ -35,7 +36,7 @@ instance showUrlConsMulti ::
   ) => ShowUrl (UrlCons (Multi multi) rest) where
   showUrl _ str = showUrl (UrlListProxy :: _ rest) (str <> "(multi: " <> multiStr <> ")")
     where
-      multiStr = reflectSymbol (SProxy :: SProxy multi)
+      multiStr = reflectSymbol (Proxy :: Proxy multi)
 
 instance showUrlConsLit ::
   ( IsSymbol lit
@@ -43,7 +44,7 @@ instance showUrlConsLit ::
   ) => ShowUrl (UrlCons (Lit lit) rest) where
   showUrl _ str = showUrl (UrlListProxy :: _ rest) (str <> "(lit: " <> litStr <> ")")
     where
-      litStr = reflectSymbol (SProxy :: SProxy lit)
+      litStr = reflectSymbol (Proxy :: Proxy lit)
 
 --------------------------------------------------------------------------------
 
@@ -73,7 +74,7 @@ instance ordSegment :: Ord Segment where
 asSegments :: forall urlStr urlParts
   .  ParseUrl urlStr urlParts
   => ToSegments urlParts
-  => SProxy urlStr -> List Segment
+  => Proxy urlStr -> List Segment
 asSegments _ = List.reverse $ toSegments (UrlListProxy :: _ urlParts) Nil
 
 class ToSegments (urlParts :: UrlList) where
@@ -88,7 +89,7 @@ instance toSegmentsConsKey ::
   ) => ToSegments (UrlCons (Key key) rest) where
   toSegments _ segs = toSegments (UrlListProxy :: _ rest) (Key keyStr : segs)
     where
-      keyStr = reflectSymbol (SProxy :: SProxy key)
+      keyStr = reflectSymbol (Proxy :: Proxy key)
 
 instance toSegmentsConsMulti ::
   ( IsSymbol multi
@@ -96,7 +97,7 @@ instance toSegmentsConsMulti ::
   ) => ToSegments (UrlCons (Multi multi) rest) where
   toSegments _ segs = toSegments (UrlListProxy :: _ rest) (Multi multiStr : segs)
     where
-      multiStr = reflectSymbol (SProxy :: SProxy multi)
+      multiStr = reflectSymbol (Proxy :: Proxy multi)
 
 instance toSegmentsConsLit ::
   ( IsSymbol lit
@@ -104,13 +105,13 @@ instance toSegmentsConsLit ::
   ) => ToSegments (UrlCons (Lit lit) rest) where
   toSegments _ segs = toSegments (UrlListProxy :: _ rest) (Lit litStr : segs)
     where
-      litStr = reflectSymbol (SProxy :: SProxy lit)
+      litStr = reflectSymbol (Proxy :: Proxy lit)
 
 --------------------------------------------------------------------------------
 
 data UrlListProxy (f :: UrlList) = UrlListProxy
 
-foreign import kind UrlList
+data UrlList
 foreign import data UrlNil :: UrlList
 foreign import data UrlCons :: UrlPart -> UrlList -> UrlList
 foreign import data UrlParseFail :: UrlList
@@ -233,7 +234,7 @@ else instance failMatch ::
       Text "' (acc: '" <> Text acc <> Text "', mode: " <> Text mode <> Text ")" )
   ) => Match u h t acc mode rest
 
-foreign import kind UrlPart
+data UrlPart
 foreign import data Key :: Symbol -> UrlPart
 foreign import data Lit :: Symbol -> UrlPart
 foreign import data Multi :: Symbol -> UrlPart

@@ -11,7 +11,7 @@ import Test.Unit.Assert as Assert
 tests :: TestSuite
 tests = suite "Cookies" do
   suite "parseCookieHeader" do
-    test "parses" $ Assert.equal mempty (Cookies.parseCookieHeader "")
+    test "parses" $ Assert.equal Map.empty (Cookies.parseCookieHeader "")
     test "basic" $ Assert.equal
       (Map.fromFoldable [Tuple "foo" "bar"])
       (Cookies.parseCookieHeader "foo=bar")

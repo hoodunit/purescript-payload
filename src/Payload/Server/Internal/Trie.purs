@@ -4,15 +4,14 @@ import Prelude
 
 import Data.Array as Array
 import Data.Either (Either(..), either, note)
-import Data.Foldable (class Foldable, foldM, foldr)
+import Data.Foldable (class Foldable, foldM)
 import Data.List (List(..), (:))
 import Data.List as List
-import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
-import Payload.Internal.UrlParsing (Segment(Lit, Key, Multi), showUrl)
+import Payload.Internal.UrlParsing (Segment(Lit, Key, Multi))
 
 data Trie a = Trie
   { value :: Maybe a

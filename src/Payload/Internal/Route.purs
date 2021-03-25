@@ -5,7 +5,7 @@ module Payload.Internal.Route
        , Undefined(Undefined)
        ) where
 
-import Payload.ResponseTypes (Empty(..))
+import Payload.ResponseTypes (Empty)
 import Payload.Spec (GNil, Guards(..))
 
 type DefaultServerRouteSpec =

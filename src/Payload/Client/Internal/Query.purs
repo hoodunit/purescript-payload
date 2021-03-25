@@ -7,13 +7,14 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Payload.Client.QueryParams (class EncodeQueryParam, class EncodeQueryParamMulti, encodeQueryParam, encodeQueryParamMulti)
-import Payload.Internal.QueryParsing (Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, kind QueryList)
+import Payload.Internal.QueryParsing (Key, Multi, class ParseQuery, QueryCons, QueryListProxy(..), QueryNil, QueryList)
 import Prim.Row as Row
 import Record as Record
-import Type.Prelude (class IsSymbol, SProxy(..), reflectSymbol)
+import Type.Prelude (class IsSymbol, reflectSymbol)
+import Type.Proxy (Proxy(..))
 
-class EncodeQuery (urlStr :: Symbol) (query :: # Type) | urlStr -> query where
-  encodeQuery :: SProxy urlStr
+class EncodeQuery (urlStr :: Symbol) (query :: Row Type) | urlStr -> query where
+  encodeQuery :: Proxy urlStr
                  -> Record query
                  -> String
 
@@ -29,7 +30,7 @@ instance encodeQuerySymbol ::
 
 class EncodeQueryList
       (queryParts :: QueryList)
-      (query :: # Type) where
+      (query :: Row Type) where
   encodeQueryList :: QueryListProxy queryParts
                 -> Record query
                 -> List String
@@ -52,9 +53,9 @@ instance encodeQueryListConsKey ::
       Just encoded -> (label <> "=" <> encoded) : rest
       Nothing -> rest
     where
-      label = reflectSymbol (SProxy :: SProxy queryKey) 
-      val = Record.get (SProxy :: SProxy ourKey) query
-      queryRest = Record.delete (SProxy :: SProxy ourKey) query
+      label = reflectSymbol (Proxy :: Proxy queryKey) 
+      val = Record.get (Proxy :: Proxy ourKey) query
+      queryRest = Record.delete (Proxy :: Proxy ourKey) query
       rest = encodeQueryList (QueryListProxy :: _ rest) queryRest
 
 instance encodeQueryListConsMulti ::
@@ -66,4 +67,4 @@ instance encodeQueryListConsMulti ::
     Just encoded -> encoded : Nil
     Nothing -> Nil
     where
-      queryObj = Record.get (SProxy :: _ ourKey) query
+      queryObj = Record.get (Proxy :: _ ourKey) query

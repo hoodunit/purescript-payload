@@ -1,7 +1,5 @@
 module Payload.Client.EncodeBody where
 
-import Prelude
-
 import Payload.ContentType (class HasContentType)
 import Simple.JSON as SimpleJson
 

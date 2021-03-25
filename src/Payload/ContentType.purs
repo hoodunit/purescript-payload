@@ -1,12 +1,11 @@
 module Payload.ContentType where
 
-import Prelude
-
 import Effect.Exception.Unsafe (unsafeThrow)
 import Payload.Internal.Route (Undefined)
 import Payload.ResponseTypes (Json)
 import Type.Proxy (Proxy)
 
+class HasContentType :: forall k. k -> Constraint
 class HasContentType a where
   getContentType :: Proxy a -> String
 

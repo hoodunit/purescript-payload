@@ -13,9 +13,8 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (CustomMethod, Method(..), unCustomMethod)
 import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType (MediaType(..))
-import Data.String as String
-import Data.String.Utils as String
-import Data.Symbol (SProxy(..))
+import Data.String (Pattern(..), joinWith, stripSuffix) as String
+import Data.String.Utils (startsWith) as String
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -34,13 +33,13 @@ import Payload.Internal.Route (DefaultRouteSpec, Undefined)
 import Payload.ResponseTypes (Response(..), ResponseBody(..), HttpStatus)
 import Payload.Spec (Route)
 import Prim.Row as Row
-import Prim.RowList (class RowToList, kind RowList)
+import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RowList
 import Prim.Symbol as Symbol
 import Record as Record
 import Type.Equality (class TypeEquals, to)
 import Type.Proxy (Proxy(..))
-import Type.RowList (class ListToRow, RLProxy(..))
+import Type.RowList (class ListToRow)
 
 type ClientFnWithOptions payload body = RequestOptions -> ClientFn payload body
 type ClientFn payload body = payload -> Aff (ClientResponse body)
@@ -48,12 +47,12 @@ type ClientFn payload body = payload -> Aff (ClientResponse body)
 class Queryable
   route
   (basePath :: Symbol)
-  (baseParams :: # Type)
+  (baseParams :: Row Type)
   payload
   res
   | route baseParams basePath -> payload, route -> res where
   request :: route
-             -> SProxy basePath
+             -> Proxy basePath
              -> Proxy (Record baseParams)
              -> Options
              -> ClientFnWithOptions payload res
@@ -78,10 +77,10 @@ instance queryableGetRoute ::
     => Queryable (Route "GET" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts reqOpts payload = do
     let urlPath = encodeUrlWithParams opts
-                        (SProxy :: _ fullPath)
-                        (RLProxy :: _ fullParamsList)
+                        (Proxy :: _ fullPath)
+                        (Proxy :: _ fullParamsList)
                         payload
-    let urlQuery = encodeOptionalQuery (SProxy :: _ fullPath)
+    let urlQuery = encodeOptionalQuery (Proxy :: _ fullPath)
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
@@ -111,14 +110,14 @@ else instance queryablePostRoute ::
     => Queryable (Route "POST" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts reqOpts payload = do
     let urlPath = encodeUrlWithParams opts
-                        (SProxy :: _ fullPath)
-                        (RLProxy :: _ fullParamsList)
+                        (Proxy :: _ fullPath)
+                        (Proxy :: _ fullParamsList)
                         payload
-    let urlQuery = encodeOptionalQuery (SProxy :: _ fullPath)
+    let urlQuery = encodeOptionalQuery (Proxy :: _ fullPath)
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    let (body :: body) = Record.get (SProxy :: SProxy "body") (to payload)
+    let (body :: body) = Record.get (Proxy :: Proxy "body") (to payload)
     let encodedBody = RequestBody.String (encodeBody body)
     let headers = [ContentType (MediaType (getContentType (Proxy :: _ body)))]
     makeRequest {method: POST, url, body: Just encodedBody, headers, opts, reqOpts}
@@ -141,10 +140,10 @@ else instance queryableHeadRoute ::
     => Queryable (Route "HEAD" path (Record route)) basePath baseParams (Record payload) String where
   request _ _ _ opts reqOpts payload = do
     let urlPath = encodeUrlWithParams opts
-                        (SProxy :: _ fullPath)
-                        (RLProxy :: _ fullParamsList)
+                        (Proxy :: _ fullPath)
+                        (Proxy :: _ fullParamsList)
                         payload
-    let urlQuery = encodeOptionalQuery (SProxy :: _ fullPath)
+    let urlQuery = encodeOptionalQuery (Proxy :: _ fullPath)
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
@@ -172,10 +171,10 @@ else instance queryablePutRoute ::
   request _ _ _ opts reqOpts payload = do
     let body = encodeOptionalBody (Proxy :: _ body) payload
     let urlPath = encodeUrlWithParams opts
-                        (SProxy :: _ fullPath)
-                        (RLProxy :: _ fullParamsList)
+                        (Proxy :: _ fullPath)
+                        (Proxy :: _ fullParamsList)
                         payload
-    let urlQuery = encodeOptionalQuery (SProxy :: _ fullPath)
+    let urlQuery = encodeOptionalQuery (Proxy :: _ fullPath)
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
@@ -206,10 +205,10 @@ else instance queryableDeleteRoute ::
   request _ _ _ opts reqOpts payload = do
     let body = encodeOptionalBody (Proxy :: _ body) payload
     let urlPath = encodeUrlWithParams opts
-                        (SProxy :: _ fullPath)
-                        (RLProxy :: _ fullParamsList)
+                        (Proxy :: _ fullPath)
+                        (Proxy :: _ fullParamsList)
                         payload
-    let urlQuery = encodeOptionalQuery (SProxy :: _ fullPath)
+    let urlQuery = encodeOptionalQuery (Proxy :: _ fullPath)
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
@@ -235,10 +234,10 @@ else instance queryableOptionsRoute ::
     => Queryable (Route "OPTIONS" path (Record route)) basePath baseParams (Record payload) res where
   request _ _ _ opts reqOpts payload = do
     let urlPath = encodeUrlWithParams opts
-                        (SProxy :: _ fullPath)
-                        (RLProxy :: _ fullParamsList)
+                        (Proxy :: _ fullPath)
+                        (Proxy :: _ fullParamsList)
                         payload
-    let urlQuery = encodeOptionalQuery (SProxy :: _ fullPath)
+    let urlQuery = encodeOptionalQuery (Proxy :: _ fullPath)
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
@@ -353,13 +352,13 @@ decodeError :: AX.Response String -> DecodeResponseError -> ClientError
 decodeError res error = DecodeError { error, response: asPayloadResponse res }
 
 bodyResponse :: forall a. AX.Response String -> a -> Response a
-bodyResponse res body = Response (Record.insert (SProxy :: _ "body") body rest)
+bodyResponse res body = Response (Record.insert (Proxy :: _ "body") body rest)
   where
     rest = statusAndHeaders res
 
 asPayloadResponse :: AX.Response String
                  -> Response String
-asPayloadResponse res = Response (Record.insert (SProxy :: _ "body") res.body rest)
+asPayloadResponse res = Response (Record.insert (Proxy :: _ "body") res.body rest)
   where
     rest = statusAndHeaders res
 
@@ -376,7 +375,7 @@ asHeaderTuple (ResponseHeader name value) = Tuple name value
 
 class EncodeOptionalBody
   (body :: Type)
-  (payload :: # Type)
+  (payload :: Row Type)
   where
     encodeOptionalBody :: Proxy body
                   -> Record payload
@@ -393,9 +392,9 @@ else instance encodeOptionalBodyDefined ::
 class EncodeOptionalQuery
   (url :: Symbol)
   (query :: Type)
-  (payload :: # Type)
+  (payload :: Row Type)
   where
-    encodeOptionalQuery :: SProxy url
+    encodeOptionalQuery :: Proxy url
                   -> Proxy query
                   -> Record payload
                   -> String
@@ -413,13 +412,13 @@ else instance encodeOptionalQueryDefined ::
 
 class EncodeUrlWithParams
   (url :: Symbol)
-  (params :: RowList)
-  (payload :: # Type)
+  (params :: RowList Type)
+  (payload :: Row Type)
   where
     encodeUrlWithParams ::
                   Options
-                  -> SProxy url
-                  -> RLProxy params
+                  -> Proxy url
+                  -> Proxy params
                   -> Record payload
                   -> String
 
@@ -436,7 +435,7 @@ else instance encodeUrlWithParamsDefined ::
 
 encodeUrl :: forall url params
   . PayloadUrl.EncodeUrl url params
-  => Options -> SProxy url -> Record params -> String
+  => Options -> Proxy url -> Record params -> String
 encodeUrl opts url params =
   baseUrl <> path
   where

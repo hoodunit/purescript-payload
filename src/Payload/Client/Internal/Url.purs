@@ -6,17 +6,17 @@ import Data.Array as Array
 import Data.List (List)
 import Data.String as String
 import Payload.Client.EncodeParam (class EncodeParam, encodeParam)
-import Payload.Internal.UrlParsing (class ParseUrl, UrlListProxy(..), Key, Lit, Multi, UrlCons, UrlNil, kind UrlList)
+import Payload.Internal.UrlParsing (class ParseUrl, UrlListProxy(..), Key, Lit, Multi, UrlCons, UrlNil, UrlList)
 import Prim.Row as Row
 import Record as Record
-import Type.Prelude (class IsSymbol, SProxy(..), reflectSymbol)
+import Type.Prelude (class IsSymbol, reflectSymbol)
 import Type.Proxy (Proxy(..))
 
 class EncodeUrl
       (urlStr :: Symbol)
-      (params :: # Type)
+      (params :: Row Type)
       | urlStr -> params where
-  encodeUrl :: SProxy urlStr -> Record params -> String
+  encodeUrl :: Proxy urlStr -> Record params -> String
 
 instance encodeUrlRecord ::
   ( ParseUrl urlStr urlParts
@@ -26,7 +26,7 @@ instance encodeUrlRecord ::
 
 class WriteUrl
       (urlParts :: UrlList)
-      (params :: # Type) where
+      (params :: Row Type) where
   writeUrl :: UrlListProxy urlParts -> Record params -> String
 
 instance writeUrlUrlNil :: WriteUrl UrlNil params where
@@ -41,8 +41,8 @@ instance writeUrlConsKey ::
   ) => WriteUrl (UrlCons (Key key) rest) params where
   writeUrl _ params = "/" <> encodedParam <> restOfUrl
     where
-      encodedParam = encodeParam (Record.get (SProxy :: SProxy key) params)
-      restOfParams = Record.delete (SProxy :: _ key) params
+      encodedParam = encodeParam (Record.get (Proxy :: Proxy key) params)
+      restOfParams = Record.delete (Proxy :: _ key) params
       restOfUrl = writeUrl (UrlListProxy :: _ rest) restOfParams
 
 instance writeUrlConsLit ::
@@ -51,7 +51,7 @@ instance writeUrlConsLit ::
   ) => WriteUrl (UrlCons (Lit lit) rest) params where
   writeUrl _ params = "/" <> litStr <> restOfUrl
     where
-      litStr = reflectSymbol (SProxy :: SProxy lit)
+      litStr = reflectSymbol (Proxy :: Proxy lit)
       restOfUrl = writeUrl (UrlListProxy :: _ rest) params
 
 instance writeUrlConsMulti ::
@@ -60,5 +60,5 @@ instance writeUrlConsMulti ::
   ) => WriteUrl (UrlCons (Multi multiKey) UrlNil) params where
   writeUrl _ params = "/" <> multiStr
     where
-      multiList = Record.get (SProxy :: _ multiKey) params
+      multiList = Record.get (Proxy :: _ multiKey) params
       multiStr = String.joinWith "/" (Array.fromFoldable multiList)

@@ -4,16 +4,14 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Map as Map
-import Payload.Headers as Headers
-import Payload.ResponseTypes (Failure, RawResponse, Response(..), ResponseBody(..))
+import Payload.ResponseTypes (RawResponse, Response, ResponseBody(..))
 import Payload.Server.Response as Response
-import Payload.Server.Status as Status
 import Payload.Spec (GET, Spec(Spec))
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
-  
+
 tests :: TestSuite
 tests = do
   let { get } = Helpers.request "http://localhost:3000"

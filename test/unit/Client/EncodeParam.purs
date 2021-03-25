@@ -2,7 +2,6 @@ module Payload.Test.Unit.Client.EncodeParam where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
 import Payload.Client.EncodeParam (encodeParam)
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert

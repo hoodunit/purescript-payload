@@ -23,6 +23,12 @@ getMessages :: { params :: { id :: Int }, query :: { limit :: Int } } -> Aff (Ar
 getMessages {params: {id}, query: {limit}} = pure
   [{ id: 1, text: "Hey " <> show id}, { id: 2, text: "Limit " <> show limit }]
 
+handlers ::
+    { getMessages ::
+        { params :: { id :: Int }
+        , query :: { limit :: Int }
+        } -> Aff (Array { id :: Int, text :: String })
+    }
 handlers = { getMessages }
 
 main :: Effect Unit

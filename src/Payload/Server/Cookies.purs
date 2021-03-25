@@ -21,8 +21,8 @@ foreign import serializeImpl :: String -> String -> String
 
 requestCookies :: HTTP.Request -> Map String String
 requestCookies req = case requestCookieHeader req of
-  Just cookieHeader -> parseCookieHeader cookieHeader
-  Nothing -> mempty
+  Just header -> parseCookieHeader header
+  Nothing -> Map.empty
 
 parseCookieHeader :: String -> Map String String
 parseCookieHeader header = ((parseWrapper header

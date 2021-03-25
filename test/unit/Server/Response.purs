@@ -5,13 +5,11 @@ import Prelude
 import Control.Monad.Except (runExceptT)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), note)
-import Data.Map (Map)
-import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
-import Payload.Headers (Headers(..))
+import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Empty(..), Json(..), RawResponse, Response(..), ResponseBody(..))
 import Payload.Server.Response (class EncodeResponse, encodeResponse)
