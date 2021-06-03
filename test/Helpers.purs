@@ -16,6 +16,7 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff, error, throwError)
 import Effect.Aff as Aff
+import Effect.Class (class MonadEffect)
 import Payload.Client.Response (ClientResponse)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
@@ -28,14 +29,25 @@ import Test.Unit.Assert as Assert
 
 withServer
   :: forall routesSpec guardsSpec handlers guards
-   . Routable routesSpec guardsSpec handlers guards
+  . Routable routesSpec guardsSpec handlers guards Aff
   => Spec { routes :: routesSpec, guards :: guardsSpec }
   -> { handlers :: handlers, guards :: guards }
   -> Aff Unit
   -> Aff Unit
-withServer apiSpec api_ aff = do
+withServer = withServer' identity
+
+withServer'
+  :: forall routesSpec guardsSpec handlers guards m
+   . MonadEffect m
+  => Routable routesSpec guardsSpec handlers guards m
+  => (m ~> Aff)
+  -> Spec { routes :: routesSpec, guards :: guardsSpec }
+  -> { handlers :: handlers, guards :: guards }
+  -> Aff Unit
+  -> Aff Unit
+withServer' runM apiSpec api_ aff = do
   let opts = Payload.defaultOpts { logLevel = Payload.LogError, port = 3000 }
-  whileServerRuns (Payload.startGuarded opts apiSpec api_) aff
+  whileServerRuns (Payload.startGuarded' runM opts apiSpec api_) aff
 
 whileServerRuns ::
   Aff (Either String Payload.Server)
@@ -51,14 +63,25 @@ whileServerRuns runServer doWhileRunning = do
     completed (Right server) = Payload.close server
 
 withRoutes :: forall routesSpec handlers
-  . Routable routesSpec {} handlers {}
+  . Routable routesSpec {} handlers {} Aff
   => Spec routesSpec
   -> handlers
   -> Aff Unit
   -> Aff Unit
-withRoutes _ handlers = 
-  withServer (Spec :: Spec { guards :: {}, routes :: routesSpec })
-             { guards: {}, handlers }
+withRoutes = withRoutes' identity
+
+withRoutes' :: forall routesSpec handlers m
+  . MonadEffect m
+  => Routable routesSpec {} handlers {} m
+  => (m ~> Aff)
+  -> Spec routesSpec
+  -> handlers
+  -> Aff Unit
+  -> Aff Unit
+withRoutes' runM _ handlers = 
+  withServer' runM
+              (Spec :: Spec { guards :: {}, routes :: routesSpec })
+              { guards: {}, handlers }
 
 type ApiResponse =
   { status :: Int
