@@ -8,6 +8,7 @@ import Payload.Examples.Basic.Test as BasicExample
 import Payload.Examples.Files.Test as FilesExample
 import Payload.Examples.Hello.Test as HelloExample
 import Payload.Examples.Movies.Test as MoviesExample
+import Payload.Examples.Transformer.Test as TransformerExample
 import Payload.Test.Config (defaultConfig)
 import Payload.Test.Integration.Client.Errors as ClientErrorsTest
 import Payload.Test.Integration.Client.Methods as ClientMethodsTest
@@ -77,6 +78,7 @@ tests = do
     BasicExample.tests cfg
     FilesExample.tests
     MoviesExample.tests cfg
+    TransformerExample.tests
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do

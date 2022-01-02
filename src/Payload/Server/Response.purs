@@ -82,6 +82,7 @@ import Control.Monad.Except (throwError)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (over)
+import Effect.Aff.Class (class MonadAff)
 import Node.Stream as Stream
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
@@ -123,7 +124,7 @@ updateHeaders f (Response res) = Response (res { headers = f res.headers })
 -- | which that type can be produced (e.g. a full response with different
 -- | headers or a different status code).
 class ToSpecResponse (docRoute :: Symbol) a b where
-  toSpecResponse :: Proxy docRoute -> a -> Result (Response b)
+  toSpecResponse :: forall m. MonadAff m => Proxy docRoute -> a -> Result m (Response b)
 
 instance toSpecResponseEitherFailureVal
   :: EncodeResponse a
@@ -194,7 +195,7 @@ else instance toSpecResponseFail ::
 -- | spec under the "body" field must implement EncodeResponse. This is also
 -- | a good place to add a Content-Type header for the encoded response.
 class EncodeResponse r where
-  encodeResponse :: Response r -> Result RawResponse
+  encodeResponse :: forall m. MonadAff m => Response r -> Result m RawResponse
 instance encodeResponseResponseBody :: EncodeResponse ResponseBody where
   encodeResponse = pure
 else instance encodeResponseRecord ::

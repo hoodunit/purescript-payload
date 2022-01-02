@@ -16,6 +16,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
+import Effect.Aff.Class (liftAff)
 import Effect.Class (liftEffect)
 import Foreign (readString)
 import Node.FS.Aff as FsAff
@@ -39,11 +40,11 @@ data File = File String
 
 instance encodeResponseFile :: EncodeResponse File where
   encodeResponse (Response r@{ body: File path }) = do
-    exists <- lift $ FsAff.exists path
+    exists <- lift $ liftAff $ FsAff.exists path
     if not exists
       then throwError notFoundError
       else do
-        stat <- lift $ FsAff.stat path
+        stat <- lift $ liftAff $ FsAff.stat path
         if Stats.isFile stat then do
           fileStream <- lift $ liftEffect $ createReadStream path
           let mimeType = fromMaybe "text/plain" $ MimeTypes.pathToMimeType path
