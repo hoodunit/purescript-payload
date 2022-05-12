@@ -1,4 +1,4 @@
-exports.encodeUri = function(str) {
+export function encodeUri(str) {
   try {
     return encodeURIComponent(str)
   } catch (e) {

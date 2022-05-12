@@ -32,8 +32,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * MIT Licensed
  */
 
-'use strict';
-
 /**
  * Module exports.
  * @public
@@ -221,11 +219,11 @@ function tryDecode(str, decode) {
   }
 }
 
-exports.parseWrapper = function (str) {
+export function parseWrapper(str) {
   return parse(str)
 }
 
-exports.serializeImpl = function (name) {
+export function serializeImpl(name) {
   return function(val) {
     return serialize(name, val)
   }

@@ -1,4 +1,4 @@
-exports.endResponse_ = function(res){
+export function endResponse_(res) {
   return function(unit){
     return function(cb){
       return function(){

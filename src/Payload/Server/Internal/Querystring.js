@@ -1,5 +1,6 @@
-exports.querystringParse = function(inputStr){
-  var qs = require('querystring');
+import qs from 'querystring';
+
+export function querystringParse(inputStr) {
   var parsed = qs.parse(inputStr);
   for (var prop in parsed) {
     if (Object.prototype.hasOwnProperty.call(parsed, prop)) {

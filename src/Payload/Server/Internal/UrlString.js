@@ -1,3 +1,3 @@
-exports.unsafeDecodeURIComponent = function(str){
+export function unsafeDecodeURIComponent(str) {
   return decodeURIComponent(str)
 }

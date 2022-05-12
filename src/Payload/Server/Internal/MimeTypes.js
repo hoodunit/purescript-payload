@@ -7879,6 +7879,6 @@ function mkExtToTypeMapping(){
 
 var extToTypeMapping = mkExtToTypeMapping()
 
-exports.extensionToMimeTypeImpl = function(extension){
+export function extensionToMimeTypeImpl(extension) {
   return extToTypeMapping[extension]
 }
