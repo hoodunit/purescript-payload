@@ -92,7 +92,7 @@ launch
   => Spec routesSpec
   -> handlers
   -> Effect Unit
-launch routeSpec handlers = Aff.launchAff_ (start_ routeSpec handlers)
+launch routeSpec handlers = Aff.launchAff_ (void $ start_ routeSpec handlers)
 
 -- | Start server with default options and given route spec and handlers (no guards).
 start_

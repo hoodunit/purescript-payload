@@ -27,6 +27,7 @@ import Payload.Client.Options (LogLevel(..), Options, RequestOptions)
 import Payload.Client.Response (ClientError(..), ClientResponse)
 import Payload.ContentType (class HasContentType, getContentType)
 import Payload.Debug (formatJsonString)
+import Payload.Driver (getDriver)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.Internal.Route (DefaultRouteSpec, Undefined)
@@ -252,7 +253,8 @@ makeRequest {method, url, body, headers, opts, reqOpts} = do
   case opts.logLevel of
     LogDebug -> liftEffect (log (printRequest req))
     _ -> pure unit
-  res <- AX.request req
+  driver <- liftEffect getDriver
+  res <- AX.request driver req
   case opts.logLevel of
     LogDebug -> liftEffect (log (printResponse res))
     _ -> pure unit

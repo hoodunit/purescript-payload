@@ -65,8 +65,8 @@ writeHeaders res headers = do
 writeStringBody :: HTTP.Response -> String -> Effect Unit
 writeStringBody res str = do
   let out = HTTP.responseAsStream res
-  _ <- Stream.writeString out UTF8 str (pure unit)
-  Stream.end out (pure unit)
+  _ <- Stream.writeString out UTF8 str (const $ pure unit)
+  Stream.end out (const $ pure unit)
 
 writeStreamBody :: HTTP.Response -> UnsafeStream -> Effect Unit
 writeStreamBody res stream = do

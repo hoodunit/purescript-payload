@@ -1,8 +1,8 @@
-exports.unsafeParseIso8601DateImpl = function(dateStr) {
+export function unsafeParseIso8601DateImpl(dateStr) {
   return new Date(dateStr)
 } 
 
-exports.readEnvVarImpl = function(nothing) {
+export function readEnvVarImpl(nothing) {
   return function(just) {
     return function(key) {
       return function() {

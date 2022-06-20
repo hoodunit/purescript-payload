@@ -21,6 +21,7 @@ import Foreign (readString)
 import Node.FS.Aff as FsAff
 import Node.FS.Stats as Stats
 import Node.FS.Stream (createReadStream)
+import Node.FS.Sync as FsSync
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Failure(..), Response(..), ResponseBody(..))
 import Payload.Server.Internal.MimeTypes as MimeTypes
@@ -39,11 +40,11 @@ data File = File String
 
 instance encodeResponseFile :: EncodeResponse File where
   encodeResponse (Response r@{ body: File path }) = do
-    exists <- lift $ FsAff.exists path
+    exists <- lift $ liftEffect $ FsSync.exists path
     if not exists
       then throwError notFoundError
       else do
-        stat <- lift $ FsAff.stat path
+        stat <- lift $ liftEffect $ FsSync.stat path
         if Stats.isFile stat then do
           fileStream <- lift $ liftEffect $ createReadStream path
           let mimeType = fromMaybe "text/plain" $ MimeTypes.pathToMimeType path

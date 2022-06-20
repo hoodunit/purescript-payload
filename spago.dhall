@@ -2,6 +2,8 @@
 , dependencies =
     [ "aff"
     , "affjax"
+    , "affjax-node"
+    , "affjax-web"
     , "arrays"
     , "bifunctors"
     , "console"

@@ -1,3 +1,5 @@
+import path from 'path';
+
 export function resolve(paths) {
-  return require('path').resolve.apply(this, paths);
+  return path.resolve.apply(this, paths);
 }

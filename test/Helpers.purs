@@ -16,7 +16,9 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff, error, throwError)
 import Effect.Aff as Aff
+import Effect.Class (liftEffect)
 import Payload.Client.Response (ClientResponse)
+import Payload.Driver (getDriver)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Response(..))
@@ -83,10 +85,14 @@ request host =
   , head: head host }
 
 get :: String -> String -> Aff ApiResponse
-get host path = AX.get ResponseFormat.string (host <> "/" <> path) >>= decodeResponse
+get host path = do
+  driver <- liftEffect getDriver
+  AX.get driver ResponseFormat.string (host <> "/" <> path) >>= decodeResponse
 
 get_ :: String -> String -> Headers -> Aff ApiResponse
-get_ host path headers = AX.request req >>= decodeResponse
+get_ host path headers = do
+  driver <- liftEffect getDriver
+  AX.request driver req >>= decodeResponse
   where
     req = AX.defaultRequest
             { method = Left GET
@@ -101,17 +107,21 @@ options host path = do
         { method = Left OPTIONS
         , url = url
         , responseFormat = ResponseFormat.string }
-  result <- AX.request req
+  driver <- liftEffect getDriver
+  result <- AX.request driver req
   decodeResponse result
 
 post :: String -> String -> String -> Aff ApiResponse
-post host path reqBody = AX.post ResponseFormat.string (host <> path) (Just body) >>= decodeResponse
+post host path reqBody = do
+  driver <- liftEffect getDriver
+  AX.post driver ResponseFormat.string (host <> path) (Just body) >>= decodeResponse
   where body = RequestBody.String reqBody
 
 put :: String -> String -> String -> Aff ApiResponse
 put host path reqBody = do
   let body = Just $ RequestBody.String reqBody
-  result <- AX.put ResponseFormat.string (host <> "/" <> path) body
+  driver <- liftEffect getDriver
+  result <- AX.put driver ResponseFormat.string (host <> "/" <> path) body
   decodeResponse result
 
 delete :: String -> String -> Maybe String -> Aff ApiResponse
@@ -123,11 +133,14 @@ delete host path reqBody = do
         , url = url
         , content = content
         , responseFormat = ResponseFormat.string }
-  result <- AX.request req
+  driver <- liftEffect getDriver
+  result <- AX.request driver req
   decodeResponse result
 
 head :: String -> String -> Aff ApiResponse
-head host path = AX.request req >>= decodeResponse
+head host path = do
+  driver <- liftEffect getDriver
+  AX.request driver req >>= decodeResponse
   where
     req = AX.defaultRequest
       { method = Left HEAD
