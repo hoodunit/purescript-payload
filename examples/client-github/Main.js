@@ -1,18 +1,14 @@
-exports.unsafeParseIso8601DateImpl = function(dateStr) {
+import * as process from "process"
+
+export const unsafeParseIso8601DateImpl = (dateStr) => {
   return new Date(dateStr)
 } 
 
-exports.readEnvVarImpl = function(nothing) {
-  return function(just) {
-    return function(key) {
-      return function() {
-        var val = require('process').env[key]
-        if (val) {
-          return just(val)
-        } else {
-          return nothing
-        }
-      }
-    }
+export const readEnvVarImpl = nothing => just => key => () => {
+  var val = process.env[key]
+  if (val) {
+    return just(val)
+  } else {
+    return nothing
   }
 }

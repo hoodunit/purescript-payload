@@ -16,6 +16,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String as String
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
+import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Foreign (readString)
 import Node.FS.Aff as FsAff
@@ -39,22 +40,19 @@ data File = File String
 
 instance encodeResponseFile :: EncodeResponse File where
   encodeResponse (Response r@{ body: File path }) = do
-    exists <- lift $ FsAff.exists path
-    if not exists
-      then throwError notFoundError
-      else do
-        stat <- lift $ FsAff.stat path
-        if Stats.isFile stat then do
-          fileStream <- lift $ liftEffect $ createReadStream path
-          let mimeType = fromMaybe "text/plain" $ MimeTypes.pathToMimeType path
-          pure $ Response
-             { status: Status.ok
-             , headers: Headers.fromFoldable
-                 [ Tuple "Content-Type" mimeType
-                 , Tuple "Content-Length" (show (fileSize stat))
-                 ]
-             , body: StreamBody (unsafeCoerce fileStream) }
-          else throwError notFoundError
+    statResult <- lift $ Aff.attempt $ FsAff.stat path
+    case statResult of
+      Right stat | Stats.isFile stat -> do
+        fileStream <- lift $ liftEffect $ createReadStream path
+        let mimeType = fromMaybe "text/plain" $ MimeTypes.pathToMimeType path
+        pure $ Response
+          { status: Status.ok
+          , headers: Headers.fromFoldable
+          [ Tuple "Content-Type" mimeType
+          , Tuple "Content-Length" (show (fileSize stat))
+          ]
+          , body: StreamBody (unsafeCoerce fileStream) }
+      _ -> throwError notFoundError
 
 instance readForeignFile :: ReadForeign File where
   readImpl f = File <$> readString f

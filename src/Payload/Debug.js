@@ -1,8 +1,8 @@
-exports.jsonStringify = function(r) {
+export const jsonStringify = (r) => {
   return JSON.stringify(r, null, 2)
 }
 
-exports.formatJsonString = function(str) {
+export const formatJsonString = (str) => {
   try {
     return JSON.stringify(JSON.parse(str), null, 2)
   } catch (e) {

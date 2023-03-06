@@ -1,3 +1,3 @@
-exports.toLowerCase = function(str){
+export const toLowerCase = (str) => {
   return str.toLowerCase()
 }

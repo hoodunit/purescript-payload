@@ -2,7 +2,7 @@ module Payload.Test.Helpers where
 
 import Prelude
 
-import Affjax as AX
+import Affjax.Node as AX
 import Affjax.RequestBody as RequestBody
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as ResponseFormat

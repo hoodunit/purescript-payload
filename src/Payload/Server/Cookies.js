@@ -221,12 +221,10 @@ function tryDecode(str, decode) {
   }
 }
 
-exports.parseWrapper = function (str) {
+export const parseWrapper = (str) => {
   return parse(str)
 }
 
-exports.serializeImpl = function (name) {
-  return function(val) {
-    return serialize(name, val)
-  }
+export const serializeImpl = (name) => (val) => {
+  return serialize(name, val)
 }
