@@ -2,25 +2,21 @@ module Payload.Client.Queryable where
 
 import Prelude
 
-import Affjax.Node as AX
-import Affjax.RequestBody as RequestBody
-import Affjax.RequestHeader (RequestHeader(..))
-import Affjax.ResponseFormat as ResponseFormat
-import Affjax.ResponseHeader (ResponseHeader(..))
-import Affjax.StatusCode (StatusCode(..))
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.HTTP.Method (CustomMethod, Method(..), unCustomMethod)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.MediaType (MediaType(..))
 import Data.String (Pattern(..), joinWith, stripSuffix) as String
 import Data.String.Utils (startsWith) as String
 import Data.Tuple (Tuple(..))
-import Effect.Aff (Aff)
+import Effect.Aff (Aff, Error)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Payload.Client.DecodeResponse (class DecodeResponse, DecodeResponseError, decodeResponse)
+import Effect.Exception (Error)
+import Payload.Client.DecodeResponse (class DecodeResponse, DecodeResponseError(..), decodeResponse)
 import Payload.Client.EncodeBody (class EncodeBody, encodeBody)
+import Payload.Client.Fetch (FetchOptions, FetchResponse, fetch)
+import Payload.Client.Fetch as Fetch
 import Payload.Client.Internal.Query (class EncodeQuery, encodeQuery)
 import Payload.Client.Internal.Url as PayloadUrl
 import Payload.Client.Options (LogLevel(..), Options, RequestOptions)
@@ -30,6 +26,7 @@ import Payload.Debug (formatJsonString)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.Internal.Route (DefaultRouteSpec, Undefined)
+import Payload.Method (Method(..))
 import Payload.ResponseTypes (Response(..), ResponseBody(..), HttpStatus)
 import Payload.Spec (Route)
 import Prim.Row as Row
@@ -84,7 +81,7 @@ instance queryableGetRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    makeRequest {method: GET, url, body: Nothing, headers: [], opts, reqOpts}
+    makeRequest {method: GET, url, body: Nothing, headers: Headers.empty, opts, reqOpts}
 else instance queryablePostRoute ::
        ( Row.Union route DefaultRouteSpec mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
@@ -115,7 +112,7 @@ else instance queryablePostRoute ::
                                payload
     let url = urlPath <> urlQuery
     let body = encodeOptionalBody (Proxy :: _ body) payload
-    let headers = maybe [] (\_ -> [ContentType (MediaType (getContentType (Proxy :: _ body)))]) body
+    let headers = maybe Headers.empty (\_ -> Headers.fromFoldable [Tuple "Content-Type" (getContentType (Proxy :: _ body))]) body
     makeRequest {method: POST, url, body, headers, opts, reqOpts}
 else instance queryableHeadRoute ::
        ( Row.Lacks "body" route
@@ -143,7 +140,7 @@ else instance queryableHeadRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    makeRequest {method: HEAD, url, body: Nothing, headers: [], opts, reqOpts}
+    makeRequest {method: HEAD, url, body: Nothing, headers: Headers.empty, opts, reqOpts}
 else instance queryablePutRoute ::
        ( Row.Union route DefaultRouteSpec mergedRoute
        , Row.Nub mergedRoute routeWithDefaults
@@ -174,7 +171,7 @@ else instance queryablePutRoute ::
                                payload
     let url = urlPath <> urlQuery
     let body = encodeOptionalBody (Proxy :: _ body) payload
-    let headers = maybe [] (\_ -> [ContentType (MediaType (getContentType (Proxy :: _ body)))]) body
+    let headers = maybe Headers.empty (\_ -> Headers.fromFoldable [Tuple "Content-Type" (getContentType (Proxy :: _ body))]) body
     makeRequest {method: PUT, url, body, headers, opts, reqOpts}
 else instance queryableDeleteRoute ::
        ( Row.Union route DefaultRouteSpec mergedRoute
@@ -208,7 +205,7 @@ else instance queryableDeleteRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    let headers = maybe [] (\_ -> [ContentType (MediaType (getContentType (Proxy :: _ body)))]) body
+    let headers = maybe Headers.empty (\_ -> Headers.fromFoldable [Tuple "Content-Type" (getContentType (Proxy :: _ body))]) body
     makeRequest {method: DELETE, url, body, headers, opts, reqOpts}
 else instance queryableOptionsRoute ::
        ( Row.Lacks "body" route
@@ -237,137 +234,107 @@ else instance queryableOptionsRoute ::
                                (Proxy :: _ query)
                                payload
     let url = urlPath <> urlQuery
-    makeRequest {method: OPTIONS, url, body: Nothing, headers: [], opts, reqOpts}
+    makeRequest {method: OPTIONS, url, body: Nothing, headers: Headers.empty, opts, reqOpts}
 
 type Request =
   { method :: Method
   , url :: String
-  , body :: Maybe RequestBody.RequestBody
-  , headers :: Array RequestHeader
+  , body :: Maybe String
+  , headers :: Headers
   , opts :: Options
   , reqOpts :: RequestOptions }
 
 makeRequest :: forall body. DecodeResponse body => Request -> Aff (ClientResponse body)
 makeRequest {method, url, body, headers, opts, reqOpts} = do
   case opts.logLevel of
-    LogDebug -> liftEffect (log (printRequest req))
+    LogDebug -> liftEffect (log (printRequest url fetchOptions))
     _ -> pure unit
-  res <- AX.request req
+  res <- fetch url fetchOptions
   case opts.logLevel of
     LogDebug -> liftEffect (log (printResponse res))
     _ -> pure unit
-  pure (decodeAffjaxResponse res)
+  decodeFetchResponse res
   where
-    defaultReq = AX.defaultRequest
-      { method = Left method
-      , url = url
-      , content = body
-      , responseFormat = ResponseFormat.string
-      , headers = AX.defaultRequest.headers <> headers
-      }
-    req = appendHeaders (opts.extraHeaders <> reqOpts.extraHeaders) defaultReq
+    fetchOptions :: FetchOptions
+    fetchOptions =
+      { method
+      , body
+      , headers: headers <> opts.extraHeaders <> reqOpts.extraHeaders }
 
-printRequest :: AX.Request String -> String
-printRequest {method, url, headers, content} =
+printRequest :: forall fmt. String -> FetchOptions -> String
+printRequest url {method, headers, body} =
   "DEBUG Request:\n" <>
   "--------------------------------\n" <>
-  printMethod method <> " " <> url <> "\n" <>
-  printHeaders headers <>
-  printContent content <>
+  show method <> " " <> url <> "\n" <>
+  printHeaders (Headers.toUnfoldable headers) <> "\n" <>
+  fromMaybe "" body <> "\n" <>
   "--------------------------------\n"
   where
-    printMethod :: Either Method CustomMethod -> String
-    printMethod (Left m) = show m
-    printMethod (Right m) = unCustomMethod m
-
-    printHeaders :: Array RequestHeader -> String
+    printHeaders :: Array (Tuple String String) -> String
     printHeaders [] = ""
     printHeaders hdrs = headersStr <> "\n"
        where
          headersStr = String.joinWith "  \n" (printHeader <$> hdrs)
 
-    printHeader :: RequestHeader -> String
-    printHeader (Accept mediaType) = "accept " <> show mediaType
-    printHeader (ContentType mediaType) = "content-type " <> show mediaType
-    printHeader (RequestHeader key val) = key <> " " <> val
+    printHeader :: Tuple String String -> String
+    printHeader (Tuple name value) = name <> ": " <> value
 
-    printContent :: Maybe RequestBody.RequestBody -> String
-    printContent (Just (RequestBody.String s)) = s <> "\n"
-    printContent (Just _) = "(non-String body)\n"
-    printContent Nothing = ""
-
-printResponse :: Either AX.Error (AX.Response String) -> String
+printResponse :: forall fmt. Either Error FetchResponse -> String
 printResponse (Left error) =
   "DEBUG Response:\n" <>
   "--------------------------------\n" <>
-  AX.printError error <>
+  show error <>
   "--------------------------------\n"
-printResponse (Right {status, statusText, headers, body}) =
+printResponse (Right {status, headers}) =
   "DEBUG Response:\n" <>
   "--------------------------------\n" <>
-  "Status: " <> printStatus status <> " " <> statusText <> "\n" <>
-  "Headers:\n" <> printHeaders headers <> "\n" <>
-  "Body:\n" <> printBody body <> "\n" <>
+  "Status: " <> show status.code <> " " <> status.reason <> "\n" <>
+  "Headers:\n" <> printHeaders (Headers.toUnfoldable headers) <> "\n" <>
+  -- "Body:\n" <> printBody body <> "\n" <>
   "--------------------------------\n"
   where
-    printStatus :: StatusCode -> String
-    printStatus (StatusCode code) = show code
-    
-    printHeaders :: Array ResponseHeader -> String
+    printHeaders :: Array (Tuple String String) -> String
     printHeaders [] = ""
-    printHeaders hdrs = (String.joinWith "  \n" (printHeader <$> hdrs)) <> "\n"
+    printHeaders hdrs = headersStr <> "\n"
+       where
+         headersStr = String.joinWith "  \n" (printHeader <$> hdrs)
 
-    contentIsJson = maybe false (String.startsWith "application/json") $ lookupHeader "content-type" headers
+    printHeader :: Tuple String String -> String
+    printHeader (Tuple name value) = name <> ": " <> value
 
-    printHeader :: ResponseHeader -> String
-    printHeader (ResponseHeader field val) = field <> " " <> val
-
-    printBody :: String -> String
-    printBody b | contentIsJson = formatJsonString b
-                | otherwise = b
-
-lookupHeader :: String -> Array ResponseHeader -> Maybe String
-lookupHeader key headers = Array.findMap matchingHeaderVal headers
-  where
-    matchingHeaderVal :: ResponseHeader -> Maybe String
-    matchingHeaderVal (ResponseHeader k val) | k == "content-type" = Just val
-                                             | otherwise = Nothing
-
-decodeAffjaxResponse :: forall body
+decodeFetchResponse :: forall body
   . DecodeResponse body
-  => Either AX.Error (AX.Response String)
-  -> ClientResponse body
-decodeAffjaxResponse (Left err) = Left (RequestError { message: AX.printError err })
-decodeAffjaxResponse (Right res@{ status: StatusCode s }) | s >= 200 && s < 300 = do
-  case decodeResponse (StringBody res.body) of
-    Right decoded -> Right (bodyResponse res decoded)
-    Left err -> Left (decodeError res err)
-decodeAffjaxResponse (Right res) = Left (StatusError { response: asPayloadResponse res })
+  => Either Error FetchResponse
+  -> Aff (ClientResponse body)
+decodeFetchResponse (Left err) = pure (Left (RequestError { message: show err }))
+decodeFetchResponse (Right res@{ status, headers }) | status.code >= 200 && status.code < 300 = do
+  decoded <- decodeResponse res
+  case decoded of
+    Right decoded -> pure $ Right (bodyResponse res decoded)
+    Left error@(JsonDecodeError { body, errors }) -> do
+      pure $ Left $ DecodeError {error, response: Response {status, headers, body}}
+    Left err -> do
+      decodedErr <- decodeError res err
+      pure $ Left decodedErr
+-- Non-200 statuses are treated as errors
+decodeFetchResponse (Right res) = do
+  response <- asPayloadResponse res
+  pure (Left (StatusError { response }))
 
-decodeError :: AX.Response String -> DecodeResponseError -> ClientError
-decodeError res error = DecodeError { error, response: asPayloadResponse res }
+decodeError :: FetchResponse -> DecodeResponseError -> Aff ClientError
+decodeError res error = do
+  response <- asPayloadResponse res
+  pure (DecodeError { error, response })
 
-bodyResponse :: forall a. AX.Response String -> a -> Response a
-bodyResponse res body = Response (Record.insert (Proxy :: _ "body") body rest)
-  where
-    rest = statusAndHeaders res
+bodyResponse :: forall a. FetchResponse -> a -> Response a
+bodyResponse {status, headers} body = Response (Record.insert (Proxy :: _ "body") body {status, headers})
 
-asPayloadResponse :: AX.Response String
-                 -> Response String
-asPayloadResponse res = Response (Record.insert (Proxy :: _ "body") res.body rest)
-  where
-    rest = statusAndHeaders res
-
-statusAndHeaders :: forall a. AX.Response a
-                 -> { status :: HttpStatus, headers :: Headers }
-statusAndHeaders res = { status, headers }
-  where
-    status = { code: unwrapStatus res.status, reason: res.statusText }
-    headers = Headers.fromFoldable (asHeaderTuple <$> res.headers)
-    unwrapStatus (StatusCode code) = code
-
-asHeaderTuple :: ResponseHeader -> Tuple String String
-asHeaderTuple (ResponseHeader name value) = Tuple name value
+asPayloadResponse :: FetchResponse -> Aff (Response String)
+asPayloadResponse {status, headers, raw} = do
+  bodyResp <- Fetch.text raw
+  case bodyResp of
+    Right body -> pure (Response (Record.insert (Proxy :: _ "body") body {status, headers}))
+    Left err -> pure (Response (Record.insert (Proxy :: _ "body") "" {status, headers}))
 
 class EncodeOptionalBody
   (body :: Type)
@@ -375,7 +342,7 @@ class EncodeOptionalBody
   where
     encodeOptionalBody :: Proxy body
                   -> Record payload
-                  -> Maybe RequestBody.RequestBody
+                  -> Maybe String
 
 instance encodeOptionalBodyUndefined :: EncodeOptionalBody Undefined payload where
   encodeOptionalBody _ payload = Nothing
@@ -383,7 +350,7 @@ else instance encodeOptionalBodyDefined ::
   ( TypeEquals (Record payload) { body :: body | rest }
   , EncodeBody body
   ) => EncodeOptionalBody body payload where
-  encodeOptionalBody _ payload = Just $ RequestBody.String $ encodeBody (to payload).body
+  encodeOptionalBody _ payload = Just $ encodeBody (to payload).body
 
 class EncodeOptionalQuery
   (url :: Symbol)
@@ -442,11 +409,3 @@ stripTrailingSlash :: String -> String
 stripTrailingSlash s = case String.stripSuffix (String.Pattern "/") s of
   Just stripped -> stripped
   Nothing -> s
-
-appendHeaders :: forall a. Headers -> AX.Request a -> AX.Request a
-appendHeaders headers req = req { headers = newHeaders }
-  where
-    newHeaders = req.headers <> (asAxHeader <$> Headers.toUnfoldable headers)
-
-    asAxHeader :: Tuple String String -> RequestHeader
-    asAxHeader (Tuple key val) = RequestHeader key val

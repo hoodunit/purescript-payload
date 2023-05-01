@@ -9,6 +9,7 @@ module Payload.Server
        , LogLevel(..)
        , Server
        , close
+       , closeAllConnections
        ) where
 
 import Prelude
@@ -245,8 +246,14 @@ listen { logger } server@(Server httpServer) opts = Aff.makeAff $ \cb -> do
     startedMsg = "Server is running on http://" <> opts.hostname <> ":" <> show opts.port
     errorMsg e = "Closing server due to error: " <> show e
 
--- | Stops a server
+-- | Stops the server from accepting new connections and closes all connections connected to this server which are not sending a request or waiting for a response.
 close :: Server -> Aff Unit
 close (Server server) = Aff.makeAff $ \cb -> do
   HTTP.close server (cb (Right unit))
   pure Aff.nonCanceler
+
+foreign import closeAllConnectionsImpl :: HTTP.Server -> Effect Unit
+
+-- | Closes all connections connected to this server.
+closeAllConnections :: Server -> Effect Unit
+closeAllConnections (Server server) = closeAllConnectionsImpl server

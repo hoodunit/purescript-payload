@@ -83,10 +83,10 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (over)
 import Node.Stream as Stream
+import Payload.ContentType as ContentType
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
-import Payload.ResponseTypes (Empty, Failure(..), HttpStatus, Json(..), RawResponse, Response(..), ResponseBody(..), Result)
-import Payload.ContentType as ContentType
+import Payload.ResponseTypes (Empty, Failure(..), HttpStatus, Json(..), RawResponse, Response(..), ResponseBody(..), Result, UnsafeStream)
 import Payload.Server.Status as Status
 import Payload.TypeErrors (type (<>), type (|>))
 import Prim.TypeError (class Fail, Quote, Text)
@@ -224,6 +224,11 @@ else instance encodeResponseStream ::
                    { status: r.status
                    , headers: Headers.setIfNotDefined "content-type" ContentType.plain r.headers
                    , body: StreamBody (unsafeCoerce r.body) }
+else instance encodeResponseUnsafeStream :: EncodeResponse UnsafeStream where
+  encodeResponse (Response r) = pure $ Response
+                   { status: r.status
+                   , headers: Headers.setIfNotDefined "content-type" ContentType.plain r.headers
+                   , body: StreamBody (readableStreamToNodeReadable r.body) }
 else instance encodeResponseMaybe :: EncodeResponse a => EncodeResponse (Maybe a) where
   encodeResponse (Response { body: Nothing }) = pure $ Response
                    { status: Status.notFound
@@ -478,3 +483,5 @@ notExtended = status Status.notExtended
 -- | Status code: 511
 networkAuthenticationRequired :: forall a. a -> Response a
 networkAuthenticationRequired = status Status.networkAuthenticationRequired
+
+foreign import readableStreamToNodeReadable :: UnsafeStream -> UnsafeStream

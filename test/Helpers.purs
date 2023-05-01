@@ -16,6 +16,8 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff, error, throwError)
 import Effect.Aff as Aff
+import Effect.Class (liftEffect)
+import Effect.Class.Console (log)
 import Payload.Client.Response (ClientResponse)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
@@ -48,7 +50,9 @@ whileServerRuns runServer doWhileRunning = do
     runAff (Left e) = Aff.throwError (Aff.error e)
     runAff (Right _) = doWhileRunning
     completed (Left _) = pure unit
-    completed (Right server) = Payload.close server
+    completed (Right server) = do
+                                 liftEffect $ Payload.closeAllConnections server
+                                 Payload.close server
 
 withRoutes :: forall routesSpec handlers
   . Routable routesSpec {} handlers {}

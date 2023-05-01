@@ -3,3 +3,7 @@ export const onError = server => cb => () => {
     cb(error)()
   })
 }
+
+export const closeAllConnectionsImpl = server => () => {
+  server.closeAllConnections()
+}

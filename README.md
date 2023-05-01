@@ -395,7 +395,7 @@ The client functions take typed values as parameters, encode them into an HTTP r
 
 See the [Movies example tests](./examples/movies/Test.purs) for further examples of client API calls and the [GitHub API example](./examples/client-github) for an example of calling an external API.
 
-The client library uses the [Affjax library](https://github.com/slamdata/purescript-affjax) under the hood. If you are using the client on Node.js, you will need to install the `xhr2` package.
+The client library uses the native browser and Node.js Fetch API. If you need to support older browsers or Node.js version, this needs to be polyfilled.
 
 ## Building
 
