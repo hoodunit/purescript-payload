@@ -14,6 +14,7 @@ import Node.Stream as Stream
 import Payload.Client.Fetch (FetchResponse)
 import Payload.Client.Fetch as Fetch
 import Payload.ResponseTypes (ResponseBody(..))
+import Payload.Server.Handlers (File(..))
 import Payload.TypeErrors (type (<>), type (|>))
 import Prim.TypeError (class Warn, Quote, Text)
 import Simple.JSON as SimpleJson
@@ -82,14 +83,16 @@ else instance decodeResponseArray ::
     text <- Fetch.text resp.raw
     pure $ text # lmap (show >>> unknown)
            >>= (\body -> SimpleJson.readJSON body # lmap (jsonDecodeError body))
--- | Adding a default instance allows the client to be incomplete:
--- | not all responses are supported.
-else instance decodeResponseDefault ::
-  Warn (Text "API client cannot query all of endpoints in API spec:"
-          |> Text ""
-          |> Text "No type class instance was found for"
-          |> Text ""
-          |> Text "DecodeResponse " <> Quote body
-          |> Text "")
-  => DecodeResponse body where
-  decodeResponse _ = pure (Left (unhandled "Could not decode response - no DecodeResponse instance"))
+else instance decodeResponseFile :: DecodeResponse File where
+  decodeResponse resp = decodeResponseUnimplemented resp
+
+decodeResponseUnimplemented :: forall body
+  . Warn (Text "API client cannot query all of endpoints in API spec:"
+  |> Text ""
+  |> Text "No type class instance was found for"
+  |> Text ""
+  |> Text "DecodeResponse " <> Quote body
+  |> Text "")
+  => DecodeResponse body
+  => FetchResponse -> Aff (Either DecodeResponseError body)
+decodeResponseUnimplemented _ = pure (Left (unhandled "Could not decode response - no DecodeResponse instance"))
