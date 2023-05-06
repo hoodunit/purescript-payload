@@ -79,6 +79,7 @@ module Payload.Server.Response
 import Prelude
 
 import Control.Monad.Except (throwError)
+import Data.ArrayBuffer.Types (Uint8Array)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (over)
@@ -94,6 +95,7 @@ import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy)
 import Unsafe.Coerce (unsafeCoerce)
+import Web.Streams.ReadableStream (ReadableStream)
 
 status :: forall a. HttpStatus -> a -> Response a
 status s body = Response { status: s, headers: Headers.empty, body }
@@ -217,14 +219,7 @@ else instance encodeResponseString :: EncodeResponse String where
                    { status: r.status
                    , headers: Headers.setIfNotDefined "content-type" ContentType.plain r.headers
                    , body: StringBody r.body }
-else instance encodeResponseStream ::
-  ( TypeEquals (Stream.Stream r) (Stream.Stream (read :: Stream.Read | r')))
-  => EncodeResponse (Stream.Stream r) where
-  encodeResponse (Response r) = pure $ Response
-                   { status: r.status
-                   , headers: Headers.setIfNotDefined "content-type" ContentType.plain r.headers
-                   , body: StreamBody (unsafeCoerce r.body) }
-else instance encodeResponseUnsafeStream :: EncodeResponse UnsafeStream where
+else instance encodeResponseReadableStream :: EncodeResponse (ReadableStream Uint8Array) where
   encodeResponse (Response r) = pure $ Response
                    { status: r.status
                    , headers: Headers.setIfNotDefined "content-type" ContentType.plain r.headers
@@ -484,4 +479,4 @@ notExtended = status Status.notExtended
 networkAuthenticationRequired :: forall a. a -> Response a
 networkAuthenticationRequired = status Status.networkAuthenticationRequired
 
-foreign import readableStreamToNodeReadable :: UnsafeStream -> UnsafeStream
+foreign import readableStreamToNodeReadable :: ReadableStream Uint8Array -> UnsafeStream

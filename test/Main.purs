@@ -9,20 +9,21 @@ import Payload.Examples.Files.Test as FilesExample
 import Payload.Examples.Hello.Test as HelloExample
 import Payload.Examples.Movies.Test as MoviesExample
 import Payload.Test.Config (defaultConfig)
+import Payload.Test.Integration.Client.ContentTypes as ClientContentTypes
 import Payload.Test.Integration.Client.Errors as ClientErrorsTest
 import Payload.Test.Integration.Client.Methods as ClientMethodsTest
 import Payload.Test.Integration.Client.Options as ClientOptionsTest
 import Payload.Test.Integration.Client.QueryParams as ClientQueryParams
+import Payload.Test.Integration.Client.Response as ClientResponse
 import Payload.Test.Integration.Client.Statuses as ClientStatuses
-import Payload.Test.Integration.Client.ContentTypes as ClientContentTypes
 import Payload.Test.Integration.Server.Body as BodyTest
 import Payload.Test.Integration.Server.Guards as GuardsTest
 import Payload.Test.Integration.Server.Methods as MethodsTest
 import Payload.Test.Integration.Server.QueryParams as QueryParamsTest
-import Payload.Test.Integration.Server.Status as StatusTest
 import Payload.Test.Integration.Server.Routing as RoutingTest
-import Payload.Test.Unit.Client.QueryParams as ClientQueryParamsTest
+import Payload.Test.Integration.Server.Status as StatusTest
 import Payload.Test.Unit.Client.EncodeParam as ClientEncodeParamTest
+import Payload.Test.Unit.Client.QueryParams as ClientQueryParamsTest
 import Payload.Test.Unit.Internal.QueryParsing as QueryParsingTest
 import Payload.Test.Unit.Internal.UrlParsing as UrlParsingTest
 import Payload.Test.Unit.Server.Cookies as CookiesTest
@@ -71,6 +72,7 @@ tests = do
     ClientQueryParams.tests cfg
     ClientStatuses.tests cfg
     ClientContentTypes.tests cfg
+    ClientResponse.tests cfg
 
   suite "Examples" do
     HelloExample.tests

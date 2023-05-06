@@ -2,7 +2,7 @@ module Payload.Client.DecodeResponse where
 
 import Prelude
 
-import Data.ArrayBuffer.Types (ArrayBuffer)
+import Data.ArrayBuffer.Types (ArrayBuffer, Uint8Array)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
@@ -13,12 +13,13 @@ import Foreign (MultipleErrors)
 import Node.Stream as Stream
 import Payload.Client.Fetch (FetchResponse)
 import Payload.Client.Fetch as Fetch
-import Payload.ResponseTypes (ResponseBody(..), UnsafeStream)
+import Payload.ResponseTypes (ResponseBody(..))
 import Payload.TypeErrors (type (<>), type (|>))
 import Prim.TypeError (class Warn, Quote, Text)
 import Simple.JSON as SimpleJson
 import Type.Equality (class TypeEquals)
 import Unsafe.Coerce (unsafeCoerce)
+import Web.Streams.ReadableStream (ReadableStream)
 
 data DecodeResponseError
   = InternalDecodeError { message :: String }
@@ -63,14 +64,10 @@ class DecodeResponse body where
 instance decodeResponseString :: DecodeResponse String where
   decodeResponse resp = Fetch.text resp.raw
                         # map (lmap (show >>> unknown))
-else instance decodeResponseUnsafeStream :: DecodeResponse UnsafeStream where
+else instance decodeResponseReadableStream :: DecodeResponse (ReadableStream Uint8Array) where
   decodeResponse resp = case Fetch.body resp.raw of 
-    Just body -> pure (Right (unsafeCoerce body))
+    Just body -> pure (Right body)
     Nothing -> pure (Left (unknown "Stream body was empty"))
--- else instance decodeResponseStream ::
---   ( TypeEquals (Stream.Stream r) (Stream.Stream (read :: Stream.Read | r'))
---   ) => DecodeResponse ArrayBuffer (Stream.Stream r) where
---   decodeResponse s = Right (unsafeCoerce s)
 else instance decodeResponseRecord ::
   ( SimpleJson.ReadForeign (Record r)
   ) => DecodeResponse (Record r) where
