@@ -75,3 +75,19 @@ tests cfg = do
         body <- unwrapBody $ client.foo {}
         readStream <- streamToString body
         Assert.equal "asdf" readStream
+    test "Node stream (server) -> String (client)" $ do
+      let serverSpec = Spec :: _ { foo :: GET "/foo" { response :: Stream (read :: Read) } }
+      let clientSpec = Spec :: _ { foo :: GET "/foo" { response :: String } }
+      let handlers = { foo: \_ -> pure (stringsToNodeStream ["a", "s", "d", "f"]) }
+      withRoutes serverSpec handlers do
+        let client = mkClient cfg.clientOpts clientSpec
+        body <- unwrapBody $ client.foo {}
+        Assert.equal "asdf" body
+    test "Node stream (server) -> record (client)" $ do
+      let serverSpec = Spec :: _ { foo :: GET "/foo" { response :: Stream (read :: Read) } }
+      let clientSpec = Spec :: _ { foo :: GET "/foo" { response :: { foo :: Int } } }
+      let handlers = { foo: \_ -> pure (stringsToNodeStream ["{", "\"foo\":", "1", "}"]) }
+      withRoutes serverSpec handlers do
+        let client = mkClient cfg.clientOpts clientSpec
+        body <- unwrapBody $ client.foo {}
+        Assert.equal { foo: 1 } body
