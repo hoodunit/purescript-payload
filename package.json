@@ -6,8 +6,7 @@
     "build:watch": "spago build --watch",
     "build:client:basic": "pulp --watch browserify --main Payload.Examples.Basic.Client --to output/examples/basicClient.js -- --censor-lib --strict",
     "docs:local": "spago docs",
-    "example:movies": "nodemon -w output --exec \"node -e 'require(\\\"./output/Payload.Examples.Movies.Main/index.js\\\").main()'\"",
-    "example:github": "nodemon -w output --exec \"node -e 'require(\\\"./output/Payload.Examples.ClientGitHub.Main/index.js\\\").main()'\"",
+    "example:github": "nodemon -w output --exec \"node -e 'import(\\\"./output/Payload.Examples.ClientGitHub.Main/index.js\\\").then(m => m.main())'\"",
     "publish:version": "spago bump-version",
     "publish:push": "pulp publish",
     "test": "spago test --watch --main Payload.Test.Main"
