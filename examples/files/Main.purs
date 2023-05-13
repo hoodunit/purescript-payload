@@ -3,35 +3,34 @@ module Payload.Examples.Files.Main where
 import Data.Either (Either)
 import Data.List (List)
 import Effect.Aff (Aff)
-import Payload.Server.Handlers (File)
+import Node.Stream (Read, Stream)
+import Payload.ResponseTypes (Failure, Response(..))
 import Payload.Server.Handlers as Handlers
-import Payload.ResponseTypes (Failure)
 import Payload.Spec (Spec(Spec), GET)
 
 spec :: Spec
   { guards :: {}
   , routes ::
     { indexPage :: GET "/"
-        { response :: File }
+        { response :: Stream (read :: Read) }
     , public :: GET "/<..path>"
         { params :: { path :: List String }
-        , response :: File }
+        , response :: Stream (read :: Read) }
     }
   }
 spec = Spec
 
-indexPage :: {} -> Aff File
-indexPage = Handlers.file "examples/files/index.html"
+indexPage :: {} -> Aff (Either Failure (Response (Stream (read :: Read))))
+indexPage _ = Handlers.file "examples/files/index.html"
 
-public :: { params :: { path :: List String } } -> Aff (Either Failure File)
+public :: { params :: { path :: List String } } -> Aff (Either Failure (Response (Stream (read :: Read))))
 public { params: {path} } = Handlers.directory "examples/files/public" path 
 
 api ::
     { guards :: Record ()
     , handlers ::
-        { indexPage :: Record () -> Aff File
-        , public :: { params :: { path :: List String } } -> Aff (Either Failure File)
-        }
+        { indexPage :: {} -> Aff (Either Failure (Response (Stream (read :: Read))))
+        , public :: { params :: { path :: List String } } -> Aff (Either Failure (Response (Stream (read :: Read))))        }
     }
 api =
   { handlers: { indexPage, public }

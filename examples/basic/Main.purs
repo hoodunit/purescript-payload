@@ -13,7 +13,6 @@ import Payload.Examples.Basic.Spec (AdminUser(..), Post, User)
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Failure(Forward))
 import Payload.Server.Guards as Guards
-import Payload.Server.Handlers (File(..))
 import Payload.Server.Handlers as Handlers
 
 getUsers :: { guards :: { adminUser :: AdminUser, request :: HTTP.Request }} -> Aff (Array User)
@@ -33,12 +32,6 @@ createUser {body: user} = pure user
 
 getUserPost :: { params :: { id :: Int, postId :: String } } -> Aff Post
 getUserPost {params: {postId}} = pure { id: postId, text: "Some post" }
-
-indexPage :: {} -> Aff File
-indexPage _ = pure (File "test/index.html")
-
-files :: { params :: { path :: List String} } -> Aff (Either Failure File)
-files { params: {path} } = Handlers.directory "test" path
 
 getPage :: { params :: { id :: String } } -> Aff String
 getPage { params: {id} } = pure $ "Page " <> id
@@ -85,8 +78,8 @@ api = {
       create: createUser
     },
     getUsersNonAdmin,
-    indexPage,
-    files,
+    indexPage: \_ -> Handlers.file "test/index.html",
+    files: \{params: {path}} -> Handlers.directory "test" path,
     getPage,
     getPageMetadata,
     getHello,

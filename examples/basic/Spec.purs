@@ -3,7 +3,7 @@ module Payload.Examples.Basic.Spec where
 import Data.List (List)
 import Foreign.Object (Object)
 import Node.HTTP as HTTP
-import Payload.Server.Handlers (File)
+import Node.Stream (Read, Stream)
 import Payload.Spec (type (:), Spec(Spec), GET, Guards, Nil, POST, Routes)
 
 spec :: Spec {
@@ -43,11 +43,11 @@ spec :: Spec {
       response :: Array User
     },
     indexPage :: GET "/" {
-      response :: File
+      response :: Stream (read :: Read)
     },
     files :: GET "/<..path>" {
       params :: { path :: List String },
-      response :: File
+      response :: Stream (read :: Read)
     },
     getPage :: GET "/pages/<id>" {
       params :: { id :: String },
