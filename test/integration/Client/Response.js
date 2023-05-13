@@ -33,3 +33,13 @@ export const stringsToStream = (strings) => {
   })
   return stream
 }
+
+export const stringsToNodeStream = (strings) => {
+  const stream = new Readable()
+  stream._read = () => {}
+  for (const string of strings) {
+    stream.push(string)
+  }
+  stream.push(null)
+  return stream
+}

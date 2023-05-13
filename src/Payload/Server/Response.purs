@@ -83,6 +83,7 @@ import Data.ArrayBuffer.Types (Uint8Array)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (over)
+import Node.Stream (Read, Readable, Stream)
 import Node.Stream as Stream
 import Payload.ContentType as ContentType
 import Payload.Headers (Headers)
@@ -224,6 +225,11 @@ else instance encodeResponseReadableStream :: EncodeResponse (ReadableStream Uin
                    { status: r.status
                    , headers: Headers.setIfNotDefined "content-type" ContentType.plain r.headers
                    , body: StreamBody (readableStreamToNodeReadable r.body) }
+else instance encodeResponseStream :: EncodeResponse (Stream r) where
+  encodeResponse (Response r) = pure $ Response
+                   { status: r.status
+                   , headers: Headers.setIfNotDefined "content-type" ContentType.plain r.headers
+                   , body: StreamBody (unsafeCoerce r.body) }
 else instance encodeResponseMaybe :: EncodeResponse a => EncodeResponse (Maybe a) where
   encodeResponse (Response { body: Nothing }) = pure $ Response
                    { status: Status.notFound

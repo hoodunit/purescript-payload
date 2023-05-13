@@ -8,6 +8,7 @@ import Data.ArrayBuffer.Types (Uint8Array)
 import Data.Either (Either(..))
 import Effect (Effect)
 import Effect.Aff (Aff, error, throwError)
+import Node.Stream (Read, Stream)
 import Payload.Client (ClientError(..), ClientResponse, mkClient, unwrapBody)
 import Payload.ResponseTypes (Json(..))
 import Payload.Server.Response as Response
@@ -19,6 +20,7 @@ import Test.Unit.Assert as Assert
 import Web.Streams.ReadableStream (ReadableStream)
 
 foreign import stringsToStream :: Array String -> ReadableStream Uint8Array
+foreign import stringsToNodeStream :: Array String -> Stream (read :: Read)
 foreign import streamToStringImpl :: ReadableStream Uint8Array -> Effect (Promise String)
 
 streamToString :: ReadableStream Uint8Array -> Aff String
@@ -61,6 +63,15 @@ tests cfg = do
       let handlers = { foo: \_ -> pure (stringsToStream ["a", "s", "d", "f"]) }
       withRoutes spec handlers do
         let client = mkClient cfg.clientOpts spec
+        body <- unwrapBody $ client.foo {}
+        readStream <- streamToString body
+        Assert.equal "asdf" readStream
+    test "Node stream (server) -> ReadableStream Uint8Array (client)" $ do
+      let serverSpec = Spec :: _ { foo :: GET "/foo" { response :: Stream (read :: Read) } }
+      let clientSpec = Spec :: _ { foo :: GET "/foo" { response :: ReadableStream Uint8Array } }
+      let handlers = { foo: \_ -> pure (stringsToNodeStream ["a", "s", "d", "f"]) }
+      withRoutes serverSpec handlers do
+        let client = mkClient cfg.clientOpts clientSpec
         body <- unwrapBody $ client.foo {}
         readStream <- streamToString body
         Assert.equal "asdf" readStream
