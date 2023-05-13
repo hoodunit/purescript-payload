@@ -78,6 +78,9 @@ This library is experimental, in flux, and will likely have breaking API changes
 Install Payload:
 
 ```
+spago install payload
+
+# Or with bower
 bower install purescript-payload
 ```
 
