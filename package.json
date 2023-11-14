@@ -15,10 +15,10 @@
     "bower": "^1.8.14",
     "nodemon": "2.0.21",
     "pulp": "^16.0.2",
-    "purescript": "^0.15.8",
+    "purescript": "^0.15.12",
     "purescript-psa": "0.8.2",
     "rimraf": "4.3.1",
-    "spago": "^0.20.9",
+    "spago": "^0.21.0",
     "xhr2": "https://github.com/hoodunit/node-xhr2.git#6f65a6557706842b7284191f15ec9afaba270909"
   }
 }

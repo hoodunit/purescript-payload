@@ -18,7 +18,6 @@
   , "http-methods"
   , "integers"
   , "js-date"
-  , "js-promise-aff"
   , "lists"
   , "maybe"
   , "media-types"
