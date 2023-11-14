@@ -53,6 +53,8 @@ whileServerRuns runServer doWhileRunning = do
     completed (Right server) = do
                                  liftEffect $ Payload.closeAllConnections server
                                  Payload.close server
+                                 -- A short delay seems to give time to clean up
+                                 Aff.delay (Aff.Milliseconds 10.0)
 
 withRoutes :: forall routesSpec handlers
   . Routable routesSpec {} handlers {}
