@@ -1,0 +1,54 @@
+package:
+  name: payload
+  dependencies:
+    - aff
+    - aff-promise
+    - affjax
+    - affjax-node
+    - arraybuffer-types
+    - arrays
+    - bifunctors
+    - console
+    - datetime
+    - effect
+    - either
+    - exceptions
+    - foldable-traversable
+    - foreign
+    - foreign-object
+    - http-methods
+    - integers
+    - js-date
+    - lists
+    - maybe
+    - media-types
+    - newtype
+    - node-buffer
+    - node-fs
+    - node-http
+    - node-path
+    - node-streams
+    - node-url
+    - nullable
+    - ordered-collections
+    - prelude
+    - record
+    - refs
+    - simple-json
+    - strings
+    - stringutils
+    - transformers
+    - tuples
+    - type-equality
+    - typelevel-prelude
+    - unfoldable
+    - unsafe-coerce
+    - web-streams
+  test:
+    main: Test.Main
+    dependencies:
+      - test-unit
+
+workspace:
+  packageSet:
+    registry: 73.3.0

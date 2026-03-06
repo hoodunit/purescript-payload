@@ -1,6 +1,7 @@
 .*
 !/.bowerrc
 !/.gitignore
+!/.nvmrc
 /output/
 /node_modules/
 /bower_components/
