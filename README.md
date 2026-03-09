@@ -426,8 +426,16 @@ Generate local API docs:
 npm run docs:local
 ```
 
-To prepare for a future Registry publish without actually publishing, run:
+Registry publishing is configured in [`spago.yaml`](./spago.yaml) under `package.publish`. The current placeholder release version there is `0.5.0`, which should be bumped to the actual next release version before publishing.
+
+There is no `spago publish --dry-run` command in `spago@1.0.3`. The safe local preparation path is:
+
+1. Build and test the project.
+2. Run `npx spago auth` once on the machine that will publish, which adds your SSH public key to `package.publish.owners`.
+3. Create the matching git tag only when you are ready to publish the release.
+
+When those are in place, publish from the tagged commit with:
 
 ```
-npx spago publish --dry-run
+npx spago publish
 ```
