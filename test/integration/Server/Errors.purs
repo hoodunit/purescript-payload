@@ -7,6 +7,7 @@ import Data.Map as Map
 import Payload.ResponseTypes (RawResponse, Response, ResponseBody(..))
 import Payload.Server.Response as Response
 import Payload.Spec (GET, Spec(Spec))
+import Payload.Test.Config as Config
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
@@ -14,7 +15,7 @@ import Test.Unit.Assert as Assert
 
 tests :: TestSuite
 tests = do
-  let { get } = Helpers.request "http://localhost:3000"
+  let { get } = Helpers.request Config.baseUrl
   suite "Errors" do
     test "returning Either String returns a String as an internal error" $ do
       let spec = Spec :: _ { foo :: GET "/foo" { response :: String } }

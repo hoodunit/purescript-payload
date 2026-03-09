@@ -6,13 +6,14 @@ import Effect.Aff (Aff)
 import Payload.ResponseTypes (Response)
 import Payload.Server.Response as Response
 import Payload.Spec (GET, Spec(Spec))
+import Payload.Test.Config as Config
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
   
 tests :: TestSuite
 tests = do
-  let { get } = Helpers.request "http://localhost:3000"
+  let { get } = Helpers.request Config.baseUrl
   suite "Status" do
     test "to modify the status, return a Response with a new status" $ do
       let spec = Spec :: _ { foo :: GET "/foo" { response :: { id :: Int } } }

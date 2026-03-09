@@ -5,13 +5,14 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Foreign.Object (Object)
 import Payload.Spec (GET, POST, Spec(..))
+import Payload.Test.Config as Config
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
 
 tests :: TestSuite
 tests = do
-  let { get, post } = Helpers.request "http://localhost:3000"
+  let { get, post } = Helpers.request Config.baseUrl
   suite "Query parameter requests" do
     suite "keys (e.g. foo=<myFoo>)" do
       test "GET /search?limit=3 succeeds with valid int" $ do

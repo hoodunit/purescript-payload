@@ -5,13 +5,14 @@ import Prelude
 import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Payload.Spec (GET, POST, PUT, Spec(Spec), DELETE)
+import Payload.Test.Config as Config
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
 
 tests :: TestSuite
 tests = do
-  let { get, post, put, delete } = Helpers.request "http://localhost:3000"
+  let { get, post, put, delete } = Helpers.request Config.baseUrl
   suite "Routing" do
     suite "URL params" do
       test "sending valid URL params returns 200 response" $ do

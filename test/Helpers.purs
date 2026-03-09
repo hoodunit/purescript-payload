@@ -13,6 +13,7 @@ import Data.HTTP.Method (Method(..))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.String.CodeUnits as String
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff, error, throwError)
 import Effect.Aff as Aff
@@ -25,6 +26,7 @@ import Payload.ResponseTypes (Response(..))
 import Payload.Server as Payload
 import Payload.Server.Routable (class Routable)
 import Payload.Spec (Spec(Spec))
+import Payload.Test.Config as Config
 import Test.Unit (Test, failure, success)
 import Test.Unit.Assert as Assert
 
@@ -36,7 +38,7 @@ withServer
   -> Aff Unit
   -> Aff Unit
 withServer apiSpec api_ aff = do
-  let opts = Payload.defaultOpts { logLevel = Payload.LogError, port = 3000 }
+  let opts = Payload.defaultOpts { logLevel = Payload.LogError, port = Config.testPort }
   whileServerRuns (Payload.startGuarded opts apiSpec api_) aff
 
 whileServerRuns ::
@@ -88,21 +90,26 @@ request host =
   , delete: delete host
   , head: head host }
 
+joinUrl :: String -> String -> String
+joinUrl host path
+  | String.take 1 path == "/" = host <> path
+  | otherwise = host <> "/" <> path
+
 get :: String -> String -> Aff ApiResponse
-get host path = AX.get ResponseFormat.string (host <> "/" <> path) >>= decodeResponse
+get host path = AX.get ResponseFormat.string (joinUrl host path) >>= decodeResponse
 
 get_ :: String -> String -> Headers -> Aff ApiResponse
 get_ host path headers = AX.request req >>= decodeResponse
   where
     req = AX.defaultRequest
             { method = Left GET
-            , url = host <> "/" <> path
+            , url = joinUrl host path
             , responseFormat = ResponseFormat.string
             , headers = (\(Tuple name val) -> RequestHeader name val) <$> Headers.toUnfoldable headers }
 
 options :: String -> String -> Aff ApiResponse
 options host path = do
-  let url = host <> "/" <> path
+  let url = joinUrl host path
   let req = AX.defaultRequest
         { method = Left OPTIONS
         , url = url
@@ -117,13 +124,13 @@ post host path reqBody = AX.post ResponseFormat.string (host <> path) (Just body
 put :: String -> String -> String -> Aff ApiResponse
 put host path reqBody = do
   let body = Just $ RequestBody.String reqBody
-  result <- AX.put ResponseFormat.string (host <> "/" <> path) body
+  result <- AX.put ResponseFormat.string (joinUrl host path) body
   decodeResponse result
 
 delete :: String -> String -> Maybe String -> Aff ApiResponse
 delete host path reqBody = do
   let content = RequestBody.String <$> reqBody
-  let url = host <> "/" <> path
+  let url = joinUrl host path
   let req = AX.defaultRequest
         { method = Left DELETE
         , url = url
@@ -138,7 +145,7 @@ head host path = AX.request req >>= decodeResponse
     req = AX.defaultRequest
       { method = Left HEAD
       , responseFormat = ResponseFormat.string
-      , url = host <> "/" <> path }
+      , url = joinUrl host path }
 
 decodeResponse :: Either AX.Error (AX.Response String) -> Aff ApiResponse
 decodeResponse (Right res) = pure (decodeBody res)
