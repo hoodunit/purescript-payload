@@ -412,6 +412,8 @@ Build the library:
 npm run build
 ```
 
+If that fails with `No such built-in module: node:sqlite`, your shell is still using an older Node.js release. Run `nvm use` in the repo first.
+
 Run the test suite:
 
 ```

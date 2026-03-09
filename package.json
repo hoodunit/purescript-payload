@@ -4,10 +4,15 @@
     "node": ">=22.14.0"
   },
   "scripts": {
+    "check:node": "node scripts/check-node-version.js",
     "clean": "rimraf output .spago",
+    "prebuild": "npm run check:node",
     "build": "spago build -p payload",
+    "prebuild:watch": "npm run check:node",
     "build:watch": "spago build -p payload --watch",
+    "predocs:local": "npm run check:node",
     "docs:local": "spago docs -p payload",
+    "pretest": "npm run check:node",
     "test": "spago test -p payload"
   },
   "devDependencies": {
