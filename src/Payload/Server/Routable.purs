@@ -18,7 +18,7 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Console (errorShow)
-import Node.HTTP as HTTP
+import Node.HTTP.Types (IMServer, IncomingMessage, ServerResponse)
 import Payload.Internal.Route (DefaultParentRoute, DefaultServerRouteSpec)
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments, Segment(..))
 import Payload.Internal.UrlParsing as UrlParsing
@@ -46,10 +46,10 @@ import Type.Proxy (Proxy(..))
 type RoutingTrie = Trie HandlerEntry
 
 type HandlerEntry =
-  { handler :: RequestUrl -> HTTP.Request -> HTTP.Response -> Aff Outcome
+  { handler :: RequestUrl -> IncomingMessage IMServer -> ServerResponse -> Aff Outcome
   , route :: List Segment }
 
-type RawHandler = RequestUrl -> HTTP.Request -> HTTP.Response -> Aff Outcome
+type RawHandler = RequestUrl -> IncomingMessage IMServer -> ServerResponse -> Aff Outcome
 
 data Outcome = Success | Failure | Forward String
 
@@ -186,7 +186,7 @@ instance routableListCons ::
       payloadHandler :: handler
       payloadHandler = get (Proxy :: Proxy routeName) handlers
 
-executeHandler :: HTTP.Response -> Result RawResponse -> Aff Outcome
+executeHandler :: ServerResponse -> Result RawResponse -> Aff Outcome
 executeHandler res mHandler = do
   result <- Aff.attempt $ runExceptT mHandler
   case result of

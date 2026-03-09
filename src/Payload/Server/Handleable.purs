@@ -18,8 +18,10 @@ import Effect.Aff as Aff
 import Effect.Exception as Ex
 import Effect.Ref as Ref
 import Node.Encoding (Encoding(..))
-import Node.HTTP as HTTP
-import Node.Stream (onDataString, onEnd, onError)
+import Node.EventEmitter as EventEmitter
+import Node.HTTP.IncomingMessage as IncomingMessage
+import Node.HTTP.Types (IMServer, IncomingMessage, ServerResponse)
+import Node.Stream as Stream
 import Payload.Internal.Route (Undefined(..))
 import Payload.Internal.UrlParsing (class ParseUrl, class ToSegments)
 import Payload.ResponseTypes (Failure(Error, Forward), RawResponse, Response, ResponseBody(..), Result)
@@ -38,7 +40,7 @@ import Prim.Symbol as Symbol
 import Type.Equality (class TypeEquals, to)
 import Type.Proxy (Proxy(..))
 
-type MethodHandler = RequestUrl -> HTTP.Request -> HTTP.Response -> Result RawResponse
+type MethodHandler = RequestUrl -> IncomingMessage IMServer -> ServerResponse -> Result RawResponse
 
 class Handleable
   route
@@ -56,8 +58,8 @@ class Handleable
             -> handler
             -> guards
             -> RequestUrl
-            -> HTTP.Request
-            -> HTTP.Response
+            -> IncomingMessage IMServer
+            -> ServerResponse
             -> Result RawResponse
 
 instance handleablePostRoute ::
@@ -403,19 +405,20 @@ mkResponse _ _ aff = do
   (rawResp :: RawResponse) <- Resp.encodeResponse specResp
   pure rawResp
 
-readBody :: HTTP.Request -> Aff String
+readBody :: IncomingMessage IMServer -> Aff String
 readBody req = Aff.makeAff (readBody_ req)
 
-readBody_ :: HTTP.Request -> (Either Ex.Error String -> Effect Unit) -> Effect Aff.Canceler
+readBody_ :: IncomingMessage IMServer -> (Either Ex.Error String -> Effect Unit) -> Effect Aff.Canceler
 readBody_ req cb = do
   buffer <- Ref.new ""
-  let inputStream = HTTP.requestAsStream req
+  let inputStream = IncomingMessage.toReadable req
   let handleData str = (flip Ref.modify_) buffer (_ <> str)
   let handleEnd = Ref.read buffer >>= returnBody
   Ex.catchException returnError do
-    onError inputStream returnError
-    onDataString inputStream UTF8 handleData
-    onEnd inputStream handleEnd
+    Stream.setEncoding inputStream UTF8
+    EventEmitter.on_ Stream.errorH returnError inputStream
+    EventEmitter.on_ Stream.dataHStr handleData inputStream
+    EventEmitter.on_ Stream.endH handleEnd inputStream
   pure mempty
   where
     returnError msg = cb $ Left $ msg

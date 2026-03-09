@@ -19,7 +19,8 @@ import Data.Symbol (class IsSymbol)
 import Data.Tuple (Tuple)
 import Effect.Aff (Aff)
 import Foreign.Object as Object
-import Node.HTTP as HTTP
+import Node.HTTP.IncomingMessage as IncomingMessage
+import Node.HTTP.Types (IMServer, IncomingMessage)
 import Payload.Headers (Headers)
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Failure(..), Response, Result)
@@ -62,21 +63,21 @@ else instance toGuardValIdentity :: ToGuardVal a a where
   toGuardVal = pure
 
 -- | Guard for retrieving request headers
-headers :: HTTP.Request -> Aff Headers
+headers :: IncomingMessage IMServer -> Aff Headers
 headers req = pure (Headers.fromFoldable headersArr)
   where
     headersArr :: Array (Tuple String String)
-    headersArr = Object.toUnfoldable $ HTTP.requestHeaders req
+    headersArr = Object.toUnfoldable $ IncomingMessage.headers req
 
 -- | Guard for retrieving raw underlying request
-rawRequest :: HTTP.Request -> Aff HTTP.Request
+rawRequest :: IncomingMessage IMServer -> Aff (IncomingMessage IMServer)
 rawRequest req = pure req
 
 -- | Guard for retrieving request cookies
-cookies :: HTTP.Request -> Aff (Map String String)
+cookies :: IncomingMessage IMServer -> Aff (Map String String)
 cookies req = pure (Cookies.requestCookies req)
 
-type GuardFn a = HTTP.Request -> Aff a
+type GuardFn a = IncomingMessage IMServer -> Aff a
 
 class RunGuards
   (guardNames :: GuardList)
@@ -88,7 +89,7 @@ class RunGuards
                -> GuardTypes (Record guardsSpec)
                -> Record allGuards
                -> Record results
-               -> HTTP.Request
+               -> IncomingMessage IMServer
                -> Result (Record routeGuardSpec)
 
 instance runGuardsNil :: RunGuards GNil guardsSpec allGuards routeGuardSpec routeGuardSpec where

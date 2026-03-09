@@ -45,7 +45,7 @@ package:
     - unsafe-coerce
     - web-streams
   test:
-    main: Test.Main
+    main: Payload.Test.Main
     dependencies:
       - test-unit
 
