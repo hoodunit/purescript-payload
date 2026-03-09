@@ -79,16 +79,13 @@ Install Payload:
 
 ```
 spago install payload
-
-# Or with bower
-bower install purescript-payload
 ```
 
 Then read on for examples and docs.
 
 ## Examples
 
-[The above hello world example](./examples/hello/Main.purs) and more can be found in the [examples directory](./examples). These examples are built and run as part of the project tests, so they are always working and up to date.
+[The above hello world example](./src/Payload/Examples/Hello/Main.purs) and more can be found under [src/Payload/Examples](./src/Payload/Examples). These examples are built and run as part of the project tests, so they are always working and up to date.
 
 ## API Documentation
 
@@ -179,7 +176,7 @@ moviesApiSpec = Spec
 
 [Guards](#guards) and [URL paths and parameters](#url-parameters) specified in parent routes are merged and passed to child route handlers at compile time, so that at run time the handlers will receive those values as part of their incoming request payload. 
 
-See the [Spec module](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Spec) for the full set of supported spec keywords and the [Movies example](./examples/movies/Main.purs) for a larger example with hierarchical routes.
+See the [Spec module](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Spec) for the full set of supported spec keywords and the [Movies example](./src/Payload/Examples/Movies/Main.purs) for a larger example with hierarchical routes.
 
 ### Requests
 
@@ -314,7 +311,7 @@ To return an error, handlers can return `Either error val`, where `error` can be
 
 #### Static files
 
-Static files can be served using the [file](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Handlers#v:file) or [directory](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Handlers#v:directory) helpers in the [Handlers module](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Handlers). The provided handlers will add appropriate MIME types to responses and protect against directory traversal attacks. See also [the example for serving static files](./examples/files/Main.purs).
+Static files can be served using the [file](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Handlers#v:file) or [directory](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Handlers#v:directory) helpers in the [Handlers module](https://pursuit.purescript.org/packages/purescript-payload/docs/Payload.Server.Handlers). The provided handlers will add appropriate MIME types to responses and protect against directory traversal attacks. See also [the example for serving static files](./src/Payload/Examples/Files/Main.purs).
 
 ### Guards
 
@@ -366,7 +363,7 @@ main = do
   Payload.launch spec { handlers, guards }
 ```
 
-Guards can also be applied on parent routes in a hierarchical API spec. For an example of this see the [Movies API Example](./examples/movies/Main.purs).
+Guards can also be applied on parent routes in a hierarchical API spec. For an example of this see the [Movies API Example](./src/Payload/Examples/Movies/Main.purs).
 
 ### Client
 
@@ -396,22 +393,39 @@ do
 
 The client functions take typed values as parameters, encode them into an HTTP request, and then decode the response into typed response values. If the response has a 2xx status code, it is treated as a successful API response and the client attempts to decode it into the type given in the spec. For other responses the client will return an error containing the full response.
 
-See the [Movies example tests](./examples/movies/Test.purs) for further examples of client API calls and the [GitHub API example](./examples/client-github) for an example of calling an external API.
+See the [Movies example tests](./test/Payload/Examples/Movies/Test.purs) for further examples of client API calls and the [GitHub API example](./src/Payload/Examples/ClientGitHub/Main.purs) for an example of calling an external API.
 
 The client library uses the native browser and Node.js Fetch API. If you need to support older browsers or Node.js version, this needs to be polyfilled.
 
 ## Building
 
-* Install Node.js.
+* Install Node.js 22.14.0 or newer. The repo includes an `.nvmrc` file for `nvm use`.
 * Install project dependencies:
 
 ```
 npm install
-npx --no-install bower update --force-latest
 ```
 
-Build library and run tests:
+Build the library:
+
+```
+npm run build
+```
+
+Run the test suite:
 
 ```
 npm test
+```
+
+Generate local API docs:
+
+```
+npm run docs:local
+```
+
+To prepare for a future Registry publish without actually publishing, run:
+
+```
+npx spago publish --dry-run
 ```
