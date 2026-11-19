@@ -26,6 +26,8 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Console (log)
+import Effect.Exception (try)
+import Effect.Exception as Exception
 import Node.EventEmitter as EventEmitter
 import Node.HTTP as HTTP
 import Node.HTTP.IncomingMessage as IncomingMessage
@@ -240,11 +242,14 @@ showRouteUrl Nil = ""
   
 requestUrl :: IncomingMessage IMServer -> Effect (Either String RequestUrl)
 requestUrl req = do
-  parsedUrl <- Url.new' (IncomingMessage.url req) "http://payload.invalid"
-  path <- Url.pathname parsedUrl
-  query <- urlQuery parsedUrl
-  let pathSegments = urlToSegments path
-  pure $ Right { method, path: pathSegments, query }
+  parsed <- try (Url.new' (IncomingMessage.url req) "http://payload.invalid")
+  case parsed of
+    Left err -> pure (Left (Exception.message err))
+    Right parsedUrl -> do
+      path <- Url.pathname parsedUrl
+      query <- urlQuery parsedUrl
+      let pathSegments = urlToSegments path
+      pure $ Right { method, path: pathSegments, query }
   where
     method = IncomingMessage.method req
 
@@ -258,7 +263,7 @@ urlQuery url = stripLeadingQuestionMark <$> Url.search url
 listen :: Config -> Server -> ListenConfig -> Aff (Either String Unit)
 listen { logger } server@(Server httpServer) opts = Aff.makeAff $ \cb -> do
   let netServer = HTTPServer.toNetServer httpServer
-  EventEmitter.once_ NetServer.errorH (\error -> cb (Right (Left (show error)))) netServer
+  EventEmitter.on_ NetServer.errorH (\error -> cb (Right (Left (show error)))) netServer
   EventEmitter.once_ NetServer.listeningH (logger.log startedMsg *> cb (Right (Right unit))) netServer
   case opts.backlog of
     Just backlog ->
