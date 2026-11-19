@@ -17,9 +17,9 @@
   },
   "devDependencies": {
     "nodemon": "2.0.21",
-    "purescript": "0.15.15",
+    "purescript": "0.15.17",
     "rimraf": "4.3.1",
-    "spago": "1.0.3",
+    "spago": "1.0.5",
     "xhr2": "https://github.com/hoodunit/node-xhr2.git#6f65a6557706842b7284191f15ec9afaba270909"
   }
 }

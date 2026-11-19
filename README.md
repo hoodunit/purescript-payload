@@ -428,7 +428,7 @@ npm run docs:local
 
 Registry publishing is configured in [`spago.yaml`](./spago.yaml) under `package.publish`. The current placeholder release version there is `0.5.0`, which should be bumped to the actual next release version before publishing.
 
-There is no `spago publish --dry-run` command in `spago@1.0.3`. The safe local preparation path is:
+There is no `spago publish --dry-run` command in `spago@1.0.5`. The safe local preparation path is:
 
 1. Build and test the project.
 2. Run `npx spago auth` once on the machine that will publish, which adds your SSH public key to `package.publish.owners`.
