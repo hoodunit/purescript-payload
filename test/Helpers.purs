@@ -16,6 +16,7 @@ import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits as String
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff, error, throwError)
+import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
@@ -183,6 +184,11 @@ assertOk req = do
   case res of
     Right _ -> success
     Left errors -> failure $ "Request failed: " <> show errors
+
+foreign import rawStatusLineImpl :: Int -> String -> EffectFnAff String
+
+rawStatusLine :: String -> Aff String
+rawStatusLine target = fromEffectFnAff (rawStatusLineImpl Config.testPort target)
 
 assertFail :: forall a err. Aff (Either err a) -> Test
 assertFail req = do
