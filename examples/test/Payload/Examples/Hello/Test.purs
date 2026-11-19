@@ -3,9 +3,9 @@ module Payload.Examples.Hello.Test where
 import Prelude
 
 import Payload.Examples.Hello.Main (handlers, spec)
-import Payload.Test.Config as Config
-import Payload.Test.Helpers (respMatches, withRoutes)
-import Payload.Test.Helpers as Helpers
+import Payload.Examples.Test.Config as Config
+import Payload.Examples.Test.Helpers (respMatches, withRoutes)
+import Payload.Examples.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 

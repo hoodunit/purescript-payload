@@ -10,8 +10,8 @@ import Payload.Client as Client
 import Payload.Examples.Movies.Main (moviesApi, moviesApiSpec)
 import Payload.Headers as Headers
 import Payload.Server.Cookies as Cookies
-import Payload.Test.Config (TestConfig)
-import Payload.Test.Helpers (assertFail, bodyEquals, withServer)
+import Payload.Examples.Test.Config (TestConfig)
+import Payload.Examples.Test.Helpers (assertFail, bodyEquals, withServer)
 import Test.Unit (TestSuite, suite, test)
 
 cookieOpts :: Map String String -> Client.RequestOptions

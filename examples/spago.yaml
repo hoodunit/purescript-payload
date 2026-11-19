@@ -1,0 +1,27 @@
+package:
+  name: payload-examples
+  dependencies:
+    - aff
+    - console
+    - datetime
+    - effect
+    - either
+    - foreign
+    - foreign-object
+    - js-date
+    - lists
+    - maybe
+    - node-http
+    - node-streams
+    - ordered-collections
+    - payload
+    - prelude
+    - simple-json
+    - strings
+    - tuples
+  test:
+    main: Payload.Examples.Test.Main
+    dependencies:
+      - affjax
+      - affjax-node
+      - test-unit

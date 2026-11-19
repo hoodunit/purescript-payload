@@ -7,9 +7,9 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff)
 import Payload.Examples.Files.Main (api, spec)
-import Payload.Test.Config as Config
-import Payload.Test.Helpers (respMatches, withServer)
-import Payload.Test.Helpers as Helpers
+import Payload.Examples.Test.Config as Config
+import Payload.Examples.Test.Helpers (respMatches, withServer)
+import Payload.Examples.Test.Helpers as Helpers
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
 

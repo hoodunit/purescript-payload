@@ -13,7 +13,7 @@
     "predocs:local": "npm run check:node",
     "docs:local": "spago docs -p payload",
     "pretest": "npm run check:node",
-    "test": "spago test -p payload"
+    "test": "spago test -p payload && spago test -p payload-examples"
   },
   "devDependencies": {
     "nodemon": "2.0.21",
