@@ -5,13 +5,14 @@ import Prelude
 import Data.Maybe (Maybe(..), maybe)
 import Foreign.Object (Object)
 import Payload.Spec (GET, POST, PUT, Spec(..), DELETE)
+import Payload.Test.Config as Config
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
 
 tests :: TestSuite
 tests = do
-  let { delete, post, put } = Helpers.request "http://localhost:3000"
+  let { delete, post, put } = Helpers.request Config.baseUrl
   suite "Body" do
     suite "decoding" do
       test "sending a valid POST body returns valid 200 response" $ do

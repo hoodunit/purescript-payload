@@ -54,7 +54,7 @@ file path = do
     _ -> pure (Left notFoundError)
 
 fileSize :: Stats.Stats -> Int
-fileSize (Stats.Stats statsObj) = Int.round statsObj.size
+fileSize = Int.round <<< Stats.size
 
 -- | Handler for returning static files from a directory.
 -- | Protects against directory traversal attacks.

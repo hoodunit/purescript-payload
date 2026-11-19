@@ -8,14 +8,14 @@ import Data.Maybe (Maybe(..))
 import Data.String as String
 import Effect.Aff (Aff)
 import Foreign.Object (Object)
-import Node.HTTP as HTTP
+import Node.HTTP.Types (IMServer, IncomingMessage)
 import Payload.Examples.Basic.Spec (AdminUser(..), Post, User)
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Failure(Forward))
 import Payload.Server.Guards as Guards
 import Payload.Server.Handlers as Handlers
 
-getUsers :: { guards :: { adminUser :: AdminUser, request :: HTTP.Request }} -> Aff (Array User)
+getUsers :: { guards :: { adminUser :: AdminUser, request :: IncomingMessage IMServer }} -> Aff (Array User)
 getUsers { guards: { adminUser: AdminUser adminUser } } = pure [adminUser, { id: 1, name: "John Doe" }]
 
 getUsersNonAdmin :: { params :: { name :: String } } -> Aff (Array User)
@@ -46,14 +46,14 @@ search :: { query :: { a :: Int, b :: Int, rest :: Object (Array String) } }
           -> Aff String
 search _ = pure "Search result"
 
-getAdminUser :: HTTP.Request -> Aff (Either Failure AdminUser)
+getAdminUser :: IncomingMessage IMServer -> Aff (Either Failure AdminUser)
 getAdminUser req = do
   authTokenRes <- parseAuthToken req
   case authTokenRes of
     Right token -> pure (Right (AdminUser { id: 1, name: "John Admin" }))
     Left err -> pure (Left (Forward "Not an admin"))
 
-parseAuthToken :: HTTP.Request -> Aff (Either String String)
+parseAuthToken :: IncomingMessage IMServer -> Aff (Either String String)
 parseAuthToken req = do
   headers <- Guards.headers req
   case Headers.lookup "authorization" headers of

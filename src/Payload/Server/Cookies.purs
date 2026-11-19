@@ -14,12 +14,13 @@ import Data.String as String
 import Data.Tuple (Tuple(..))
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Node.HTTP as HTTP
+import Node.HTTP.IncomingMessage as IncomingMessage
+import Node.HTTP.Types (IMServer, IncomingMessage)
 
 foreign import parseWrapper :: String -> Object String
 foreign import serializeImpl :: String -> String -> String
 
-requestCookies :: HTTP.Request -> Map String String
+requestCookies :: IncomingMessage IMServer -> Map String String
 requestCookies req = case requestCookieHeader req of
   Just header -> parseCookieHeader header
   Nothing -> Map.empty
@@ -29,8 +30,8 @@ parseCookieHeader header = ((parseWrapper header
                            # Object.toUnfoldable) :: Array (Tuple String String))
                            # Map.fromFoldable
 
-requestCookieHeader :: HTTP.Request -> Maybe String
-requestCookieHeader = HTTP.requestHeaders >>> Object.lookup "cookie"
+requestCookieHeader :: IncomingMessage IMServer -> Maybe String
+requestCookieHeader = IncomingMessage.headers >>> Object.lookup "cookie"
 
 setCookieHeader :: String -> String -> Tuple String String
 setCookieHeader name val = Tuple "Set-Cookie" (serializeImpl name val)

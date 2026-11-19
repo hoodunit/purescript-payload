@@ -7,11 +7,13 @@ import Data.Maybe (Maybe(..))
 import Data.String.Utils as StringUtils
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
-import Node.HTTP as HTTP
+import Node.HTTP.IncomingMessage as IncomingMessage
+import Node.HTTP.Types (IMServer, IncomingMessage)
 import Payload.Headers as Headers
 import Payload.ResponseTypes (Failure(..))
 import Payload.Server.Guards as Guards
 import Payload.Spec (type (:), GET, Guards, Nil, Routes, Spec(Spec))
+import Payload.Test.Config as Config
 import Payload.Test.Helpers (get_, respMatches, withServer)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
@@ -49,16 +51,16 @@ userIndex _ = pure "User page"
 unauthenticatedIndex :: forall r. { | r} -> Aff String
 unauthenticatedIndex _ = pure "Unauthenticated page"
 
-getAdminUser :: HTTP.Request -> Aff (Either Failure AdminUser)
+getAdminUser :: IncomingMessage IMServer -> Aff (Either Failure AdminUser)
 getAdminUser req = do
   headers <- Guards.headers req
   case Headers.lookup "Authorization" headers of
     (Just "Token secret") -> pure (Right (AdminUser { id: 1, name: "John Admin" }))
     _ -> pure (Left (Forward "Not an admin"))
 
-getUser :: HTTP.Request -> Aff (Either Failure User)
+getUser :: IncomingMessage IMServer -> Aff (Either Failure User)
 getUser req = do
-  if StringUtils.endsWith "username" (HTTP.requestURL req)
+  if StringUtils.endsWith "username" (IncomingMessage.url req)
      then pure (Right (User { id: 1, name: "John User" }))
      else pure (Left (Forward "Not a user"))
   
@@ -68,10 +70,10 @@ tests = do
   let handlers = { adminIndex, userIndex, unauthenticatedIndex }
   let api = { guards, handlers }
   suite "Guards" do
-    let { get } = Helpers.request "http://localhost:3000"
+    let { get } = Helpers.request Config.baseUrl
     test "routes to guarded handler if guard is passed (secret is provied)" $ do
       withServer spec api do
-        res <- get_ "http://localhost:3000" "/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
+        res <- get_ Config.baseUrl "/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
         respMatches { status: 200, body: "Admin page" } res
     test "fails with 404 if guard is failed (no secret provided)" $ do
       withServer spec api do
@@ -117,7 +119,7 @@ tests = do
             }
           }
       withServer spec_ { guards: { adminUser: getAdminUser }, handlers: { adminIndex } } do
-        res <- get_ "http://localhost:3000" "/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
+        res <- get_ Config.baseUrl "/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
         Assert.equal 200 res.status
     test "parent routes guard: request fails if guard fails" $ do
       let spec_ = Spec :: Spec {
@@ -151,7 +153,7 @@ tests = do
             }
           }
       withServer spec_ { guards: { adminUser: getAdminUser }, handlers: { all: { adminIndex } } } do
-        res <- get_ "http://localhost:3000" "/all/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
+        res <- get_ Config.baseUrl "/all/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
         Assert.equal 200 res.status
     test "endpoint guard: request fails if guard fails" $ do
       let spec_ = Spec :: Spec {
@@ -181,5 +183,5 @@ tests = do
             }
           }
       withServer spec_ { guards: { adminUser: getAdminUser }, handlers: { adminIndex } } do
-        res <- get_ "http://localhost:3000" "/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
+        res <- get_ Config.baseUrl "/admin" (Headers.fromFoldable [Tuple "Authorization" "Token secret"])
         Assert.equal 200 res.status

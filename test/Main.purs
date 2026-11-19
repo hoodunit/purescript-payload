@@ -4,10 +4,6 @@ import Prelude
 
 import Effect (Effect)
 import Effect.Aff as Aff
-import Payload.Examples.Basic.Test as BasicExample
-import Payload.Examples.Files.Test as FilesExample
-import Payload.Examples.Hello.Test as HelloExample
-import Payload.Examples.Movies.Test as MoviesExample
 import Payload.Test.Config (defaultConfig)
 import Payload.Test.Integration.Client.ContentTypes as ClientContentTypes
 import Payload.Test.Integration.Client.Errors as ClientErrorsTest
@@ -73,12 +69,6 @@ tests = do
     ClientStatuses.tests cfg
     ClientContentTypes.tests cfg
     ClientResponse.tests cfg
-
-  suite "Examples" do
-    HelloExample.tests
-    BasicExample.tests cfg
-    FilesExample.tests
-    MoviesExample.tests cfg
 
 main :: Effect Unit
 main = Aff.launchAff_ $ do

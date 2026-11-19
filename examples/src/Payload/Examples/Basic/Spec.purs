@@ -2,14 +2,14 @@ module Payload.Examples.Basic.Spec where
 
 import Data.List (List)
 import Foreign.Object (Object)
-import Node.HTTP as HTTP
+import Node.HTTP.Types (IMServer, IncomingMessage)
 import Node.Stream (Read, Stream)
 import Payload.Spec (type (:), Spec(Spec), GET, Guards, Nil, POST, Routes)
 
 spec :: Spec {
   guards :: {
      adminUser :: AdminUser,
-     request :: HTTP.Request
+     request :: IncomingMessage IMServer
   },
   routes :: {
     users :: Routes "/users" {

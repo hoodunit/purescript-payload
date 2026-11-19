@@ -10,8 +10,8 @@ import Payload.Client (mkGuardedClient, unwrapBody, unwrapResponse)
 import Payload.Examples.Basic.Main (api)
 import Payload.Examples.Basic.Spec (spec)
 import Payload.Headers as Headers
-import Payload.Test.Config (TestConfig)
-import Payload.Test.Helpers (withServer)
+import Payload.Examples.Test.Config (TestConfig)
+import Payload.Examples.Test.Helpers (withServer)
 import Test.Unit (TestSuite, Test, failure, suite, test)
 import Test.Unit.Assert as Assert
 

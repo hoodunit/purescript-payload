@@ -5,14 +5,24 @@ import Prelude
 import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Payload.Spec (GET, POST, PUT, Spec(Spec), DELETE)
+import Payload.Test.Config as Config
 import Payload.Test.Helpers (respMatches, withRoutes)
 import Payload.Test.Helpers as Helpers
 import Test.Unit (TestSuite, suite, test)
+import Test.Unit.Assert as Assert
 
 tests :: TestSuite
 tests = do
-  let { get, post, put, delete } = Helpers.request "http://localhost:3000"
+  let { get, post, put, delete } = Helpers.request Config.baseUrl
   suite "Routing" do
+    test "a request target that is not a URL returns an internal error and the server keeps serving" $ do
+      let spec = Spec :: _ { foo :: GET "/foo" { response :: String } }
+      let handlers = { foo: \_ -> pure "foo" }
+      withRoutes spec handlers do
+        statusLine <- Helpers.rawStatusLine "//["
+        Assert.equal "HTTP/1.1 500 Internal Server Error" statusLine
+        res <- get "/foo"
+        respMatches { status: 200, body: "foo" } res
     suite "URL params" do
       test "sending valid URL params returns 200 response" $ do
         let spec = Spec :: _ { foo :: GET "/foo/<id>" { params :: { id :: Int }, response :: String }

@@ -5,7 +5,7 @@ import Prelude
 import Data.Either (Either, note)
 import Data.Map as Map
 import Effect.Aff (Aff)
-import Node.HTTP as HTTP
+import Node.HTTP.Types (IMServer, IncomingMessage)
 import Payload.Server.Cookies (requestCookies)
 import Payload.Spec (type (:), Spec(Spec), DELETE, GET, Guards, POST, Routes, Nil)
 
@@ -160,12 +160,12 @@ deleteRating :: { params :: { movieId :: Int }
                 } -> Aff StatusCodeResponse
 deleteRating _ = pure { statusCode: 1, statusMessage: "Deleted" }
 
-getApiKey :: HTTP.Request -> Aff (Either String ApiKey)
+getApiKey :: IncomingMessage IMServer -> Aff (Either String ApiKey)
 getApiKey req = do
   let cookies = requestCookies req
   pure $ note "No cookie" $ Map.lookup "apiKey" cookies
 
-getSessionId :: HTTP.Request -> Aff (Either String SessionId)
+getSessionId :: IncomingMessage IMServer -> Aff (Either String SessionId)
 getSessionId req = do
   let cookies = requestCookies req
   pure $ note "No cookie" $ Map.lookup "sessionId" cookies
