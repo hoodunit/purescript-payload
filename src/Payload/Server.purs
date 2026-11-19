@@ -26,24 +26,19 @@ import Effect.Aff (Aff)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Effect.Exception (try)
-import Effect.Exception as Exception
 import Node.EventEmitter as EventEmitter
 import Node.HTTP as HTTP
 import Node.HTTP.IncomingMessage as IncomingMessage
 import Node.HTTP.Server as HTTPServer
 import Node.HTTP.Types (HttpServer, IMServer, IncomingMessage, ServerResponse)
 import Node.Net.Server as NetServer
-import Node.URL (URL)
-import Node.URL as Url
 import Payload.Internal.UrlParsing (Segment)
 import Payload.ResponseTypes (ResponseBody(..))
 import Payload.Server.Internal.Request (RequestUrl)
 import Payload.Server.Internal.ServerResponse (writeResponse)
 import Payload.Server.Internal.Trie (Trie)
 import Payload.Server.Internal.Trie as Trie
-import Payload.Server.Internal.UrlString (urlToSegments)
-import Payload.Server.Response (internalError)
+import Payload.Server.Internal.UrlString (splitRequestTarget, urlToSegments)
 import Payload.Server.Response as Response
 import Payload.Server.Routable (class Routable, HandlerEntry, Outcome(..), mkRouter)
 import Payload.Spec (Spec(Spec))
@@ -193,11 +188,7 @@ mkLogger logLevel = { log: log_, logDebug, logError }
 handleRequest :: Config -> Trie HandlerEntry -> IncomingMessage IMServer -> ServerResponse -> Effect Unit
 handleRequest cfg@{ logger } routerTrie req res = do
   logger.logDebug (IncomingMessage.method req <> " " <> IncomingMessage.url req)
-  reqUrl <- requestUrl req
-  case reqUrl of
-    Right reqUrl -> runHandlers cfg routerTrie reqUrl req res
-    Left err -> do
-      writeResponse res (internalError $ StringBody $ "Path could not be decoded: " <> show err)
+  runHandlers cfg routerTrie (requestUrl req) req res
 
 runHandlers :: Config -> Trie HandlerEntry -> RequestUrl
                -> IncomingMessage IMServer -> ServerResponse -> Effect Unit
@@ -240,25 +231,10 @@ showRouteUrl :: List Segment -> String
 showRouteUrl (method : rest) = show method <> " /" <> String.joinWith "/" (Array.fromFoldable $ show <$> rest)
 showRouteUrl Nil = ""
   
-requestUrl :: IncomingMessage IMServer -> Effect (Either String RequestUrl)
-requestUrl req = do
-  parsed <- try (Url.new' (IncomingMessage.url req) "http://payload.invalid")
-  case parsed of
-    Left err -> pure (Left (Exception.message err))
-    Right parsedUrl -> do
-      path <- Url.pathname parsedUrl
-      query <- urlQuery parsedUrl
-      let pathSegments = urlToSegments path
-      pure $ Right { method, path: pathSegments, query }
+requestUrl :: IncomingMessage IMServer -> RequestUrl
+requestUrl req = { method: IncomingMessage.method req, path: urlToSegments path, query }
   where
-    method = IncomingMessage.method req
-
-urlQuery :: URL -> Effect String
-urlQuery url = stripLeadingQuestionMark <$> Url.search url
-  where
-    stripLeadingQuestionMark query = case String.stripPrefix (String.Pattern "?") query of
-      Just stripped -> stripped
-      Nothing -> query
+    { path, query } = splitRequestTarget (IncomingMessage.url req)
 
 listen :: Config -> Server -> ListenConfig -> Aff (Either String Unit)
 listen { logger } server@(Server httpServer) opts = Aff.makeAff $ \cb -> do

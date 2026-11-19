@@ -185,10 +185,10 @@ assertOk req = do
     Right _ -> success
     Left errors -> failure $ "Request failed: " <> show errors
 
-foreign import rawStatusLineImpl :: Int -> String -> EffectFnAff String
+foreign import rawGetImpl :: Int -> String -> EffectFnAff { status :: String, body :: String }
 
-rawStatusLine :: String -> Aff String
-rawStatusLine target = fromEffectFnAff (rawStatusLineImpl Config.testPort target)
+rawGet :: String -> Aff { status :: String, body :: String }
+rawGet target = fromEffectFnAff (rawGetImpl Config.testPort target)
 
 assertFail :: forall a err. Aff (Either err a) -> Test
 assertFail req = do

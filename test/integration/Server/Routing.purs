@@ -2,6 +2,7 @@ module Payload.Test.Integration.Server.Routing where
 
 import Prelude
 
+import Data.Foldable (intercalate)
 import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Payload.Spec (GET, POST, PUT, Spec(Spec), DELETE)
@@ -15,14 +16,29 @@ tests :: TestSuite
 tests = do
   let { get, post, put, delete } = Helpers.request Config.baseUrl
   suite "Routing" do
-    test "a request target that is not a URL returns an internal error and the server keeps serving" $ do
-      let spec = Spec :: _ { foo :: GET "/foo" { response :: String } }
-      let handlers = { foo: \_ -> pure "foo" }
-      withRoutes spec handlers do
-        statusLine <- Helpers.rawStatusLine "//["
-        Assert.equal "HTTP/1.1 500 Internal Server Error" statusLine
-        res <- get "/foo"
-        respMatches { status: 200, body: "foo" } res
+    suite "unusual request targets" do
+      test "a request target that is not a URL is routed as a path and the server keeps serving" $ do
+        let spec = Spec :: _ { foo :: GET "/foo" { response :: String } }
+        let handlers = { foo: \_ -> pure "foo" }
+        withRoutes spec handlers do
+          res <- Helpers.rawGet "//["
+          Assert.equal "HTTP/1.1 404 Not Found" res.status
+          ok <- get "/foo"
+          respMatches { status: 200, body: "foo" } ok
+      test "a path starting with // is routed without its leading slashes" $ do
+        let spec = Spec :: _ { user :: GET "/users/<id>" { params :: { id :: Int }, response :: String } }
+        let handlers = { user: \{ params: { id } } -> pure ("user " <> show id) }
+        withRoutes spec handlers do
+          res <- Helpers.rawGet "//users/1"
+          Assert.equal { status: "HTTP/1.1 200 OK", body: "user 1" } res
+      test "dot segments are routed literally" $ do
+        let spec = Spec :: _ { any :: GET "/<..rest>" { params :: { rest :: List String }, response :: String } }
+        let handlers = { any: \{ params: { rest } } -> pure (intercalate "|" rest) }
+        withRoutes spec handlers do
+          dots <- Helpers.rawGet "/a/x/../b"
+          Assert.equal "a|x|..|b" dots.body
+          encodedDots <- Helpers.rawGet "/%2e%2e/b"
+          Assert.equal "..|b" encodedDots.body
     suite "URL params" do
       test "sending valid URL params returns 200 response" $ do
         let spec = Spec :: _ { foo :: GET "/foo/<id>" { params :: { id :: Int }, response :: String }
